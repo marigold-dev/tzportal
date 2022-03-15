@@ -4,6 +4,9 @@
   "private": true,
   "dependencies": {
     "@dipdup/tzkt-api": "^0.0.1",
+    "@material/banner": "^13.0.0",
+    "@mui/icons-material": "^5.5.1",
+    "@mui/styles": "^5.5.1",
     "@taquito/beacon-wallet": "^11.2.0",
     "@taquito/taquito": "^11.2.0",
     "@testing-library/jest-dom": "^5.14.1",

@@ -10,5 +10,11 @@
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
     "url": "^0.11.0"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.8.2",
+    "@emotion/styled": "^11.8.1",
+    "@material/banner": "^13.0.0",
+    "@mui/material": "^5.5.1"
   }
 }
