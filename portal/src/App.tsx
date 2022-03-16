@@ -37,16 +37,15 @@ function App() {
 
   return (
     <React.Fragment>
-      <Box
+      <Box bgcolor="secondary.main"  
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
-          backgroundColor: 'gray',
         }}
       >
         <Typography sx={{ minWidth: 100 }}>TzPortal</Typography>
 
-        {userAddress != "" ? <Tooltip title="Account settings">
+        {userAddress !== "" ? <Tooltip title="Account settings">
           <IconButton
             onClick={handleClick}
             size="small"
