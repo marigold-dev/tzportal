@@ -5,6 +5,7 @@ import {
     NetworkType
 } from "@airgap/beacon-sdk";
 import Button from "@mui/material/Button";
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 
 type ButtonProps = {
     Tezos: TezosToolkit;
@@ -35,7 +36,7 @@ const ConnectButton = ({
             await wallet.requestPermissions({
                 network: {
                     type: NetworkType.HANGZHOUNET,
-                    rpcUrl: "https://hangzhounet.tezos.marigold.dev"
+                    rpcUrl: process.env["REACT_APP_TEZOS_NODE"]!
                 }
             });
             // gets user's address
@@ -69,13 +70,9 @@ const ConnectButton = ({
     }, []);
 
     return (
-        <div className="buttons">
             <Button variant="contained" onClick={connectWallet}>
-                <span>
-                    <i className="fas fa-wallet"></i>&nbsp; Connect with wallet
-                </span>
+               <AccountBalanceWalletIcon /> &nbsp; Connect
             </Button>
-        </div>
     );
 };
 

@@ -8,10 +8,10 @@ import reportWebVitals from './reportWebVitals';
 const themeLight = createTheme({
   palette: {
     primary: {
-      main : "#eb3448"
+      main : "#333399"
     },
     secondary: {
-      main : "#ff8600"
+      main : "#ffffff"
     }
   }
 });

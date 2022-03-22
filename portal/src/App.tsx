@@ -20,7 +20,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 
 function App() {
 
-  const [Tezos, setTezos] = useState<TezosToolkit>(new TezosToolkit("https://hangzhounet.tezos.marigold.dev"));
+  const [Tezos, setTezos] = useState<TezosToolkit>(new TezosToolkit(process.env["REACT_APP_TEZOS_NODE"]!));
   const [wallet, setWallet] = useState<any>(null);
   const [userAddress, setUserAddress] = useState<string>("");
   const [userBalance, setUserBalance] = useState<number>(0);
@@ -36,14 +36,15 @@ function App() {
 
 
   return (
-    <React.Fragment>
-      <Box bgcolor="secondary.main"  
+    <div style={{backgroundImage : "url('/bg.jpg')" , height : "100vh",backgroundSize: "cover"}} >
+      <Box bgcolor="#00000080"  
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
+          padding : "0.4em"
         }}
       >
-        <Typography sx={{ minWidth: 100 }}>TzPortal</Typography>
+        <Typography color="secondary.main" variant="h4">TzPortal</Typography>
 
         {userAddress !== "" ? <Tooltip title="Account settings">
           <IconButton
@@ -54,7 +55,7 @@ function App() {
             aria-haspopup="true"
             aria-expanded={open ? 'true' : undefined}
           >
-            <MenuIcon sx={{ width: 32, height: 32 }} />
+            <MenuIcon color="secondary" sx={{ width: 32, height: 32 }} />
           </IconButton>
         </Tooltip> : <ConnectButton
           Tezos={Tezos}
@@ -106,7 +107,7 @@ function App() {
         <Divider />
 
         <MenuItem>
-          <AccountBalanceWalletIcon />  {userBalance}
+          <AccountBalanceWalletIcon /> &nbsp; {userBalance} mutez
         </MenuItem>
         <Divider />
 
@@ -125,7 +126,7 @@ function App() {
       </Menu>
 
 
-      <Box>
+      <Box >
 
         BODY IS HERE
 
@@ -135,7 +136,7 @@ function App() {
 
 
 
-    </React.Fragment>
+    </div>
 
 
 

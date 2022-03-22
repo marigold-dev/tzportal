@@ -14,10 +14,6 @@
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^12.0.0",
     "@testing-library/user-event": "^13.2.1",
-    "@types/jest": "^27.0.1",
-    "@types/node": "^16.7.13",
-    "@types/react": "^17.0.20",
-    "@types/react-dom": "^17.0.9",
     "notistack": "^2.0.3",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -26,10 +22,15 @@
     "web-vitals": "^2.1.0"
   },
   "scripts": {
-    "start": "react-app-rewired start",
-    "build": "react-app-rewired build",
+    "start": "HTTPS=true react-app-rewired start",
+    "start:hangzhounet": "HTTPS=true env-cmd -f .env.hangzhounet react-app-rewired start",
+    "start:ithacanet": "HTTPS=true env-cmd -f .env.ithacanet react-app-rewired start",
+    "build": "react-app-rewired --max_old_space_size=2048 build",
+    "build:hangzhounet": "env-cmd -f .env.hangzhounet react-app-rewired --max_old_space_size=2048 build",
+    "build:ithacanet": "env-cmd -f .env.ithacanet react-app-rewired --max_old_space_size=2048 build",
     "test": "react-app-rewired test",
-    "eject": "react-scripts eject"
+    "eject": "react-app-rewired eject",
+    "update-taquito": "ncu -u --target newest --filter '/^@taquito.*$/' && npm i"
   },
   "eslintConfig": {
     "extends": [
@@ -50,6 +51,10 @@
     ]
   },
   "devDependencies": {
+    "@types/jest": "^27.0.1",
+    "@types/node": "^16.7.13",
+    "@types/react": "^17.0.20",
+    "@types/react-dom": "^17.0.9",
     "assert": "^2.0.0",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.0",
