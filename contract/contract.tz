@@ -1,0 +1,113 @@
+{ parameter
+    (or (or %deposit
+           (pair %fA12
+              (pair (nat %amount_to_transfer) (contract %callback (ticket bytes)))
+              (contract %fa12_transfer (pair (pair address address) nat)))
+           (pair %xTZ (nat %amount_to_transfer) (contract %callback (ticket bytes))))
+        (ticket %withdraw bytes)) ;
+  storage unit ;
+  code { UNIT ;
+         SWAP ;
+         CAR ;
+         IF_LEFT
+           { IF_LEFT
+               { DUP ;
+                 CAR ;
+                 CDR ;
+                 PUSH mutez 0 ;
+                 DUP 3 ;
+                 CAR ;
+                 CAR ;
+                 DUP 4 ;
+                 CDR ;
+                 ADDRESS ;
+                 PACK ;
+                 TICKET ;
+                 TRANSFER_TOKENS ;
+                 NIL operation ;
+                 SWAP ;
+                 CONS ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CAR ;
+                 DIG 2 ;
+                 CDR ;
+                 PAIR ;
+                 DUP ;
+                 CAR ;
+                 PUSH mutez 0 ;
+                 DIG 2 ;
+                 CDR ;
+                 SELF_ADDRESS ;
+                 SOURCE ;
+                 PAIR ;
+                 PAIR ;
+                 TRANSFER_TOKENS ;
+                 CONS }
+               { PUSH mutez 1 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 MUL ;
+                 AMOUNT ;
+                 COMPARE ;
+                 LT ;
+                 IF { PUSH string "User needs to provide at least 'amount_to_transfer' mutez" ;
+                      FAILWITH }
+                    {} ;
+                 DUP ;
+                 CDR ;
+                 PUSH mutez 0 ;
+                 DIG 2 ;
+                 CAR ;
+                 PUSH string "XTZ" ;
+                 PACK ;
+                 TICKET ;
+                 TRANSFER_TOKENS ;
+                 NIL operation ;
+                 SWAP ;
+                 CONS } }
+           { READ_TICKET ;
+             SWAP ;
+             DROP ;
+             UNPAIR ;
+             SWAP ;
+             UNPAIR ;
+             SELF_ADDRESS ;
+             DIG 3 ;
+             COMPARE ;
+             EQ ;
+             PUSH string "We only accept tickets we created!" ;
+             PAIR ;
+             DUP ;
+             CDR ;
+             NOT ;
+             IF { CAR ; FAILWITH } { DROP } ;
+             UNPACK string ;
+             IF_NONE
+               { PUSH string "The ticket somehow did not contain a valid string" ; FAILWITH }
+               { PUSH string "XTZ" ;
+                 SWAP ;
+                 COMPARE ;
+                 NEQ ;
+                 IF { PUSH string "The ticket somehow did not contain a valid string XTZ" ;
+                      FAILWITH }
+                    {} } ;
+             SOURCE ;
+             CONTRACT unit ;
+             IF_NONE
+               { PUSH string "The contract Tezos.source does not exist" ; FAILWITH }
+               {} ;
+             PUSH mutez 1 ;
+             DIG 2 ;
+             MUL ;
+             UNIT ;
+             TRANSFER_TOKENS ;
+             NIL operation ;
+             SWAP ;
+             CONS } ;
+         PAIR } }
+
