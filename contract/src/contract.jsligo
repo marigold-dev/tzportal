@@ -1,114 +1,138 @@
-type transfer_params = [address,address,nat];  //from,to,qty
+// DEFINITIONS  
 
-type transfer = contract<transfer_params>;
+type fa12ContractParameters = [address,address,nat];  //from,to,qty
+type fa12Contract = contract<fa12ContractParameters>;
 
-type fa12_op = {
-  fa12_transfer: transfer,
-  amount_to_transfer: nat,
-  callback: contract<ticket<bytes>>,
+type rollupContractParameters = [ticket<bytes>,address]; 
+type rollupContract = contract<rollupContractParameters>;
+
+type ticketType =
+| ["XTZ"]
+| ["FA12", address];
+
+type fa12Op = {
+  fa12Address: address,
+  amountToTransfer: nat,
+  rollupAddress: address,
+  l2Address: address
 };
 
-type xtz_op = {
-  amount_to_transfer: nat,
-  callback: contract<ticket<bytes>>,
+type xtzOp = {
+  amountToTransfer: nat,
+  rollupAddress: address,
+  l2Address: address
 };
 
-type deposit_op = 
-| ["FA12", fa12_op]
-| ["XTZ" , xtz_op];
+type depositOp = 
+| ["FA12_OP", fa12Op]
+| ["XTZ_OP" , xtzOp];
 
 type parameter =
-  | ["Deposit" , deposit_op]
+  | ["Deposit" , depositOp]
   | ["Withdraw" , ticket<bytes>];
 
 type return_ =  [list<operation>, unit];
 
-let assert_msg = ([message,condition] : [string,bool]) : unit => {
-  if (!condition)failwith(message);
-};
+type read_ticket_return = [[address, [bytes , nat]] , ticket<bytes>];
 
-let get_transfer_contract = (fa12_contract_addr: address) : transfer => {
-  let transfer_opt: option<transfer> = Tezos.get_entrypoint_opt("%transfer", fa12_contract_addr);
-  let transfer = match (transfer_opt ,{
-    Some : (contract : transfer) => contract,
+// FUNCTIONS  
+
+let getTransferContract = (fa12ContractAddr: address) : fa12Contract => {
+  let transferOption: option<fa12Contract> = Tezos.get_entrypoint_opt("%transfer", fa12ContractAddr);
+  let transfer = match (transferOption ,{
+    Some : (contract : fa12Contract) => contract,
     None : () => failwith("The contract does not exist or is not a valid fa1.2 contract")
     });
   return transfer;
 };
 
-let get_funds = (fa12_transfer: transfer, amt: nat) : operation => {
+let getFunds = (fa12Contract: fa12Contract, amt: nat) : operation => {
   return Tezos.transaction(
     [Tezos.source, Tezos.self_address, amt],
     0 as mutez,
-    fa12_transfer
+    fa12Contract
   );
 };
 
-let deposit = (op: deposit_op): list<operation> => {
+let deposit = (op: depositOp): return_ => {
 
   match( op , {
-   FA12 : (fa12_op : fa12_op) => {          
-      let tic: ticket<bytes> = Tezos.create_ticket(
-        Bytes.pack(Tezos.address(fa12_op.fa12_transfer)),
-        fa12_op.amount_to_transfer);
-      let give_tic = Tezos.transaction(tic, 0 as mutez, fa12_op.callback);
-      return list([get_funds(fa12_op.fa12_transfer, fa12_op.amount_to_transfer), give_tic]);
+   FA12_OP : (fa12Op : fa12Op) => {  
+      if(fa12Op.amountToTransfer < (1 as nat)) failwith("Enter a positive and not null amount");
+      
+      //create FA1.2 ticket
+      let b = Bytes.pack(FA12(fa12Op.fa12Address));       
+      let tic: ticket<bytes> = Tezos.create_ticket(b,fa12Op.amountToTransfer);
+      
+      //get rollup contract
+      let rollup : rollupContract = Tezos.get_contract_with_error(fa12Op.rollupAddress,"Invalid rollup address!");
+
+      //get fa1.2 contract
+      let fa12Contract : fa12Contract = Tezos.get_contract_with_error(fa12Op.fa12Address,"Invalid FA1.2 address!");
+
+      //send ticket to rollup
+      let op = Tezos.transaction([tic, fa12Op.l2Address],0 as mutez,rollup);
+      return [list([op,getFunds(fa12Contract,fa12Op.amountToTransfer)]),unit];
    } ,
-   XTZ : (xtz_op : xtz_op) => {
-    if(Tezos.amount < (xtz_op.amount_to_transfer * (1 as mutez))) failwith("User needs to provide at least 'amount_to_transfer' mutez");
-    let tic: ticket<bytes> = Tezos.create_ticket(Bytes.pack("XTZ"),xtz_op.amount_to_transfer);
-    let give_tic = Tezos.transaction(tic, 0 as mutez, xtz_op.callback);
-    return list([give_tic]);
+
+   XTZ_OP : (xtzOp : xtzOp) => {
+    if(xtzOp.amountToTransfer < (1 as nat)) failwith("Enter a positive and not null amount");
+    if(Tezos.amount < (xtzOp.amountToTransfer * (1 as mutez))) failwith("User needs to provide at least 'amountToTransfer' mutez");
+    
+    //create XTZ ticket
+    let tic: ticket<bytes> = Tezos.create_ticket(Bytes.pack(XTZ()),xtzOp.amountToTransfer);
+   
+    //get rollup contract
+    let rollup : rollupContract = Tezos.get_contract_with_error(xtzOp.rollupAddress,"Invalid rollup address!");
+
+    //send ticket to rollup
+    let op = Tezos.transaction([tic, xtzOp.l2Address],0 as mutez,rollup);
+    return [list([op]),unit];
    }
   });
 };
 
-let withdraw = (ticket: ticket<bytes>) : list<operation> => {
-  // This discards the ticket 
-  let [[ticket_address, [typeBytes, amount_]], _] = Tezos.read_ticket(ticket);
+let withdraw = (ticket: ticket<bytes>) : return_ => {
+  // Read/burn the ticket 
+  let [[ticketerAddress, [typeBytes, qty]], _] : read_ticket_return = Tezos.read_ticket(ticket);
 
-  assert_msg("We only accept tickets we created!", ticket_address == Tezos.self_address);
+  // check if we are the ticketer
+  if(ticketerAddress != Tezos.self_address)failwith("We only accept tickets we created!");
 
-//FIXME  let typeOpt: option<address|string> = Bytes.unpack(typeBytes);
-  let typeOpt: option<string> = Bytes.unpack(typeBytes);
+  let typeOpt: option<ticketType> = Bytes.unpack(typeBytes);
 
-/*
-  let fa12_transfer_address : address = match (typeOpt ,{
-     Some : (fa12_transfer_address : address) => fa12_transfer_address,
-     None : () => failwith("The ticket somehow did not contain a valid address")
-    });
-  let fa12_transfer = get_transfer_contract(fa12_transfer_address);
-  let op = Tezos.transaction(
-      [Tezos.self_address, Tezos.source, amount_ ],
-      0 as mutez,
-      fa12_transfer
-    ); */
+  match (typeOpt ,{
+      Some : (ticketType : ticketType) => { 
+        // try with XTZ first
+        match(ticketType , {
+          XTZ : () => {             
+            let callerContract : contract<unit> = Tezos.get_contract_with_error(Tezos.source,"Cannot find the caller implicit account contract");
 
-     match (typeOpt ,{
-      Some : (ticketType : string) => {if(ticketType != "XTZ") failwith("The ticket somehow did not contain a valid string XTZ")},
-      None : () => failwith("The ticket somehow did not contain a valid string")
-     });
-   
-   let sourceContractOpt : option<contract<unit>> = Tezos.get_contract_opt(Tezos.source);
-   let sourceContract = match (sourceContractOpt ,{
-    Some : (sourceContract : contract<unit>) => sourceContract,
-    None : () => failwith("The contract Tezos.source does not exist")
-    });
-   let op = Tezos.transaction(
-       unit,
-       amount_ * (1 as mutez),
-       sourceContract
-     );
+            //give back the XTZ to the caller
+            return [list([Tezos.transaction(unit,qty * (1 as mutez),callerContract)]),unit];                                               
+          },
+          FA12 : (fa12Address : address) => { 
+                let fa12Contract = getTransferContract(fa12Address);
 
+                //send back FA1.2 token ownership to the caller
+            return [list([Tezos.transaction(
+                    [Tezos.self_address, Tezos.source, qty ],
+                    0 as mutez,
+                    fa12Contract
+                  )]),unit]; 
+                }
+          });
+      },
+      None : () => failwith("The ticket does not contain a valid ticketType")
+  });   
 
-  return list([op]);
 };
 
+
+// MAIN  
+
 let main = ([action , _store]:[parameter , unit]): return_ => {
-  return [ match (action, {
-   Deposit : (op : deposit_op) => deposit(op),
-   Withdraw : (ticket : ticket<bytes>) => withdraw(ticket)
-  }),
-  unit
-  ]
+  return match (action, {
+      Deposit : (op : depositOp) => deposit(op),
+      Withdraw : (ticket : ticket<bytes>) => withdraw(ticket)})
 };

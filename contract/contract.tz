@@ -1,39 +1,61 @@
 { parameter
     (or (or %deposit
-           (pair %fA12
-              (pair (nat %amount_to_transfer) (contract %callback (ticket bytes)))
-              (contract %fa12_transfer (pair (pair address address) nat)))
-           (pair %xTZ (nat %amount_to_transfer) (contract %callback (ticket bytes))))
+           (pair %fA12_OP
+              (pair (nat %amountToTransfer) (address %fa12Address))
+              (pair (address %l2Address) (address %rollupAddress)))
+           (pair %xTZ_OP
+              (pair (nat %amountToTransfer) (address %l2Address))
+              (address %rollupAddress)))
         (ticket %withdraw bytes)) ;
   storage unit ;
-  code { UNIT ;
-         SWAP ;
-         CAR ;
+  code { CAR ;
          IF_LEFT
            { IF_LEFT
-               { DUP ;
-                 CAR ;
-                 CDR ;
-                 PUSH mutez 0 ;
-                 DUP 3 ;
-                 CAR ;
-                 CAR ;
-                 DUP 4 ;
-                 CDR ;
-                 ADDRESS ;
-                 PACK ;
-                 TICKET ;
-                 TRANSFER_TOKENS ;
-                 NIL operation ;
-                 SWAP ;
-                 CONS ;
+               { PUSH nat 1 ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
                  CAR ;
                  CAR ;
-                 DIG 2 ;
+                 COMPARE ;
+                 LT ;
+                 IF { PUSH string "Enter a positive and not null amount" ; FAILWITH } {} ;
+                 PUSH string "Invalid rollup address!" ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
                  CDR ;
+                 CDR ;
+                 CONTRACT (pair (ticket bytes) address) ;
+                 IF_NONE { FAILWITH } { SWAP ; DROP } ;
+                 PUSH string "Invalid FA1.2 address!" ;
+                 DUP 3 ;
+                 CAR ;
+                 CDR ;
+                 CONTRACT (pair (pair address address) nat) ;
+                 IF_NONE { FAILWITH } { SWAP ; DROP } ;
+                 SWAP ;
+                 PUSH mutez 0 ;
+                 DUP 4 ;
+                 CDR ;
+                 CAR ;
+                 DUP 5 ;
+                 CAR ;
+                 CAR ;
+                 DUP 6 ;
+                 CAR ;
+                 CDR ;
+                 LEFT unit ;
+                 PACK ;
+                 TICKET ;
+                 PAIR ;
+                 TRANSFER_TOKENS ;
+                 UNIT ;
+                 NIL operation ;
+                 DIG 4 ;
+                 CAR ;
+                 CAR ;
+                 DIG 4 ;
                  PAIR ;
                  DUP ;
                  CAR ;
@@ -45,31 +67,57 @@
                  PAIR ;
                  PAIR ;
                  TRANSFER_TOKENS ;
-                 CONS }
-               { PUSH mutez 1 ;
+                 CONS ;
+                 DIG 2 ;
+                 CONS ;
+                 PAIR }
+               { PUSH nat 1 ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
+                 CAR ;
+                 CAR ;
+                 COMPARE ;
+                 LT ;
+                 IF { PUSH string "Enter a positive and not null amount" ; FAILWITH } {} ;
+                 PUSH mutez 1 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
                  CAR ;
                  MUL ;
                  AMOUNT ;
                  COMPARE ;
                  LT ;
-                 IF { PUSH string "User needs to provide at least 'amount_to_transfer' mutez" ;
+                 IF { PUSH string "User needs to provide at least 'amountToTransfer' mutez" ;
                       FAILWITH }
                     {} ;
+                 PUSH string "Invalid rollup address!" ;
+                 SWAP ;
                  DUP ;
+                 DUG 2 ;
                  CDR ;
+                 CONTRACT (pair (ticket bytes) address) ;
+                 IF_NONE { FAILWITH } { SWAP ; DROP } ;
                  PUSH mutez 0 ;
-                 DIG 2 ;
+                 DUP 3 ;
                  CAR ;
-                 PUSH string "XTZ" ;
+                 CDR ;
+                 DIG 3 ;
+                 CAR ;
+                 CAR ;
+                 UNIT ;
+                 RIGHT address ;
                  PACK ;
                  TICKET ;
+                 PAIR ;
                  TRANSFER_TOKENS ;
+                 UNIT ;
                  NIL operation ;
-                 SWAP ;
-                 CONS } }
+                 DIG 2 ;
+                 CONS ;
+                 PAIR } }
            { READ_TICKET ;
              SWAP ;
              DROP ;
@@ -79,35 +127,44 @@
              SELF_ADDRESS ;
              DIG 3 ;
              COMPARE ;
-             EQ ;
-             PUSH string "We only accept tickets we created!" ;
-             PAIR ;
-             DUP ;
-             CDR ;
-             NOT ;
-             IF { CAR ; FAILWITH } { DROP } ;
-             UNPACK string ;
+             NEQ ;
+             IF { PUSH string "We only accept tickets we created!" ; FAILWITH } {} ;
+             UNPACK (or (address %fA12) (unit %xTZ)) ;
              IF_NONE
-               { PUSH string "The ticket somehow did not contain a valid string" ; FAILWITH }
-               { PUSH string "XTZ" ;
-                 SWAP ;
-                 COMPARE ;
-                 NEQ ;
-                 IF { PUSH string "The ticket somehow did not contain a valid string XTZ" ;
-                      FAILWITH }
-                    {} } ;
-             SOURCE ;
-             CONTRACT unit ;
-             IF_NONE
-               { PUSH string "The contract Tezos.source does not exist" ; FAILWITH }
-               {} ;
-             PUSH mutez 1 ;
-             DIG 2 ;
-             MUL ;
-             UNIT ;
-             TRANSFER_TOKENS ;
-             NIL operation ;
-             SWAP ;
-             CONS } ;
-         PAIR } }
+               { DROP ;
+                 PUSH string "The ticket does not contain a valid ticketType" ;
+                 FAILWITH }
+               { IF_LEFT
+                   { CONTRACT %transfer (pair (pair address address) nat) ;
+                     IF_NONE
+                       { PUSH string "The contract does not exist or is not a valid fa1.2 contract" ;
+                         FAILWITH }
+                       {} ;
+                     UNIT ;
+                     NIL operation ;
+                     DIG 2 ;
+                     PUSH mutez 0 ;
+                     DIG 4 ;
+                     SOURCE ;
+                     SELF_ADDRESS ;
+                     PAIR ;
+                     PAIR ;
+                     TRANSFER_TOKENS ;
+                     CONS ;
+                     PAIR }
+                   { DROP ;
+                     PUSH string "Cannot find the caller implicit account contract" ;
+                     SOURCE ;
+                     CONTRACT unit ;
+                     IF_NONE { FAILWITH } { SWAP ; DROP } ;
+                     UNIT ;
+                     NIL operation ;
+                     DIG 2 ;
+                     PUSH mutez 1 ;
+                     DIG 4 ;
+                     MUL ;
+                     UNIT ;
+                     TRANSFER_TOKENS ;
+                     CONS ;
+                     PAIR } } } } }
 
