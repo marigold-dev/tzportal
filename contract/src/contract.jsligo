@@ -35,13 +35,26 @@ type return_ =  [list<operation>, unit];
 
 type read_ticket_return = [[address, [bytes , nat]] , ticket<bytes>];
 
+/** ERROR MAP FOR UI DISPLAY or TESTS
+    let errorMap : map<string,string> = Map.literal(list([
+      ["0", "Enter a positive and not null amount"],
+      ["1", "Invalid rollup address!"],
+      ["2", "Invalid FA1.2 address!"],
+      ["3", "User needs to provide at least 'amountToTransfer' mutez"],
+      ["4", "We only accept tickets we created!"],
+      ["5", "Cannot find the caller implicit account contract"],
+      ["6", "The ticket does not contain a valid ticketType"],
+      ["7","The contract does not exist or is not a valid fa1.2 contract"]
+    ]));
+*/
+
 // FUNCTIONS  
 
 let getTransferContract = (fa12ContractAddr: address) : fa12Contract => {
   let transferOption: option<fa12Contract> = Tezos.get_entrypoint_opt("%transfer", fa12ContractAddr);
   let transfer = match (transferOption ,{
     Some : (contract : fa12Contract) => contract,
-    None : () => failwith("The contract does not exist or is not a valid fa1.2 contract")
+    None : () => failwith("7")
     });
   return transfer;
 };
@@ -58,17 +71,17 @@ let deposit = (op: depositOp): return_ => {
 
   match( op , {
    FA12_OP : (fa12Op : fa12Op) => {  
-      if(fa12Op.amountToTransfer < (1 as nat)) failwith("Enter a positive and not null amount");
+      if(fa12Op.amountToTransfer < (1 as nat)) failwith("0");
       
       //create FA1.2 ticket
       let b = Bytes.pack(FA12(fa12Op.fa12Address));       
       let tic: ticket<bytes> = Tezos.create_ticket(b,fa12Op.amountToTransfer);
       
       //get rollup contract
-      let rollup : rollupContract = Tezos.get_contract_with_error(fa12Op.rollupAddress,"Invalid rollup address!");
+      let rollup : rollupContract = Tezos.get_contract_with_error(fa12Op.rollupAddress,"1");
 
       //get fa1.2 contract
-      let fa12Contract : fa12Contract = Tezos.get_contract_with_error(fa12Op.fa12Address,"Invalid FA1.2 address!");
+      let fa12Contract : fa12Contract = Tezos.get_contract_with_error(fa12Op.fa12Address,"2");
 
       //send ticket to rollup
       let op = Tezos.transaction([tic, fa12Op.l2Address],0 as mutez,rollup);
@@ -76,14 +89,14 @@ let deposit = (op: depositOp): return_ => {
    } ,
 
    XTZ_OP : (xtzOp : xtzOp) => {
-    if(xtzOp.amountToTransfer < (1 as nat)) failwith("Enter a positive and not null amount");
-    if(Tezos.amount < (xtzOp.amountToTransfer * (1 as mutez))) failwith("User needs to provide at least 'amountToTransfer' mutez");
+    if(xtzOp.amountToTransfer < (1 as nat)) failwith("0");
+    if(Tezos.amount < (xtzOp.amountToTransfer * (1 as mutez))) failwith("3");
     
     //create XTZ ticket
     let tic: ticket<bytes> = Tezos.create_ticket(Bytes.pack(XTZ()),xtzOp.amountToTransfer);
    
     //get rollup contract
-    let rollup : rollupContract = Tezos.get_contract_with_error(xtzOp.rollupAddress,"Invalid rollup address!");
+    let rollup : rollupContract = Tezos.get_contract_with_error(xtzOp.rollupAddress,"1");
 
     //send ticket to rollup
     let op = Tezos.transaction([tic, xtzOp.l2Address],0 as mutez,rollup);
@@ -97,7 +110,7 @@ let withdraw = (ticket: ticket<bytes>) : return_ => {
   let [[ticketerAddress, [typeBytes, qty]], _] : read_ticket_return = Tezos.read_ticket(ticket);
 
   // check if we are the ticketer
-  if(ticketerAddress != Tezos.self_address)failwith("We only accept tickets we created!");
+  if(ticketerAddress != Tezos.self_address)failwith("4");
 
   let typeOpt: option<ticketType> = Bytes.unpack(typeBytes);
 
@@ -106,7 +119,7 @@ let withdraw = (ticket: ticket<bytes>) : return_ => {
         // try with XTZ first
         match(ticketType , {
           XTZ : () => {             
-            let callerContract : contract<unit> = Tezos.get_contract_with_error(Tezos.source,"Cannot find the caller implicit account contract");
+            let callerContract : contract<unit> = Tezos.get_contract_with_error(Tezos.source,"5");
 
             //give back the XTZ to the caller
             return [list([Tezos.transaction(unit,qty * (1 as mutez),callerContract)]),unit];                                               
@@ -123,7 +136,7 @@ let withdraw = (ticket: ticket<bytes>) : return_ => {
                 }
           });
       },
-      None : () => failwith("The ticket does not contain a valid ticketType")
+      None : () => failwith("6")
   });   
 
 };

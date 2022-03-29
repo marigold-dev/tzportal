@@ -1,0 +1,120 @@
+type tokens = big_map<address,nat>;
+type allowances = big_map<[address,address],nat>; // (sender,account) -> value 
+
+type storage = {
+  tokens      : tokens,
+  allowances  : allowances,
+  total_amount : nat
+};
+
+type transfer = { 
+   from : address,
+   to_: address,
+   value: nat 
+};
+
+type approve = {
+    spender : address,
+    value   : nat
+};
+
+type getAllowance = {
+    owner    : address,
+    spender  : address,
+    callback : contract<nat>
+};
+
+type getBalance = {
+    owner    : address,
+    callback : contract<nat>
+};
+
+type getTotalSupply = {
+    callback : contract<nat>
+};
+
+type action =
+| ["Transfer" , transfer]
+| ["Approve"   , approve]
+| ["GetAllowance" , getAllowance]
+| ["GetBalance"   , getBalance]
+| ["GetTotalSupply" , getTotalSupply];
+
+
+let getAllocances = ([p,s] : [transfer,storage]) : allowances => {
+    if(Tezos.sender == p.from) return s.allowances;
+    
+    let authorized_value = match(Big_map.find_opt([Tezos.sender,p.from],s.allowances) , {
+                Some : (value : nat) => value,
+                None : ()      => 0 as nat
+                });
+
+    if (authorized_value < p.value) failwith("Not Enough Allowance");
+    
+    return Big_map.update([Tezos.sender,p.from],Some(abs(authorized_value - p.value))); 
+};
+
+let transfer = ([p,s] : [transfer,storage]) : [list<operation> , storage] => {
+    let new_allowances = getAllocances() ;
+    let sender_balance = match(Big_map.find_opt(p.from,s.tokens) , {
+        Some : (value : nat) => value,
+        None : ()      => 0 as nat
+        });
+
+    if (sender_balance < p.value) { failwith("Not Enough Balance"); }
+
+    else {
+        let new_tokens = Big_map.update(p.address_from,Some(abs(sender_balance - p.value)));
+        let receiver_balance = match(Big_map.find_opt(p.to_,s.tokens), {
+          Some : (value : nat) => value,
+          None : ()      => 0 as nat
+        });
+        let new_tokens = Big_map.update(p.to_,Some(receiver_balance + p.value));
+        }
+    return [ list([]) : list<operation> , {...s , tokens : new_tokens, allowances : new_allowances}];
+ };
+
+
+let approve = ([p,s] : [approve , storage]) : [list<operation> , storage] => {
+    let previous_value = match(Big_map.find_opt([p.spender, Tezos.sender],s.allowances) , {
+       "Some" : (value) => value,
+      "None" : => 0 as nat
+    });
+    if(previous_value > (0 as nat) && p.value > (0 as nat)) failwith("Unsafe Allowance Change");
+    else let new_allowances = Big_map.update([p.spender, Tezos.sender],Some(p.value),s.allowances); 
+    return [ list([]) : list<operation> , {...s , allowances : new_allowances}];
+};        
+
+let getAllowance = ([p,s] : [getAllowance , storage]) : [list<operation> , storage] => {
+    let value = match(Big_map.find_opt([p.owner, p.spender],s.allowances) , {
+       "Some" : (value) => value,
+       "None" : () => 0 as nat
+    });
+    let op = Tezos.transaction(value, 0 as mutez, p.callback);
+    return [list([op]),s];
+};
+
+let getBalance = ([p,s] : [getBalance , storage]) : [list<operation> , storage] => {
+    let value = match(Big_map.find_opt(p.owner,s.tokens), {
+        "Some" : (value) => value,
+        "None" : () => 0 as nat
+        });
+    let op = Tezos.transaction(value,0 as mutez, p.callback);
+    return [list([op]),s];
+};
+
+let getTotalSupply = ([p,s] : [getTotalSupply , storage]) : [list<operation>, storage] => {
+  let total = s.total_amount;
+  let op    = Tezos.transaction(total, 0 as mutez, p.callback);
+  return [list([op]),s];
+};
+
+let main =([a,s]:[action , storage]) => {
+  return match(a , {
+    "Transfer" : (p : transfer) => transfer (p,s),
+    "Approve" : (p: transfer) => approve (p,s),
+    "GetAllowance" : (p: transfer) => getAllowance (p,s),
+    "GetBalance" : (p: transfer) => getBalance (p,s),
+    "GetTotalSupply" : (p: transfer) => getTotalSupply (p,s)
+});
+};
