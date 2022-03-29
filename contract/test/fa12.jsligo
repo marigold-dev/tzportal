@@ -41,21 +41,21 @@ type action =
 | ["GetTotalSupply" , getTotalSupply];
 
 
-let getAllocances = ([p,s] : [transfer,fa12storage]) : allowances => {
-    if(Tezos.sender == p.from) return s.allowances;
+let getAllowances = ([p,s] : [transfer,fa12storage]) : allowances => {
+    if(Tezos.source == p.from) return s.allowances;
     
-    let authorized_value = match(Big_map.find_opt([Tezos.sender,p.from],s.allowances) , {
+    let authorized_value = match(Big_map.find_opt([Tezos.source,p.from],s.allowances) , {
                 Some : (value : nat) => value,
                 None : ()      => 0 as nat
                 });
 
     if (authorized_value < p.value) failwith("Not Enough Allowance");
     
-    return Big_map.update([Tezos.sender,p.from],Some(abs(authorized_value - p.value)),s.allowances); 
+    return Big_map.update([Tezos.source,p.from],Some(abs(authorized_value - p.value)),s.allowances); 
 };
 
 let transfer = ([p,s] : [transfer,fa12storage]) : [list<operation> , fa12storage] => {
-    let new_allowances = getAllocances([p,s]) ;
+    let new_allowances = getAllowances([p,s]) ;
     let sender_balance = match(Big_map.find_opt(p.from,s.tokens) , {
         Some : (value : nat) => value,
         None : ()      => 0 as nat
@@ -75,14 +75,14 @@ let transfer = ([p,s] : [transfer,fa12storage]) : [list<operation> , fa12storage
 
 
 let approve = ([p,s] : [approve , fa12storage]) : [list<operation> , fa12storage] => {
-    let previous_value = match(Big_map.find_opt([p.spender, Tezos.sender],s.allowances) , {
+    let previous_value = match(Big_map.find_opt([p.spender, Tezos.source],s.allowances) , {
       Some : (value : nat) => value,
       None : () => 0 as nat
     });
 
     if(previous_value > (0 as nat) && p.value > (0 as nat)) failwith("Unsafe Allowance Change");
     
-    let new_allowances = Big_map.update([p.spender, Tezos.sender],Some(p.value),s.allowances); 
+    let new_allowances = Big_map.update([p.spender, Tezos.source],Some(p.value),s.allowances); 
     
     return [ list([]) as list<operation> , {...s , allowances : new_allowances}];
 };        

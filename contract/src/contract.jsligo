@@ -81,10 +81,13 @@ let deposit = (op: depositOp): return_ => {
       let rollup : rollupContract = Tezos.get_contract_with_error(fa12Op.rollupAddress,"1");
 
       //get fa1.2 contract
-      let fa12Contract : fa12Contract = Tezos.get_contract_with_error(fa12Op.fa12Address,"2");
-
+      let fa12Contract = match(Tezos.get_entrypoint_opt("%transfer", fa12Op.fa12Address) as option<fa12Contract>, {
+        Some : (c : fa12Contract) => c,
+        None : () => failwith("2")
+      });
+      
       //send ticket to rollup
-      let op = Tezos.transaction([tic, fa12Op.l2Address],0 as mutez,rollup);
+      let op : operation = Tezos.transaction([tic, fa12Op.l2Address],0 as mutez,rollup);
       return [list([op,getFunds(fa12Contract,fa12Op.amountToTransfer)]),unit];
    } ,
 
