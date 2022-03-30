@@ -17,22 +17,22 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
     let _reset = Test.reset_state ( 10 as nat, list([]) as list <tez> );
     let faucet = Test.nth_bootstrap_account(0);
     let sender1 : address = Test.nth_bootstrap_account(1);
-    let log_0 = Test.log("Sender 1 has balance : ");
-    let log_1 = Test.log(Test.get_balance(sender1));
+    let _ = Test.log("Sender 1 has balance : ");
+    let _ = Test.log(Test.get_balance(sender1));
     let sender2 : address = Test.nth_bootstrap_account(2);          
-    let log_2 = Test.log("Sender 2 has balance : ");
-    let log_3 = Test.log(Test.get_balance(sender2));
+    let _ = Test.log("Sender 2 has balance : ");
+    let _ = Test.log(Test.get_balance(sender2));
 
-    let _setbaker = Test.set_baker(faucet);
-    let _setsource = Test.set_source(faucet);
+    let _ = Test.set_baker(faucet);
+    let _ = Test.set_source(faucet);
   
   
   //mock rollup origination
   let [trollupaddr, _, _] = Test.originate(rollupMain, Map.empty as map<address,ticket<bytes>>, 0 as tez);
   let rollupContr = Test.to_contract(trollupaddr);
   let rollupAddress = Tezos.address(rollupContr);
-  let log_4 = Test.log("rollup contract deployed with values : ");
-  let log_5 = Test.log(rollupContr);
+  let _ = Test.log("rollup contract deployed with values : ");
+  let _ = Test.log(rollupContr);
 
   //fa1.2 origination
   let fa12balance :nat = 4200 as nat;
@@ -41,15 +41,15 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
     ,0 as tez);
   let fa12Contr = Test.to_contract(tfa12addr);
   let fa12Address = Tezos.address(fa12Contr);
-  let log_6 = Test.log("fa12 contract deployed with values : ");
-  let log_7 = Test.log(fa12Contr);
-  let log_8 = Test.log(Test.get_storage_of_address(fa12Address));
+  let _ = Test.log("fa12 contract deployed with values : ");
+  let _ = Test.log(fa12Contr);
+  let _ = Test.log(Test.get_storage_of_address(fa12Address));
 
   //contract origination
   let [taddr, _, _] = Test.originate(main, unit, 0 as tez);
   let contr = Test.to_contract(taddr);
-  let log_9 = Test.log("contract deployed with values : ");
-  let log_10 = Test.log(contr);
+  let _ = Test.log("contract deployed with values : ");
+  let _ = Test.log(contr);
   
   // FUNCTIONS
   
