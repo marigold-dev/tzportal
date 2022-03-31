@@ -6,12 +6,14 @@ import {
 } from "@airgap/beacon-sdk";
 import Button from "@mui/material/Button";
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import { PAGES } from "../App";
 
 type ButtonProps = {
     Tezos: TezosToolkit;
     setWallet: Dispatch<SetStateAction<any>>;
     setUserAddress: Dispatch<SetStateAction<string>>;
     setUserBalance: Dispatch<SetStateAction<number>>;
+    setActivePage: Dispatch<SetStateAction<PAGES>>;
     wallet: BeaconWallet;
 };
 
@@ -20,6 +22,7 @@ const ConnectButton = ({
     setWallet,
     setUserAddress,
     setUserBalance,
+    setActivePage,
     wallet
 }: ButtonProps): JSX.Element => {
 
@@ -42,6 +45,7 @@ const ConnectButton = ({
             // gets user's address
             const userAddress = await wallet.getPKH();
             await setup(userAddress);
+            setActivePage(PAGES.DEPOSIT);
         } catch (error) {
             console.log(error);
         }

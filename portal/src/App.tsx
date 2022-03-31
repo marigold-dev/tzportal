@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './App.css';
-import ConnectButton from './ConnectWallet';
-import DisconnectButton from './DisconnectWallet';
+import ConnectButton from './components/ConnectWallet';
+import DisconnectButton from './components/DisconnectWallet';
 import { TezosToolkit } from '@taquito/taquito';
 
 import * as React from 'react';
@@ -17,6 +17,14 @@ import Tooltip from '@mui/material/Tooltip';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import MenuIcon from '@mui/icons-material/Menu';
+import { ArchiveOutlined } from '@mui/icons-material';
+import { Button } from '@mui/material';
+import Deposit from './components/Deposit';
+
+export enum PAGES {
+  "WELCOME",
+  "DEPOSIT"
+};
 
 function App() {
 
@@ -24,6 +32,8 @@ function App() {
   const [wallet, setWallet] = useState<any>(null);
   const [userAddress, setUserAddress] = useState<string>("");
   const [userBalance, setUserBalance] = useState<number>(0);
+  const [userCtezBalance, setUserCtezBalance] = useState<number>(0);
+  const [activePage, setActivePage] = useState<PAGES>(PAGES.WELCOME);
 
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
@@ -46,7 +56,17 @@ function App() {
       >
         <Typography color="secondary.main" variant="h4">TzPortal</Typography>
 
-        {userAddress !== "" ? <Tooltip title="Account settings">
+        {userAddress !== "" ? 
+
+          <div>
+          
+          <Tooltip enterTouchDelay={0} title="DEPOSIT">
+          <Button onClick={()=>setActivePage(PAGES.DEPOSIT)}>
+          <ArchiveOutlined  color="secondary"  sx={{ width: 32, height: 32 }}/>
+          </Button>
+          </Tooltip>
+
+          <Tooltip title="Account settings">
           <IconButton
             onClick={handleClick}
             size="small"
@@ -57,11 +77,12 @@ function App() {
           >
             <MenuIcon color="secondary" sx={{ width: 32, height: 32 }} />
           </IconButton>
-        </Tooltip> : <ConnectButton
+        </Tooltip></div> : <ConnectButton
           Tezos={Tezos}
           setWallet={setWallet}
           setUserAddress={setUserAddress}
           setUserBalance={setUserBalance}
+          setActivePage={setActivePage}
           wallet={wallet}
         />}
 
@@ -121,17 +142,29 @@ function App() {
             setUserAddress={setUserAddress}
             setUserBalance={setUserBalance}
             setWallet={setWallet}
+            setActivePage={setActivePage}
           />
         </MenuItem>
       </Menu>
 
-
-      <Box >
-
-        BODY IS HERE
-
-
+      {activePage == PAGES.DEPOSIT?
+      <Deposit
+      Tezos={Tezos}
+      wallet={wallet}
+      userBalance={userBalance}
+      userCtezBalance={userCtezBalance}
+      setUserBalance={setUserBalance}
+      setUserCtezBalance={setUserCtezBalance}
+      />
+      : activePage == PAGES.WELCOME ? 
+      <Box color="primary.main" alignContent={"space-between"} textAlign={"center"} sx={{ margin: "1em", padding : "1em",  backgroundColor : "#FFFFFFAA"}} >
+      <h1>WELCOME to TzPortal</h1>
+      <h2>Basic transfer to deposit TOKENS from Layer 1 to Layer 2 and withdrawal</h2>
+      <p>Designed for TORU rollups</p>
+      <p>Want to know how TORU works ? <a href="https://tezos.gitlab.io/alpha/transaction_rollups.html">Click here</a></p>
       </Box>
+      : "PAGE NOT FOUND" 
+    }
 
 
 

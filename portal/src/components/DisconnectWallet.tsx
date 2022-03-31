@@ -1,11 +1,13 @@
 import { Dispatch, SetStateAction } from "react";
 import { BeaconWallet } from "@taquito/beacon-wallet";
+import { PAGES } from "../App";
 
 interface ButtonProps {
     wallet: BeaconWallet | null;
     setUserAddress: Dispatch<SetStateAction<string>>;
     setUserBalance: Dispatch<SetStateAction<number>>;
     setWallet: Dispatch<SetStateAction<any>>;
+    setActivePage: Dispatch<SetStateAction<PAGES>>;
 }
 
 const DisconnectButton = ({
@@ -13,11 +15,13 @@ const DisconnectButton = ({
     setUserAddress,
     setUserBalance,
     setWallet,
+    setActivePage
 }: ButtonProps): JSX.Element => {
     const disconnectWallet = async (): Promise<void> => {
         setUserAddress("");
         setUserBalance(0);
         setWallet(null);
+        setActivePage(PAGES.WELCOME);
         console.log("disconnecting wallet");
         if (wallet) {
             await wallet.client.removeAllAccounts();
