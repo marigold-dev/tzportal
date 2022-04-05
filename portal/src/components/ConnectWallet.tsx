@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useState, useEffect } from "react";
-import { TezosToolkit } from "@taquito/taquito";
+import { BigMapAbstraction, TezosToolkit, WalletContract } from "@taquito/taquito";
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import {
     NetworkType
@@ -7,12 +7,16 @@ import {
 import Button from "@mui/material/Button";
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { PAGES } from "../App";
+import { FA12Contract } from "./fa12Contract";
+import BigNumber from 'bignumber.js';
+
 
 type ButtonProps = {
     Tezos: TezosToolkit;
     setWallet: Dispatch<SetStateAction<any>>;
     setUserAddress: Dispatch<SetStateAction<string>>;
     setUserBalance: Dispatch<SetStateAction<number>>;
+    setUserCtezBalance : Dispatch<SetStateAction<number>>;
     setActivePage: Dispatch<SetStateAction<PAGES>>;
     wallet: BeaconWallet;
 };
@@ -22,6 +26,7 @@ const ConnectButton = ({
     setWallet,
     setUserAddress,
     setUserBalance,
+    setUserCtezBalance,
     setActivePage,
     wallet
 }: ButtonProps): JSX.Element => {
@@ -31,6 +36,11 @@ const ConnectButton = ({
         // updates balance
         const balance = await Tezos.tz.getBalance(userAddress);
         setUserBalance(balance.toNumber());
+        //ctez
+        let ctezContract : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!);
+        const tokenMap : BigMapAbstraction = (await ctezContract.storage() as FA12Contract).tokens;
+        let ctezBalance : BigNumber|undefined = await tokenMap.get<BigNumber>(userAddress);
+        setUserCtezBalance(ctezBalance != undefined ? ctezBalance.toNumber() : 0);    
     };
 
     const connectWallet = async (): Promise<void> => {
@@ -38,7 +48,7 @@ const ConnectButton = ({
             if (!wallet) await createWallet();
             await wallet.requestPermissions({
                 network: {
-                    type: NetworkType.HANGZHOUNET,
+                    type: process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType]  : NetworkType.ITHACANET,
                     rpcUrl: process.env["REACT_APP_TEZOS_NODE"]!
                 }
             });
@@ -55,8 +65,8 @@ const ConnectButton = ({
         // creates a wallet instance if not exists
         if (!wallet) {
             wallet = new BeaconWallet({
-                name: "training",
-                preferredNetwork: NetworkType.HANGZHOUNET
+                name: "TzPortal",
+                preferredNetwork: process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType]  : NetworkType.ITHACANET,
             });
         }
         Tezos.setWalletProvider(wallet);

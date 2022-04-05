@@ -2,7 +2,7 @@ import { useState } from 'react';
 import './App.css';
 import ConnectButton from './components/ConnectWallet';
 import DisconnectButton from './components/DisconnectWallet';
-import { TezosToolkit } from '@taquito/taquito';
+import { MichelCodecPacker, TezosToolkit } from '@taquito/taquito';
 
 import * as React from 'react';
 import Box from '@mui/material/Box';
@@ -29,6 +29,7 @@ export enum PAGES {
 function App() {
 
   const [Tezos, setTezos] = useState<TezosToolkit>(new TezosToolkit(process.env["REACT_APP_TEZOS_NODE"]!));
+  Tezos.setPackerProvider(new MichelCodecPacker());
   const [wallet, setWallet] = useState<any>(null);
   const [userAddress, setUserAddress] = useState<string>("");
   const [userBalance, setUserBalance] = useState<number>(0);
@@ -82,6 +83,7 @@ function App() {
           setWallet={setWallet}
           setUserAddress={setUserAddress}
           setUserBalance={setUserBalance}
+          setUserCtezBalance={setUserCtezBalance}
           setActivePage={setActivePage}
           wallet={wallet}
         />}
@@ -141,6 +143,7 @@ function App() {
             wallet={wallet}
             setUserAddress={setUserAddress}
             setUserBalance={setUserBalance}
+            setUserCtezBalance={setUserCtezBalance}
             setWallet={setWallet}
             setActivePage={setActivePage}
           />
