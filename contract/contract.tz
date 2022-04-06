@@ -1,0 +1,153 @@
+{ parameter
+    (or (or %deposit
+           (pair %fA12_OP
+              (nat %amountToTransfer)
+              (pair (address %rollupAddress) (pair (address %l2Address) (address %fa12Address))))
+           (pair %xTZ_OP
+              (nat %amountToTransfer)
+              (pair (address %rollupAddress) (address %l2Address))))
+        (ticket %withdraw bytes)) ;
+  storage unit ;
+  code { CAR ;
+         IF_LEFT
+           { IF_LEFT
+               { PUSH nat 1 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 COMPARE ;
+                 LT ;
+                 IF { PUSH string "0" ; FAILWITH } {} ;
+                 PUSH string "1" ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 GET 3 ;
+                 CONTRACT (pair (ticket bytes) address) ;
+                 IF_NONE { FAILWITH } { SWAP ; DROP } ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 GET 6 ;
+                 CONTRACT %transfer (pair address (pair address nat)) ;
+                 IF_NONE { PUSH string "2" ; FAILWITH } {} ;
+                 SWAP ;
+                 PUSH mutez 0 ;
+                 DUP 4 ;
+                 GET 5 ;
+                 DUP 5 ;
+                 CAR ;
+                 DUP 6 ;
+                 GET 6 ;
+                 RIGHT unit ;
+                 PACK ;
+                 TICKET ;
+                 PAIR ;
+                 TRANSFER_TOKENS ;
+                 UNIT ;
+                 NIL operation ;
+                 DIG 4 ;
+                 CAR ;
+                 DIG 4 ;
+                 PAIR ;
+                 DUP ;
+                 CAR ;
+                 PUSH mutez 0 ;
+                 DIG 2 ;
+                 CDR ;
+                 SELF_ADDRESS ;
+                 PAIR ;
+                 SOURCE ;
+                 PAIR ;
+                 TRANSFER_TOKENS ;
+                 CONS ;
+                 DIG 2 ;
+                 CONS ;
+                 PAIR }
+               { PUSH nat 1 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 COMPARE ;
+                 LT ;
+                 IF { PUSH string "0" ; FAILWITH } {} ;
+                 PUSH mutez 1 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 MUL ;
+                 AMOUNT ;
+                 COMPARE ;
+                 LT ;
+                 IF { PUSH string "3" ; FAILWITH } {} ;
+                 PUSH string "1" ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 GET 3 ;
+                 CONTRACT (pair (ticket bytes) address) ;
+                 IF_NONE { FAILWITH } { SWAP ; DROP } ;
+                 PUSH mutez 0 ;
+                 DUP 3 ;
+                 GET 4 ;
+                 DIG 3 ;
+                 CAR ;
+                 UNIT ;
+                 LEFT address ;
+                 PACK ;
+                 TICKET ;
+                 PAIR ;
+                 TRANSFER_TOKENS ;
+                 UNIT ;
+                 NIL operation ;
+                 DIG 2 ;
+                 CONS ;
+                 PAIR } }
+           { READ_TICKET ;
+             SWAP ;
+             DROP ;
+             UNPAIR ;
+             SWAP ;
+             UNPAIR ;
+             SELF_ADDRESS ;
+             DIG 3 ;
+             COMPARE ;
+             NEQ ;
+             IF { PUSH string "4" ; FAILWITH } {} ;
+             UNPACK (or (unit %xTZ) (address %fA12)) ;
+             IF_NONE
+               { DROP ; PUSH string "6" ; FAILWITH }
+               { IF_LEFT
+                   { DROP ;
+                     PUSH string "5" ;
+                     SOURCE ;
+                     CONTRACT unit ;
+                     IF_NONE { FAILWITH } { SWAP ; DROP } ;
+                     UNIT ;
+                     NIL operation ;
+                     DIG 2 ;
+                     PUSH mutez 1 ;
+                     DIG 4 ;
+                     MUL ;
+                     UNIT ;
+                     TRANSFER_TOKENS ;
+                     CONS ;
+                     PAIR }
+                   { CONTRACT %transfer (pair address (pair address nat)) ;
+                     IF_NONE { PUSH string "7" ; FAILWITH } {} ;
+                     UNIT ;
+                     NIL operation ;
+                     DIG 2 ;
+                     PUSH mutez 0 ;
+                     DIG 4 ;
+                     SOURCE ;
+                     PAIR ;
+                     SELF_ADDRESS ;
+                     PAIR ;
+                     TRANSFER_TOKENS ;
+                     CONS ;
+                     PAIR } } } } }
+

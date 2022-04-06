@@ -1,0 +1,14 @@
+(Pair { Elt "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" 100000000 }
+      {}
+      "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk"
+      100000000
+      { Elt ""
+            0x697066733a2f2f516d62426663684b755a3153324a4e5052506a456a444c74637879666270616e6e4a617a34487764715552425262 }
+      { Elt 0
+            (Pair 0
+                  { Elt "decimals" 0x36 ;
+                    Elt "name" 0x4374657a ;
+                    Elt "symbol" 0x6374657a ;
+                    Elt "thumbnailUri"
+                        0x697066733a2f2f516d6534796261646259344838346835574c506a646f34375951557878566f4a48575a72775971324a5a72694d34 }) })
+

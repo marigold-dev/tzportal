@@ -1,0 +1,161 @@
+// DEFINITIONS  
+
+type fa12ContractParameters = [address,[address,nat]];  //from,to,qty
+type fa12Contract = contract<fa12ContractParameters>;
+
+type rollupContractParameters = [ticket<bytes>,address]; 
+type rollupContract = contract<rollupContractParameters>;
+
+type ticketType =
+// @layout:comb
+| ["XTZ"]
+| ["FA12", address];
+
+type fa12Op = 
+// @layout:comb
+{
+  amountToTransfer: nat,
+  rollupAddress: address,
+  l2Address: address,
+  fa12Address: address
+};
+
+type xtzOp = 
+// @layout:comb
+{
+  amountToTransfer: nat,
+  rollupAddress: address,
+  l2Address: address
+};
+
+type depositOp =
+// @layout:comb 
+| ["FA12_OP", fa12Op]
+| ["XTZ_OP" , xtzOp];
+
+type parameter =
+// @layout:comb
+  | ["Deposit" , depositOp]
+  | ["Withdraw" , ticket<bytes>];
+
+type return_ =  [list<operation>, unit];
+
+type read_ticket_return = [[address, [bytes , nat]] , ticket<bytes>];
+
+/** ERROR MAP FOR UI DISPLAY or TESTS
+    let errorMap : map<string,string> = Map.literal(list([
+      ["0", "Enter a positive and not null amount"],
+      ["1", "Invalid rollup address!"],
+      ["2", "Invalid FA1.2 address!"],
+      ["3", "User needs to provide at least 'amountToTransfer' mutez"],
+      ["4", "We only accept tickets we created!"],
+      ["5", "Cannot find the caller implicit account contract"],
+      ["6", "The ticket does not contain a valid ticketType"],
+      ["7","The contract does not exist or is not a valid fa1.2 contract"]
+    ]));
+*/
+
+// FUNCTIONS  
+
+let getTransferContract = (fa12ContractAddr: address) : fa12Contract => {
+  let transferOption: option<fa12Contract> = Tezos.get_entrypoint_opt("%transfer", fa12ContractAddr);
+  let transfer = match (transferOption ,{
+    Some : (contract : fa12Contract) => contract,
+    None : () => failwith("7")
+    });
+  return transfer;
+};
+
+let getFunds = (fa12Contract: fa12Contract, amt: nat) : operation => {
+  return Tezos.transaction(
+    [Tezos.source, [Tezos.self_address, amt]],
+    0 as mutez,
+    fa12Contract
+  );
+};
+
+let deposit = (op: depositOp): return_ => {
+
+  match( op , {
+   FA12_OP : (fa12Op : fa12Op) => {  
+      if(fa12Op.amountToTransfer < (1 as nat)) failwith("0");
+      
+      //create FA1.2 ticket
+      let b = Bytes.pack(FA12(fa12Op.fa12Address));       
+      let tic: ticket<bytes> = Tezos.create_ticket(b,fa12Op.amountToTransfer);
+      
+      //get rollup contract
+      let rollup : rollupContract = Tezos.get_contract_with_error(fa12Op.rollupAddress,"1");
+
+      //get fa1.2 contract
+      let fa12Contract = match(Tezos.get_entrypoint_opt("%transfer", fa12Op.fa12Address) as option<fa12Contract>, {
+        Some : (c : fa12Contract) => c,
+        None : () => failwith("2")
+      });
+      
+      //send ticket to rollup
+      let op : operation = Tezos.transaction([tic, fa12Op.l2Address],0 as mutez,rollup);
+      return [list([op,getFunds(fa12Contract,fa12Op.amountToTransfer)]),unit];
+   } ,
+
+   XTZ_OP : (xtzOp : xtzOp) => {
+    if(xtzOp.amountToTransfer < (1 as nat)) failwith("0");
+    if(Tezos.amount < (xtzOp.amountToTransfer * (1 as mutez))) failwith("3");
+    
+    //create XTZ ticket
+    let tic: ticket<bytes> = Tezos.create_ticket(Bytes.pack(XTZ()),xtzOp.amountToTransfer);
+   
+    //get rollup contract
+    let rollup : rollupContract = Tezos.get_contract_with_error(xtzOp.rollupAddress,"1");
+
+    //send ticket to rollup
+    let op = Tezos.transaction([tic, xtzOp.l2Address],0 as mutez,rollup);
+    return [list([op]),unit];
+   }
+  });
+};
+
+let withdraw = (ticket: ticket<bytes>) : return_ => {
+  // Read/burn the ticket 
+  let [[ticketerAddress, [typeBytes, qty]], _] : read_ticket_return = Tezos.read_ticket(ticket);
+
+  // check if we are the ticketer
+  if(ticketerAddress != Tezos.self_address)failwith("4");
+
+  let typeOpt: option<ticketType> = Bytes.unpack(typeBytes);
+
+  match (typeOpt ,{
+      Some : (ticketType : ticketType) => { 
+        // try with XTZ first
+        match(ticketType , {
+          XTZ : () => {             
+            let callerContract : contract<unit> = Tezos.get_contract_with_error(Tezos.source,"5");
+
+            //give back the XTZ to the caller
+            return [list([Tezos.transaction(unit,qty * (1 as mutez),callerContract)]),unit];                                               
+          },
+          FA12 : (fa12Address : address) => { 
+                let fa12Contract = getTransferContract(fa12Address);
+
+                //send back FA1.2 token ownership to the caller
+            return [list([Tezos.transaction(
+                    [Tezos.self_address, [Tezos.source, qty ]],
+                    0 as mutez,
+                    fa12Contract
+                  )]),unit]; 
+                }
+          });
+      },
+      None : () => failwith("6")
+  });   
+
+};
+
+
+// MAIN  
+
+let main = ([action , _store]:[parameter , unit]): return_ => {
+  return match (action, {
+      Deposit : (op : depositOp) => deposit(op),
+      Withdraw : (ticket : ticket<bytes>) => withdraw(ticket)})
+};
