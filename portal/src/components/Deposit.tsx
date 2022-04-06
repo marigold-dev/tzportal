@@ -1,13 +1,13 @@
-import React, { Dispatch, SetStateAction, useState, useEffect, FormEvent, MouseEvent } from "react";
+import { Dispatch, SetStateAction, useState, useEffect, MouseEvent } from "react";
 import { TezosToolkit, WalletContract } from "@taquito/taquito";
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import Button from "@mui/material/Button";
-import { Avatar, Backdrop, Box, Card, CardContent, CardHeader, CardMedia, Chip, CircularProgress, Divider, Grid, IconButton, ListItemIcon, Paper, Stack, StepIcon } from "@mui/material";
-import { AirplaneTicket, CameraRoll, MoreVert } from "@mui/icons-material";
+import { Avatar, Backdrop, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, IconButton, InputAdornment, Stack, TextField } from "@mui/material";
+import { AccountCircle, CameraRoll, MoreVert } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
-import { ContractXTZParameters } from "./ContractParameters";
-import { TicketToken } from "@taquito/michelson-encoder/dist/types/tokens/ticket";
+import { ContractFA12Parameters, ContractParameters, ContractXTZParameters } from "./ContractParameters";
+import { TezosTicket, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
 
 type DepositProps = {
     Tezos: TezosToolkit;
@@ -28,22 +28,26 @@ const Deposit = ({
 }: DepositProps): JSX.Element => {
     
 
-    const [rollupInbox, setRollupInbox] = useState<Map<string,TicketToken>>(new Map<string,TicketToken>());
+    const [rollupInbox, setRollupInbox] = useState<Map<string,TezosTicket>>(new Map<string,TezosTicket>());
 
+    const [quantity, setQuantity]  = useState<number>(0);
+    const [l2Address, setL2Address]  = useState<string>("");
+    const [tokenType, setTokenType]  = useState<TOKEN_TYPE>(TOKEN_TYPE.XTZ);
 
     //TEZOS OPERATIONS
-    const [tezosLoading, setTezosLoading]  = React.useState(false);
+    const [tezosLoading, setTezosLoading]  = useState(false);
     
     // MESSAGES
     const { enqueueSnackbar } = useSnackbar();
 
+    const refreshRollupInbox = async() => {
+            let rollupContract : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_ROLLUP_CONTRACT"]!);
+            let ticketMap = TezosUtils.convertTicketMapStorageToTicketMap(rollupContract);
+            setRollupInbox(ticketMap);
+    }
 
     useEffect(() => {
-        (async () => {
-            let rollupContract : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_ROLLUP_CONTRACT"]!);
-            console.log(await rollupContract.storage());
-            setRollupInbox(await rollupContract.storage() as Map<string,TicketToken>);
-        })();
+        refreshRollupInbox();
       }, []);
     
     
@@ -55,26 +59,20 @@ const Deposit = ({
         let c : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_CONTRACT"]!);
         
         try {
-            let param : ContractXTZParameters = new ContractXTZParameters('1',"tz1h5GajcQWq4ybaWuwSiYrR5PvmUxndm8T8",process.env["REACT_APP_ROLLUP_CONTRACT"]!)
-            //console.log(param);
-            console.log(c);
-            console.log(c.parameterSchema.ExtractSignatures());
-            let inspect = c.methods.deposit(
-                "xTZ_OP",
-                "1",
-                "tz1h5GajcQWq4ybaWuwSiYrR5PvmUxndm8T8",
+            let param : ContractParameters = tokenType == TOKEN_TYPE.XTZ ? new ContractXTZParameters(""+quantity,l2Address,process.env["REACT_APP_ROLLUP_CONTRACT"]!) : new ContractFA12Parameters(""+quantity,process.env["REACT_APP_CTEZ_CONTRACT"]!,l2Address,process.env["REACT_APP_ROLLUP_CONTRACT"]!)
+            //const op = await c.methods.deposit(...Object.values(param)).send(tokenType == TOKEN_TYPE.XTZ?{amount:quantity}:{});
+            
+
+            const op = await c.methods.deposit(
+                "fA12_OP",
+                ""+quantity,
+                process.env["REACT_APP_CTEZ_CONTRACT"]!,
+                l2Address,
                 process.env["REACT_APP_ROLLUP_CONTRACT"]!
-            ).toTransferParams(); 
-            console.log(JSON.stringify(inspect, null, 2))
-            
-            const op = await c.methods.deposit({
-                amountToTransfer: "1",
-                l2Address: "tz1h5GajcQWq4ybaWuwSiYrR5PvmUxndm8T8",
-                rollupAddress: process.env["REACT_APP_ROLLUP_CONTRACT"]!
-            }).send();
+            ).send(tokenType == TOKEN_TYPE.XTZ?{amount:quantity}:{});
             await op.confirmation();
-            
             enqueueSnackbar("Your deposit has been accepted (wait a bit the refresh)", {variant: "success", autoHideDuration:10000});
+            await refreshRollupInbox();
         } catch (error : any) {
             console.table(`Error: ${JSON.stringify(error, null, 2)}`);
             let tibe : TransactionInvalidBeaconError = new TransactionInvalidBeaconError(error);
@@ -108,12 +106,14 @@ const Deposit = ({
         <CardContent>
         <Stack spacing={1} direction="column"  divider={<Divider orientation="horizontal" flexItem />}>
         <Chip 
+        onClick={()=>{setTokenType(TOKEN_TYPE.XTZ);setQuantity(userBalance)}}
         sx={{width:"fit-content"}}
         avatar={<Avatar src="XTZ.png" />}
         label={userBalance/1000000}
         variant="outlined" 
         />
         <Chip 
+        onClick={()=>{setTokenType(TOKEN_TYPE.FA12);setQuantity(userCtezBalance)}}
         sx={{width:"fit-content"}}
         avatar={<Avatar src="CTEZ.png" />}
         label={userCtezBalance}
@@ -125,6 +125,33 @@ const Deposit = ({
         </Grid>
         
         <Grid item xs={12} md={2} >
+        <TextField
+        value={l2Address}
+        onChange={(e)=>setL2Address(e.target.value)}
+        label="L2 address"
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <AccountCircle />
+            </InputAdornment>
+          ),
+        }}
+        variant="standard"
+      />
+      <TextField
+      type="number"
+      onChange={(e)=>setQuantity(e.target.value?parseInt(e.target.value):0)}
+      value={quantity}
+        label="Quantity"
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Avatar sx={{height:"24px", width:"24px"}} src={ tokenType == TOKEN_TYPE.XTZ ? "XTZ.png":"CTEZ.png"} />
+            </InputAdornment>
+          ),
+        }}
+        variant="standard"
+      />
         <Button variant="contained" onClick={(e)=>handleDeposit(e)}>DEPOSIT</Button>
         </Grid>
         
@@ -143,10 +170,11 @@ const Deposit = ({
         <CardContent>
         <Stack spacing={1} direction="column"  divider={<Divider orientation="horizontal" flexItem />}>
         {rollupInbox.size > 0 ? 
-            Array.from(rollupInbox.values()).map(ticket => <Chip 
+            Array.from(rollupInbox.entries()).map(([key,ticket],index) => <Chip 
+            key={index}
             sx={{width:"fit-content"}}
-            avatar={<Avatar src="XTZ-ticket.png" />}
-            label={`${ticket.tokenVal} for tz4XXXXXXXXXXXXXXXX`}
+            avatar={ticket.value=="Unit"?<Avatar src="XTZ-ticket.png"/> : <Avatar src="CTEZ-ticket.png"/>}
+            label={`${ticket.amount} for ${key}`}
             variant="outlined" 
             />
             ) 
