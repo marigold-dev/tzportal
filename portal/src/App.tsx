@@ -150,16 +150,17 @@ function App() {
         </MenuItem>
       </Menu>
 
-      {activePage == PAGES.DEPOSIT?
+      {activePage === PAGES.DEPOSIT?
       <Deposit
       Tezos={Tezos}
       wallet={wallet}
+      userAddress={userAddress}
       userBalance={userBalance}
       userCtezBalance={userCtezBalance}
       setUserBalance={setUserBalance}
       setUserCtezBalance={setUserCtezBalance}
       />
-      : activePage == PAGES.WELCOME ? 
+      : activePage === PAGES.WELCOME ? 
       <Box color="primary.main" alignContent={"space-between"} textAlign={"center"} sx={{ margin: "1em", padding : "1em",  backgroundColor : "#FFFFFFAA"}} >
       <h1>WELCOME to TzPortal</h1>
       <h2>Basic transfer to deposit TOKENS from Layer 1 to Layer 2 and withdrawal</h2>

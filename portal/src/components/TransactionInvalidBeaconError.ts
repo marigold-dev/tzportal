@@ -27,14 +27,14 @@ constructor(transactionInvalidBeaconError : any){
     this.data_with_string="";
     this.data_expected_form="";
     this.data_message =this.message;
-    if(transactionInvalidBeaconError.data != undefined){
+    if(transactionInvalidBeaconError.data !== undefined){
         let dataArray = (Array.from<any>(new Map(Object.entries<any>(transactionInvalidBeaconError.data)).values()));
-        let contract_handle =dataArray.find((obj)=>obj.contract_handle != undefined);
-        this.data_contract_handle= contract_handle!= undefined ? contract_handle.contract_handle:"";
-        let withString = dataArray.find((obj)=>obj.with != undefined);
-        this.data_with_string= withString != undefined ? withString.with.string:"";
-        let expected_form =  dataArray.find((obj)=>obj.expected_form != undefined);
-        this.data_expected_form = expected_form!= undefined?(expected_form.expected_form + ":" +expected_form.wrong_expression.string):"";
+        let contract_handle =dataArray.find((obj)=>obj.contract_handle !== undefined);
+        this.data_contract_handle= contract_handle!== undefined ? contract_handle.contract_handle:"";
+        let withString = dataArray.find((obj)=>obj.with !== undefined);
+        this.data_with_string= withString !== undefined ? withString.with.string:"";
+        let expected_form =  dataArray.find((obj)=>obj.expected_form !== undefined);
+        this.data_expected_form = expected_form!== undefined?(expected_form.expected_form + ":" +expected_form.wrong_expression.string):"";
         this.data_message = (this.data_contract_handle?"Error on contract : "+this.data_contract_handle+" ":"")+(this.data_with_string? "error : "+this.data_with_string+" ":"")+(this.data_expected_form?"error : "+this.data_expected_form+" ":"");
     }
 }

@@ -1,33 +1,40 @@
 // DEFINITIONS  
 
-type fa12ContractParameters = [address,address,nat];  //from,to,qty
+type fa12ContractParameters = [address,[address,nat]];  //from,to,qty
 type fa12Contract = contract<fa12ContractParameters>;
 
 type rollupContractParameters = [ticket<bytes>,address]; 
 type rollupContract = contract<rollupContractParameters>;
 
 type ticketType =
+// @layout:comb
 | ["XTZ"]
 | ["FA12", address];
 
-type fa12Op = {
-  fa12Address: address,
+type fa12Op = 
+// @layout:comb
+{
+  amountToTransfer: nat,
+  rollupAddress: address,
+  l2Address: address,
+  fa12Address: address
+};
+
+type xtzOp = 
+// @layout:comb
+{
   amountToTransfer: nat,
   rollupAddress: address,
   l2Address: address
 };
 
-type xtzOp = {
-  amountToTransfer: nat,
-  rollupAddress: address,
-  l2Address: address
-};
-
-type depositOp = 
+type depositOp =
+// @layout:comb 
 | ["FA12_OP", fa12Op]
 | ["XTZ_OP" , xtzOp];
 
 type parameter =
+// @layout:comb
   | ["Deposit" , depositOp]
   | ["Withdraw" , ticket<bytes>];
 
@@ -61,7 +68,7 @@ let getTransferContract = (fa12ContractAddr: address) : fa12Contract => {
 
 let getFunds = (fa12Contract: fa12Contract, amt: nat) : operation => {
   return Tezos.transaction(
-    [Tezos.source, Tezos.self_address, amt],
+    [Tezos.source, [Tezos.self_address, amt]],
     0 as mutez,
     fa12Contract
   );
@@ -132,7 +139,7 @@ let withdraw = (ticket: ticket<bytes>) : return_ => {
 
                 //send back FA1.2 token ownership to the caller
             return [list([Tezos.transaction(
-                    [Tezos.self_address, Tezos.source, qty ],
+                    [Tezos.self_address, [Tezos.source, qty ]],
                     0 as mutez,
                     fa12Contract
                   )]),unit]; 

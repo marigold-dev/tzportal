@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useState, useEffect } from "react";
+import { Dispatch, SetStateAction, useEffect } from "react";
 import { BigMapAbstraction, TezosToolkit, WalletContract } from "@taquito/taquito";
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import {
@@ -40,7 +40,7 @@ const ConnectButton = ({
         let ctezContract : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!);
         const tokenMap : BigMapAbstraction = (await ctezContract.storage() as FA12Contract).tokens;
         let ctezBalance : BigNumber|undefined = await tokenMap.get<BigNumber>(userAddress);
-        setUserCtezBalance(ctezBalance != undefined ? ctezBalance.toNumber() : 0);    
+        setUserCtezBalance(ctezBalance !== undefined ? ctezBalance.toNumber() : 0);    
     };
 
     const connectWallet = async (): Promise<void> => {

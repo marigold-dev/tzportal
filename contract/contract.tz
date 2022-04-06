@@ -1,11 +1,11 @@
 { parameter
     (or (or %deposit
            (pair %fA12_OP
-              (pair (nat %amountToTransfer) (address %fa12Address))
-              (pair (address %l2Address) (address %rollupAddress)))
+              (nat %amountToTransfer)
+              (pair (address %rollupAddress) (pair (address %l2Address) (address %fa12Address))))
            (pair %xTZ_OP
-              (pair (nat %amountToTransfer) (address %l2Address))
-              (address %rollupAddress)))
+              (nat %amountToTransfer)
+              (pair (address %rollupAddress) (address %l2Address))))
         (ticket %withdraw bytes)) ;
   storage unit ;
   code { CAR ;
@@ -16,36 +16,31 @@
                  DUP ;
                  DUG 2 ;
                  CAR ;
-                 CAR ;
                  COMPARE ;
                  LT ;
-                 IF { PUSH string "Enter a positive and not null amount" ; FAILWITH } {} ;
-                 PUSH string "Invalid rollup address!" ;
+                 IF { PUSH string "0" ; FAILWITH } {} ;
+                 PUSH string "1" ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
-                 CDR ;
-                 CDR ;
+                 GET 3 ;
                  CONTRACT (pair (ticket bytes) address) ;
                  IF_NONE { FAILWITH } { SWAP ; DROP } ;
-                 PUSH string "Invalid FA1.2 address!" ;
-                 DUP 3 ;
-                 CAR ;
-                 CDR ;
-                 CONTRACT (pair (pair address address) nat) ;
-                 IF_NONE { FAILWITH } { SWAP ; DROP } ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 GET 6 ;
+                 CONTRACT %transfer (pair address (pair address nat)) ;
+                 IF_NONE { PUSH string "2" ; FAILWITH } {} ;
                  SWAP ;
                  PUSH mutez 0 ;
                  DUP 4 ;
-                 CDR ;
-                 CAR ;
+                 GET 5 ;
                  DUP 5 ;
                  CAR ;
-                 CAR ;
                  DUP 6 ;
-                 CAR ;
-                 CDR ;
-                 LEFT unit ;
+                 GET 6 ;
+                 RIGHT unit ;
                  PACK ;
                  TICKET ;
                  PAIR ;
@@ -53,7 +48,6 @@
                  UNIT ;
                  NIL operation ;
                  DIG 4 ;
-                 CAR ;
                  CAR ;
                  DIG 4 ;
                  PAIR ;
@@ -63,8 +57,8 @@
                  DIG 2 ;
                  CDR ;
                  SELF_ADDRESS ;
-                 SOURCE ;
                  PAIR ;
+                 SOURCE ;
                  PAIR ;
                  TRANSFER_TOKENS ;
                  CONS ;
@@ -76,39 +70,33 @@
                  DUP ;
                  DUG 2 ;
                  CAR ;
-                 CAR ;
                  COMPARE ;
                  LT ;
-                 IF { PUSH string "Enter a positive and not null amount" ; FAILWITH } {} ;
+                 IF { PUSH string "0" ; FAILWITH } {} ;
                  PUSH mutez 1 ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
                  CAR ;
-                 CAR ;
                  MUL ;
                  AMOUNT ;
                  COMPARE ;
                  LT ;
-                 IF { PUSH string "User needs to provide at least 'amountToTransfer' mutez" ;
-                      FAILWITH }
-                    {} ;
-                 PUSH string "Invalid rollup address!" ;
+                 IF { PUSH string "3" ; FAILWITH } {} ;
+                 PUSH string "1" ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
-                 CDR ;
+                 GET 3 ;
                  CONTRACT (pair (ticket bytes) address) ;
                  IF_NONE { FAILWITH } { SWAP ; DROP } ;
                  PUSH mutez 0 ;
                  DUP 3 ;
-                 CAR ;
-                 CDR ;
+                 GET 4 ;
                  DIG 3 ;
                  CAR ;
-                 CAR ;
                  UNIT ;
-                 RIGHT address ;
+                 LEFT address ;
                  PACK ;
                  TICKET ;
                  PAIR ;
@@ -128,32 +116,13 @@
              DIG 3 ;
              COMPARE ;
              NEQ ;
-             IF { PUSH string "We only accept tickets we created!" ; FAILWITH } {} ;
-             UNPACK (or (address %fA12) (unit %xTZ)) ;
+             IF { PUSH string "4" ; FAILWITH } {} ;
+             UNPACK (or (unit %xTZ) (address %fA12)) ;
              IF_NONE
-               { DROP ;
-                 PUSH string "The ticket does not contain a valid ticketType" ;
-                 FAILWITH }
+               { DROP ; PUSH string "6" ; FAILWITH }
                { IF_LEFT
-                   { CONTRACT %transfer (pair (pair address address) nat) ;
-                     IF_NONE
-                       { PUSH string "The contract does not exist or is not a valid fa1.2 contract" ;
-                         FAILWITH }
-                       {} ;
-                     UNIT ;
-                     NIL operation ;
-                     DIG 2 ;
-                     PUSH mutez 0 ;
-                     DIG 4 ;
-                     SOURCE ;
-                     SELF_ADDRESS ;
-                     PAIR ;
-                     PAIR ;
-                     TRANSFER_TOKENS ;
-                     CONS ;
-                     PAIR }
                    { DROP ;
-                     PUSH string "Cannot find the caller implicit account contract" ;
+                     PUSH string "5" ;
                      SOURCE ;
                      CONTRACT unit ;
                      IF_NONE { FAILWITH } { SWAP ; DROP } ;
@@ -164,6 +133,20 @@
                      DIG 4 ;
                      MUL ;
                      UNIT ;
+                     TRANSFER_TOKENS ;
+                     CONS ;
+                     PAIR }
+                   { CONTRACT %transfer (pair address (pair address nat)) ;
+                     IF_NONE { PUSH string "7" ; FAILWITH } {} ;
+                     UNIT ;
+                     NIL operation ;
+                     DIG 2 ;
+                     PUSH mutez 0 ;
+                     DIG 4 ;
+                     SOURCE ;
+                     PAIR ;
+                     SELF_ADDRESS ;
+                     PAIR ;
                      TRANSFER_TOKENS ;
                      CONS ;
                      PAIR } } } } }

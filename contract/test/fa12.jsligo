@@ -1,39 +1,50 @@
 type tokens = big_map<address,nat>;
 type allowances = big_map<[address,address],nat>; // (sender,account) -> value 
 
-type fa12storage = {
+type fa12storage = 
+// @layout:comb
+{
   tokens      : tokens,
   allowances  : allowances,
   total_amount : nat
 };
 
-type transfer = { 
-   from : address,
-   to_: address,
-   value: nat 
-};
+type transfer =   
+// @layout:comb
+{ /* @annot:from */ from : address,
+  /* @annot:to */ to_ : address,
+  value : nat };
 
-type approve = {
+type approve = 
+// @layout:comb
+{
     spender : address,
     value   : nat
 };
 
-type getAllowance = {
+type getAllowance = 
+// @layout:comb
+{
     owner    : address,
     spender  : address,
     callback : contract<nat>
 };
 
-type getBalance = {
+type getBalance = 
+// @layout:comb
+{
     owner    : address,
     callback : contract<nat>
 };
 
-type getTotalSupply = {
+type getTotalSupply = 
+// @layout:comb
+{
     callback : contract<nat>
 };
 
 type action =
+// @layout:comb
 | ["Transfer" , transfer]
 | ["Approve"   , approve]
 | ["GetAllowance" , getAllowance]

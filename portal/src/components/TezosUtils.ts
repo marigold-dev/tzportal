@@ -1,4 +1,3 @@
-import { TicketToken } from "@taquito/michelson-encoder/dist/types/tokens/ticket"
 import { WalletContract } from "@taquito/taquito";
 import {unpackData} from "@taquito/michel-codec";
 
@@ -75,7 +74,7 @@ export interface BytesLiteral extends Node {
         .map(byte => parseInt("0x"+byte) );
         let value : MichelsonData = unpackData(bytesArray);
         let tokenTypeStr = (valueMichelsonV1ExpressionExtended.args![0] as MichelsonV1ExpressionBase).string!;
-        let tokentype : TOKEN_TYPE = tokenTypeStr == TOKEN_TYPE.XTZ.name ? TOKEN_TYPE.XTZ : new TOKEN_TYPE(TOKEN_TYPE.FA12.name,tokenTypeStr);
+        let tokentype : TOKEN_TYPE = tokenTypeStr === TOKEN_TYPE.XTZ.name ? TOKEN_TYPE.XTZ : new TOKEN_TYPE(TOKEN_TYPE.FA12.name,tokenTypeStr);
         let tezosTicket : TezosTicket = new TezosTicket(tokentype ,  (value.args![0] as MichelsonV1ExpressionExtended).prim , Number.parseInt((valueMichelsonV1ExpressionExtended.args![2] as MichelsonV1ExpressionBase).int!))  ;
         ticketMap.set(key, tezosTicket);
       });
