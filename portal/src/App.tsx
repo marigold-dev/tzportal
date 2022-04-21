@@ -20,6 +20,8 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { ArchiveOutlined } from '@mui/icons-material';
 import { Button } from '@mui/material';
 import Deposit from './components/Deposit';
+import { NetworkType} from "@airgap/beacon-sdk";
+
 
 export enum PAGES {
   "WELCOME",
@@ -45,9 +47,12 @@ function App() {
     setAnchorEl(null);
   };
 
+  let network = process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType] : NetworkType.ITHACANET;
 
   return (
-    <div style={{backgroundImage : "url('/bg.jpg')" , height : "100vh",backgroundSize: "cover"}} >
+    <div style={{backgroundImage : "url('/bg.jpg')" , minHeight: "100vh" ,backgroundSize: "cover"}} >
+      {(network != NetworkType.MAINNET)?<div className="banner">WARNING: TEST ONLY {network}</div>:<span />}
+
       <Box bgcolor="#00000080"  
         sx={{
           display: 'flex',
@@ -125,7 +130,7 @@ function App() {
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
         <MenuItem>
-          <Avatar /> {userAddress}
+          <Avatar /> {<div className="address"><span className="address1">{userAddress.substring(0,userAddress.length/2)}</span><span className="address2">{userAddress.substring(userAddress.length/2)}</span></div> }
         </MenuItem>
         <Divider />
 
@@ -155,10 +160,6 @@ function App() {
       Tezos={Tezos}
       wallet={wallet}
       userAddress={userAddress}
-      userBalance={userBalance}
-      userCtezBalance={userCtezBalance}
-      setUserBalance={setUserBalance}
-      setUserCtezBalance={setUserCtezBalance}
       />
       : activePage === PAGES.WELCOME ? 
       <Box color="primary.main" alignContent={"space-between"} textAlign={"center"} sx={{ margin: "1em", padding : "1em",  backgroundColor : "#FFFFFFAA"}} >
@@ -169,7 +170,6 @@ function App() {
       </Box>
       : "PAGE NOT FOUND" 
     }
-
 
 
 

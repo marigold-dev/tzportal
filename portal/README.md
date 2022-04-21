@@ -1,2 +1,7 @@
 
-`yarn run start:hangzhounet`
+
+
+
+Run the web app
+
+`yarn run start:mondaynet`

@@ -1,10 +1,17 @@
 //order of fields is very important
 export abstract class ContractParameters{
     type:string;
-    amountToTransfer: string; //represent a nat
+    amountToTransfer: string; //represent a nat, so mutez
     rollupAddress: string;
     l2Address: string;
     
+    /**
+     * 
+     * @param type 
+     * @param amountToTransfer in mutez
+     * @param l2Address 
+     * @param rollupAddress 
+     */
     protected constructor(
         type:string,
         amountToTransfer: string,
@@ -19,6 +26,12 @@ export abstract class ContractParameters{
     
     export class ContractXTZParameters extends ContractParameters {
         
+        /**
+         * 
+         * @param amountToTransfer in mutez
+         * @param l2Address 
+         * @param rollupAddress 
+         */
         constructor(amountToTransfer: string,
             l2Address: string,
             rollupAddress: string){
@@ -28,6 +41,14 @@ export abstract class ContractParameters{
         
         export class ContractFA12Parameters extends ContractParameters {
             fa12Address: string;
+
+            /**
+             * 
+             * @param amountToTransfer in mutez
+             * @param fa12Address 
+             * @param l2Address 
+             * @param rollupAddress 
+             */
             constructor(
                 amountToTransfer: string,
                 fa12Address: string,

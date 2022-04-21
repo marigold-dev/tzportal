@@ -6,7 +6,7 @@ type rollupStorage = map<address,ticket<bytes>>;
 
 type rollupReturn_ =  [list<operation>, rollupStorage];
 
-// MAIN  
+// MAIN  TODO %deposit
 
 let rollupMain = (x :[depositParameters , rollupStorage]): rollupReturn_ => {
   let [[ticket,addrp] , store] = x ;

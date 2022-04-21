@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 export class FA12Contract {
 
 admin: string;
-allowances: BigMapAbstraction ;
+allowances: BigMapAbstraction ; //big_map<[address,address],nat>
 metadata: BigMapAbstraction ;
 token_metadata: BigMapAbstraction ;
 tokens: BigMapAbstraction ;

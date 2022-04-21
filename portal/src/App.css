@@ -1,3 +1,14 @@
+#root,html,body {
+  height: 100%;
+}
+
+:root{
+  --startFixedChars     : 15;    
+  --endFixedChars       : 10;    
+  --startWidth :  1em * 1 * var(--startFixedChars) ;
+  --endWidth   :  1em * 1 * (var(--endFixedChars ));
+}
+
 body {
   margin: 0px;
   padding: 0px;
@@ -7,16 +18,35 @@ body {
   text-align: center;
 }
 
+
 .App-logo {
   height: 40vmin;
   pointer-events: none;
 }
+
 
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
   }
 }
+
+.banner{
+  height: 3vh;
+  text-align: center;
+    color: #fff;
+    text-shadow:
+        0 0 7px #fff,
+        0 0 10px #fff,
+        0 0 21px #fff,
+        0 0 42px #0fa,
+        0 0 82px #0fa,
+        0 0 92px #0fa,
+        0 0 102px #0fa,
+        0 0 151px #0fa;
+        background-color: #010a01;
+
+  }
 
 .App-header {
   background-color: #282c34;
@@ -41,3 +71,43 @@ body {
     transform: rotate(360deg);
   }
 }
+
+.MuiCardHeader-content {
+  flex: 1 1 auto;
+  max-width: calc(80%);
+}
+
+.css-83ijpv-MuiTypography-root.MuiCardHeader-subheader{
+  color : white;
+  font-size : 1em;
+}
+
+.css-6od3lo-MuiChip-label.MuiChip-label{
+}
+
+.address {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.address1, .address2 {
+  display: inline-block;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  font-size: 0.9em;
+}
+
+.address1 {
+  max-width: calc(100% - var(--startWidth));
+  min-width: 3em;
+}
+.address2 {
+  text-overflow: ellipsis;
+  min-width: 5em;
+  max-width: calc(100% - var(--endWidth));
+  direction: rtl;
+}
+
+
+
