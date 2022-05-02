@@ -3,7 +3,7 @@ import { BigMapAbstraction, TezosToolkit, WalletContract } from "@taquito/taquit
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import {
     NetworkType
-} from "@airgap/beacon-sdk";
+} from "@airgap/beacon-types";
 import Button from "@mui/material/Button";
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { PAGES } from "../App";
@@ -48,7 +48,7 @@ const ConnectButton = ({
             if (!wallet) await createWallet();
             await wallet.requestPermissions({
                 network: {
-                    type: process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType]  : NetworkType.ITHACANET,
+                    type: process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType]  : NetworkType.JAKARTANET,
                     rpcUrl: process.env["REACT_APP_TEZOS_NODE"]!
                 }
             });
@@ -66,7 +66,7 @@ const ConnectButton = ({
         if (!wallet) {
             wallet = new BeaconWallet({
                 name: "TzPortal",
-                preferredNetwork: process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType]  : NetworkType.ITHACANET,
+                preferredNetwork: process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType]  : NetworkType.JAKARTANET,
             });
         }
         Tezos.setWalletProvider(wallet);

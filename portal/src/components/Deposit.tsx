@@ -7,7 +7,7 @@ import { AccountBalanceWallet, AccountCircle, CameraRoll, MoreVert } from "@mui/
 import { useSnackbar } from "notistack";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 import { ContractFA12Parameters, ContractParameters, ContractXTZParameters } from "./ContractParameters";
-import { TezosTicket, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
+import { Rollup, TezosTicket, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
 import { collapseTextChangeRangesAcrossMultipleVersions } from "typescript";
@@ -27,7 +27,7 @@ const Deposit = ({
     
     const [userBalance, setUserBalance] = useState<number>(0);
     const [userCtezBalance, setUserCtezBalance] = useState<number>(0);
-    const [rollupInbox, setRollupInbox] = useState<Map<string,TezosTicket>>(new Map<string,TezosTicket>());
+    const [rollup, setRollup] = useState<Rollup|undefined>(undefined);
     
     const [quantity, setQuantity]  = useState<number>(0); //in float TEZ
     const [l2Address, setL2Address]  = useState<string>("");
@@ -54,8 +54,8 @@ const Deposit = ({
     let rollupAddress : string = process.env["REACT_APP_ROLLUP_CONTRACT"]!;
     const refreshRollupInbox = async() => {
         let rollupContract : WalletContract = await Tezos.wallet.at(rollupAddress);
-        let ticketMap = TezosUtils.convertTicketMapStorageToTicketMap(rollupContract);
-        setRollupInbox(ticketMap);
+        let rollup: Rollup = await TezosUtils.fetchRollup(Tezos.rpc.getRpcUrl(),rollupAddress);
+        setRollup(rollup);
     }
     
     useEffect(() => {
@@ -225,15 +225,21 @@ const Deposit = ({
                 />
                 <CardContent>
                 <Stack spacing={1} direction="column"  divider={<Divider orientation="horizontal" flexItem />}>
-                {rollupInbox.size > 0 ? 
-                    Array.from(rollupInbox.entries()).map(([key,ticket],index) => <Chip 
+                { 
+                
+                /* rollup.size > 0 ? 
+                    Array.from(rollup.entries()).map(([key,ticket],index) => <Chip 
                     key={index}
                     avatar={ticket.value==="Unit"?<Avatar src="XTZ-ticket.png"/> : <Avatar src="CTEZ-ticket.png"/>}
                     label={<span>{ticket.amount} for <span className="address"><span className="address1">{key.substring(0,key.length/2)}</span><span className="address2">{key.substring(key.length/2)}</span></span></span>}
                     variant="outlined" 
                     />
                     ) 
-                    : <span />}
+                    : <span />
+            */
+           
+                    rollup !== undefined ? Object.entries(rollup).map( ([field,value],index) => <div><span>{field} : </span><span>{value}</span></div> )
+                       : "" }
                     </Stack>
                     </CardContent>
                     </Card>

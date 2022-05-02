@@ -1,6 +1,53 @@
 import { WalletContract } from "@taquito/taquito";
 import {unpackData} from "@taquito/michel-codec";
 
+export class RollupCounter {
+  next: number;
+
+  constructor(next: number){
+    this.next=next;
+  }
+}
+
+export class Rollup {
+    last_removed_commitment_hashes: any;
+    finalized_commitments: RollupCounter;
+    unfinalized_commitments: RollupCounter;
+    uncommitted_inboxes: RollupCounter;
+    commitment_newest_hash: string;
+    tezos_head_level: string;
+    burn_per_byte: string; 
+    allocated_storage: string;
+    occupied_storage: string;
+    inbox_ema: string;
+    commitments_watermark: any;
+
+    constructor(last_removed_commitment_hashes: any,
+      finalized_commitments: RollupCounter,
+      unfinalized_commitments: RollupCounter,
+      uncommitted_inboxes: RollupCounter,
+      commitment_newest_hash: string,
+      tezos_head_level: string,
+      burn_per_byte: string,
+      allocated_storage: string,
+      occupied_storage: string,
+      inbox_ema: string,
+      commitments_watermark: any){
+    this.last_removed_commitment_hashes= last_removed_commitment_hashes;
+    this.finalized_commitments=finalized_commitments;
+    this.unfinalized_commitments=unfinalized_commitments;
+    this.uncommitted_inboxes=uncommitted_inboxes;
+    this.commitment_newest_hash=commitment_newest_hash;
+    this.tezos_head_level=tezos_head_level;
+    this.burn_per_byte=burn_per_byte; 
+    this.allocated_storage=allocated_storage;
+    this.occupied_storage=occupied_storage;
+    this.inbox_ema=inbox_ema;
+    this.commitments_watermark=commitments_watermark;
+
+    }
+}
+
 export class TOKEN_TYPE {
   public static readonly XTZ = new TOKEN_TYPE("Unit");
   public static FA12 = new TOKEN_TYPE("FA12", "ticketer address");
@@ -64,6 +111,9 @@ export interface BytesLiteral extends Node {
   
   export abstract class TezosUtils{
     
+    /**
+     * @deprecated The method should not be used anymore, it was just for mocked rollup
+     */
     static convertTicketMapStorageToTicketMap( walletContract : WalletContract) : Map<string,TezosTicket>{
       let ticketMap = new Map<string,TezosTicket>();
       Array.from(walletContract.script.storage as MichelsonV1ExpressionExtended[]).forEach(item => {
@@ -79,6 +129,17 @@ export interface BytesLiteral extends Node {
         ticketMap.set(key, tezosTicket);
       });
       return ticketMap;
+    }
+
+
+    static async fetchRollup(rpc : string,rollupAddress : string ) : Promise<Rollup> {
+      
+      let response = await fetch(rpc+"/chains/main/blocks/head/context/tx_rollup/"+rollupAddress+"/state");
+      console.log("response",response);
+      return new Promise( (resolve,reject) => { 
+      if(response) resolve(new Rollup(null,new RollupCounter(0),new RollupCounter(0),new RollupCounter(0),"","","","","","",null));
+      else reject("Cannot find the rollup information of "+rollupAddress);
+    });
     }
     
   }

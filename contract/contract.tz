@@ -2,11 +2,14 @@
     (or (or %deposit
            (pair %fA12_OP
               (nat %amountToTransfer)
-              (pair (address %rollupAddress) (pair (address %l2Address) (address %fa12Address))))
+              (address %rollupAddress)
+              (address %l2Address)
+              (address %fa12Address))
            (pair %xTZ_OP
               (nat %amountToTransfer)
-              (pair (address %rollupAddress) (address %l2Address))))
-        (ticket %withdraw bytes)) ;
+              (address %rollupAddress)
+              (address %l2Address)))
+        (pair %withdraw (ticket bytes) address)) ;
   storage unit ;
   code { CAR ;
          IF_LEFT
@@ -106,7 +109,8 @@
                  DIG 2 ;
                  CONS ;
                  PAIR } }
-           { READ_TICKET ;
+           { UNPAIR ;
+             READ_TICKET ;
              SWAP ;
              DROP ;
              UNPAIR ;
@@ -119,11 +123,11 @@
              IF { PUSH string "4" ; FAILWITH } {} ;
              UNPACK (or (unit %xTZ) (address %fA12)) ;
              IF_NONE
-               { DROP ; PUSH string "6" ; FAILWITH }
+               { DROP 2 ; PUSH string "6" ; FAILWITH }
                { IF_LEFT
                    { DROP ;
                      PUSH string "5" ;
-                     SOURCE ;
+                     DIG 2 ;
                      CONTRACT unit ;
                      IF_NONE { FAILWITH } { SWAP ; DROP } ;
                      UNIT ;
@@ -143,7 +147,7 @@
                      DIG 2 ;
                      PUSH mutez 0 ;
                      DIG 4 ;
-                     SOURCE ;
+                     DIG 5 ;
                      PAIR ;
                      SELF_ADDRESS ;
                      PAIR ;

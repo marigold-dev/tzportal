@@ -20,7 +20,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { ArchiveOutlined } from '@mui/icons-material';
 import { Button } from '@mui/material';
 import Deposit from './components/Deposit';
-import { NetworkType} from "@airgap/beacon-sdk";
+import { NetworkType} from "@airgap/beacon-types";
 
 
 export enum PAGES {
@@ -47,7 +47,7 @@ function App() {
     setAnchorEl(null);
   };
 
-  let network = process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType] : NetworkType.ITHACANET;
+  let network = process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType] : NetworkType.JAKARTANET;
 
   return (
     <div style={{backgroundImage : "url('/bg.jpg')" , minHeight: "100vh" ,backgroundSize: "cover"}} >
