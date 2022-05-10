@@ -3,7 +3,7 @@
 type fa12ContractParameters = [address,[address,nat]];  //from,to,qty
 type fa12Contract = contract<fa12ContractParameters>;
 
-type rollupContractParameters = [ticket<bytes>,address]; 
+type rollupContractParameters = [ticket<bytes>,tx_rollup_l2_address]; 
 type rollupContract = contract<rollupContractParameters>;
 
 type ticketType =
@@ -16,7 +16,7 @@ type fa12Op =
 {
   amountToTransfer: nat, //in mutez
   rollupAddress: address,
-  l2Address: address,
+  l2Address: tx_rollup_l2_address,
   fa12Address: address
 };
 
@@ -25,7 +25,7 @@ type xtzOp =
 {
   amountToTransfer: nat, //in mutez
   rollupAddress: address,
-  l2Address: address
+  l2Address: tx_rollup_l2_address
 };
 
 type depositOp =
@@ -85,7 +85,10 @@ let deposit = (op: depositOp): return_ => {
       let tic: ticket<bytes> = Tezos.create_ticket(b,fa12Op.amountToTransfer);
       
       //get rollup contract
-      let rollup : rollupContract = Tezos.get_contract_with_error(fa12Op.rollupAddress,"1");
+      let rollup : rollupContract = match(Tezos.get_entrypoint_opt("%deposit", fa12Op.rollupAddress) as option<rollupContract>, {
+        Some : (c : rollupContract) => c,
+        None : () => failwith("1")
+      });
 
       //get fa1.2 contract
       let fa12Contract = match(Tezos.get_entrypoint_opt("%transfer", fa12Op.fa12Address) as option<fa12Contract>, {
@@ -105,8 +108,11 @@ let deposit = (op: depositOp): return_ => {
     //create XTZ ticket
     let tic: ticket<bytes> = Tezos.create_ticket(Bytes.pack(XTZ()),xtzOp.amountToTransfer);
    
-    //get rollup contract %deposit //TODO
-    let rollup : rollupContract = Tezos.get_contract_with_error(xtzOp.rollupAddress,"1");
+    //get rollup contract %deposit 
+    let rollup : rollupContract = match(Tezos.get_entrypoint_opt("%deposit", xtzOp.rollupAddress) as option<rollupContract>, {
+      Some : (c : rollupContract) => c,
+      None : () => failwith("1")
+    });
 
     //send ticket to rollup
     let op = Tezos.transaction([tic, xtzOp.l2Address],0 as mutez,rollup);

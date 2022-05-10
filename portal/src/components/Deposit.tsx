@@ -2,8 +2,8 @@ import { Dispatch, SetStateAction, useState, useEffect, MouseEvent } from "react
 import { BigMapAbstraction, TezosToolkit, WalletContract } from "@taquito/taquito";
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import Button from "@mui/material/Button";
-import { Avatar, Backdrop, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, IconButton, InputAdornment, Stack, TextField } from "@mui/material";
-import { AccountBalanceWallet, AccountCircle, CameraRoll, MoreVert } from "@mui/icons-material";
+import { Avatar, Backdrop, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, IconButton, InputAdornment, ListItem, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField } from "@mui/material";
+import { AccountBalanceWallet, AccountCircle, CameraRoll, List, MoreVert } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 import { ContractFA12Parameters, ContractParameters, ContractXTZParameters } from "./ContractParameters";
@@ -53,7 +53,7 @@ const Deposit = ({
     
     let rollupAddress : string = process.env["REACT_APP_ROLLUP_CONTRACT"]!;
     const refreshRollupInbox = async() => {
-        let rollupContract : WalletContract = await Tezos.wallet.at(rollupAddress);
+        //let rollupContract : WalletContract = await Tezos.wallet.at(rollupAddress);
         let rollup: Rollup = await TezosUtils.fetchRollup(Tezos.rpc.getRpcUrl(),rollupAddress);
         setRollup(rollup);
     }
@@ -238,7 +238,16 @@ const Deposit = ({
                     : <span />
             */
            
-                    rollup !== undefined ? Object.entries(rollup).map( ([field,value],index) => <div><span>{field} : </span><span>{value}</span></div> )
+                    rollup !== undefined ? <TableContainer component={Paper}><Table><TableBody>
+                        <TableRow><TableCell>commitment_newest_hash </TableCell><TableCell>{rollup.commitment_newest_hash}</TableCell></TableRow >
+                        <TableRow><TableCell>finalized_commitments </TableCell><TableCell>{rollup.finalized_commitments.next}</TableCell></TableRow >
+                        <TableRow><TableCell>last_removed_commitment_hashes </TableCell><TableCell>{rollup.last_removed_commitment_hashes}</TableCell></TableRow>
+                        <TableRow><TableCell>inbox_ema</TableCell><TableCell>{rollup.inbox_ema}</TableCell></TableRow >
+                        <TableRow><TableCell>tezos_head_level </TableCell><TableCell>{rollup.tezos_head_level}</TableCell></TableRow >
+                        <TableRow><TableCell>allocated_storage </TableCell><TableCell>{rollup.allocated_storage}</TableCell></TableRow >
+                        <TableRow><TableCell>uncommitted_inboxes </TableCell><TableCell>{rollup.uncommitted_inboxes.next}</TableCell></TableRow >
+                        <TableRow><TableCell>unfinalized_commitments </TableCell><TableCell>{rollup.unfinalized_commitments.next}</TableCell></TableRow >
+                        </TableBody></Table></TableContainer> 
                        : "" }
                     </Stack>
                     </CardContent>

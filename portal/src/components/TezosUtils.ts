@@ -135,9 +135,8 @@ export interface BytesLiteral extends Node {
     static async fetchRollup(rpc : string,rollupAddress : string ) : Promise<Rollup> {
       
       let response = await fetch(rpc+"/chains/main/blocks/head/context/tx_rollup/"+rollupAddress+"/state");
-      console.log("response",response);
       return new Promise( (resolve,reject) => { 
-      if(response) resolve(new Rollup(null,new RollupCounter(0),new RollupCounter(0),new RollupCounter(0),"","","","","","",null));
+      if(response.ok) resolve(response.json());
       else reject("Cannot find the rollup information of "+rollupAddress);
     });
     }
