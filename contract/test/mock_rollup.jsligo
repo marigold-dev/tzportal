@@ -1,8 +1,8 @@
 // DEFINITIONS  
 
-type depositParameters = [ticket<bytes>,address]; 
+type depositParameters = [ticket<bytes>,tx_rollup_l2_address]; 
 
-type rollupStorage = map<address,ticket<bytes>>;
+type rollupStorage = map<tx_rollup_l2_address,ticket<bytes>>;
 
 type rollupReturn_ =  [list<operation>, rollupStorage];
 
