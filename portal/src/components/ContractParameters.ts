@@ -1,9 +1,13 @@
+import { AddressType } from "./TezosUtils";
+
+
 //order of fields is very important
 export abstract class ContractParameters{
     type:string;
     amountToTransfer: string; //represent a nat, so mutez
     rollupAddress: string;
-    l2Address: string;
+    addressType : AddressType; // "l1_ADDRESS" or "l2_ADDRESS"
+    l2Address: string; // layer 1 or 2 address
     
     /**
      * 
@@ -15,10 +19,12 @@ export abstract class ContractParameters{
     protected constructor(
         type:string,
         amountToTransfer: string,
+        addressType : AddressType,
         l2Address: string,
         rollupAddress: string){
             this.type=type;
             this.amountToTransfer=amountToTransfer;
+            this.addressType=addressType;
             this.l2Address=l2Address;
             this.rollupAddress=rollupAddress;
         }
@@ -32,10 +38,10 @@ export abstract class ContractParameters{
          * @param l2Address 
          * @param rollupAddress 
          */
-        constructor(amountToTransfer: string,
-            l2Address: string,
+        constructor(amountToTransfer: string,addressType : AddressType,
+            l2Address: any,
             rollupAddress: string){
-                super("xTZ_OP",amountToTransfer,l2Address,rollupAddress);
+                super("xTZ_OP",amountToTransfer,addressType,l2Address,rollupAddress);
             }
         }
         
@@ -52,10 +58,11 @@ export abstract class ContractParameters{
             constructor(
                 amountToTransfer: string,
                 fa12Address: string,
+                addressType : AddressType,
                 l2Address: string,
                 rollupAddress: string,
                 ){
-                    super("fA12_OP",amountToTransfer,l2Address,rollupAddress);
+                    super("fA12_OP",amountToTransfer,addressType,l2Address,rollupAddress);
                     this.fa12Address=fa12Address;
                 }
             }

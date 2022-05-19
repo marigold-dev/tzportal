@@ -75,7 +75,10 @@ body {
 .MuiCardHeader-content {
   flex: 1 1 auto;
   max-width: calc(80%);
+  margin-left: -24px;
 }
+
+
 
 .css-83ijpv-MuiTypography-root.MuiCardHeader-subheader{
   color : white;

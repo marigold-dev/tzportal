@@ -3,49 +3,54 @@
 type fa12ContractParameters = [address,[address,nat]];  //from,to,qty
 type fa12Contract = contract<fa12ContractParameters>;
 
-type rollupContractParameters = [ticket<bytes>,tx_rollup_l2_address]; 
-type rollupContract = contract<rollupContractParameters>;
+type rollupContractParametersTORU = [ticket<bytes>,address];//[ticket<bytes>,tx_rollup_l2_address]; 
+type rollupContractParametersDEKU = [address , ticket<bytes>];//[ticket<bytes>,tx_rollup_l2_address]; 
 
 type ticketType =
 // @layout:comb
 | ["XTZ"]
 | ["FA12", address];
 
-type fa12Op = 
+export type addressType = 
+| [ "L1_ADDRESS" , address]   //tx_rollup_l2_address
+| [ "L2_ADDRESS" , address];
+
+export type fa12Op = 
 // @layout:comb
 {
   amountToTransfer: nat, //in mutez
   rollupAddress: address,
-  l2Address: tx_rollup_l2_address,
+  l2Address: addressType,
   fa12Address: address
 };
 
-type xtzOp = 
+export type xtzOp = 
 // @layout:comb
 {
   amountToTransfer: nat, //in mutez
   rollupAddress: address,
-  l2Address: tx_rollup_l2_address
+  l2Address: addressType
 };
 
-type depositOp =
+export type depositOp =
 // @layout:comb 
 | ["FA12_OP", fa12Op]
 | ["XTZ_OP" , xtzOp];
 
-type parameter =
+export type parameter =
 // @layout:comb
   | ["Deposit" , depositOp]
   | ["Withdraw" , [ticket<bytes>,address]];
 
-type return_ =  [list<operation>, unit];
+export type return_ =  [list<operation>, unit];
 
 type read_ticket_return = [[address, [bytes , nat]] , ticket<bytes>];
 
 /** ERROR MAP FOR UI DISPLAY or TESTS
     let errorMap : map<string,string> = Map.literal(list([
       ["0", "Enter a positive and not null amount"],
-      ["1", "Invalid rollup address!"],
+      ["10", "Invalid rollup address for TORU !"],
+      ["11", "Invalid rollup address for DEKU !"],
       ["2", "Invalid FA1.2 address!"],
       ["3", "User needs to provide at least 'amountToTransfer' mutez"],
       ["4", "We only accept tickets we created!"],
@@ -66,6 +71,24 @@ let getTransferContract = (fa12ContractAddr: address) : fa12Contract => {
   return transfer;
 };
 
+let getRollupDEKUContract = (a : address) : contract<rollupContractParametersDEKU> => {
+  let contractOption: option<contract<rollupContractParametersDEKU>> = Tezos.get_entrypoint_opt("%deposit", a);
+  let c = match (contractOption ,{
+    Some : (c : contract<rollupContractParametersDEKU>) => c,
+    None : () => failwith("11")
+    });
+  return c;
+}
+
+let getRollupTORUContract = (a : address) : contract<rollupContractParametersTORU> => {
+  let contractOption: option<contract<rollupContractParametersTORU>> = Tezos.get_entrypoint_opt("%deposit", a);
+  let c = match (contractOption ,{
+    Some : (c : contract<rollupContractParametersTORU>) => c,
+    None : () => failwith("10")
+    });
+  return c;
+}
+
 let getFunds = (fa12Contract: fa12Contract, amt: nat) : operation => {
   return Tezos.transaction(
     [Tezos.source, [Tezos.self_address, amt]],
@@ -84,12 +107,6 @@ let deposit = (op: depositOp): return_ => {
       let b = Bytes.pack(FA12(fa12Op.fa12Address));       
       let tic: ticket<bytes> = Tezos.create_ticket(b,fa12Op.amountToTransfer);
       
-      //get rollup contract
-      let rollup : rollupContract = match(Tezos.get_entrypoint_opt("%deposit", fa12Op.rollupAddress) as option<rollupContract>, {
-        Some : (c : rollupContract) => c,
-        None : () => failwith("1")
-      });
-
       //get fa1.2 contract
       let fa12Contract = match(Tezos.get_entrypoint_opt("%transfer", fa12Op.fa12Address) as option<fa12Contract>, {
         Some : (c : fa12Contract) => c,
@@ -97,7 +114,11 @@ let deposit = (op: depositOp): return_ => {
       });
       
       //send ticket to rollup
-      let op : operation = Tezos.transaction([tic, fa12Op.l2Address],0 as mutez,rollup);
+      let op : operation = match(fa12Op.l2Address , {
+        L1_ADDRESS : (a : address) => Tezos.transaction([a, tic],0 as mutez,getRollupDEKUContract(fa12Op.rollupAddress)),
+        L2_ADDRESS : (a : address) => Tezos.transaction([tic, a],0 as mutez,getRollupTORUContract(fa12Op.rollupAddress))
+      }); 
+      
       return [list([op,getFunds(fa12Contract,fa12Op.amountToTransfer)]),unit];
    } ,
 
@@ -107,15 +128,13 @@ let deposit = (op: depositOp): return_ => {
     
     //create XTZ ticket
     let tic: ticket<bytes> = Tezos.create_ticket(Bytes.pack(XTZ()),xtzOp.amountToTransfer);
-   
-    //get rollup contract %deposit 
-    let rollup : rollupContract = match(Tezos.get_entrypoint_opt("%deposit", xtzOp.rollupAddress) as option<rollupContract>, {
-      Some : (c : rollupContract) => c,
-      None : () => failwith("1")
-    });
 
     //send ticket to rollup
-    let op = Tezos.transaction([tic, xtzOp.l2Address],0 as mutez,rollup);
+    let op : operation = match(xtzOp.l2Address , {
+      L1_ADDRESS : (a : address) => Tezos.transaction([a, tic],0 as mutez,getRollupDEKUContract(xtzOp.rollupAddress)),
+      L2_ADDRESS : (a : address) => Tezos.transaction([tic, a],0 as mutez,getRollupTORUContract(xtzOp.rollupAddress))
+    }); 
+
     return [list([op]),unit];
    }
   });
@@ -160,7 +179,7 @@ let withdraw = ([ticket , destinationAddress] : [ticket<bytes>, address]) : retu
 
 // MAIN  
 
-let main = ([action , _store]:[parameter , unit]): return_ => {
+export let main = ([action , _store]:[parameter , unit]): return_ => {
   return match (action, {
       Deposit : (op : depositOp) => deposit(op),
       Withdraw : (params : [ticket<bytes>,address]) => withdraw(params)

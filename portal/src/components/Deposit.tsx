@@ -1,16 +1,16 @@
-import { Dispatch, SetStateAction, useState, useEffect, MouseEvent } from "react";
+import React, { useState, useEffect, MouseEvent, Fragment } from "react";
 import { BigMapAbstraction, TezosToolkit, WalletContract } from "@taquito/taquito";
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import Button from "@mui/material/Button";
-import { Avatar, Backdrop, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, IconButton, InputAdornment, ListItem, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField } from "@mui/material";
-import { AccountBalanceWallet, AccountCircle, CameraRoll, List, MoreVert } from "@mui/icons-material";
+import { Avatar, Backdrop, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, Hidden, IconButton, InputAdornment, ListItem, Paper, Popover, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField } from "@mui/material";
+import { AccountBalanceWallet, AccountCircle, ArrowDropDown, CameraRoll, MoreVert } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
-import { ContractFA12Parameters, ContractParameters, ContractXTZParameters } from "./ContractParameters";
-import { Rollup, TezosTicket, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
+import {  ContractFA12Parameters, ContractParameters, ContractXTZParameters } from "./ContractParameters";
+import {  AddressType, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
-import { collapseTextChangeRangesAcrossMultipleVersions } from "typescript";
+import { maxWidth, styled, width } from "@mui/system";
 
 
 type DepositProps = {
@@ -24,20 +24,32 @@ const Deposit = ({
     wallet,
     userAddress
 }: DepositProps): JSX.Element => {
-    
+
     const [userBalance, setUserBalance] = useState<number>(0);
     const [userCtezBalance, setUserCtezBalance] = useState<number>(0);
-    const [rollup, setRollup] = useState<Rollup|undefined>(undefined);
     
     const [quantity, setQuantity]  = useState<number>(0); //in float TEZ
     const [l2Address, setL2Address]  = useState<string>("");
     const [tokenType, setTokenType]  = useState<TOKEN_TYPE>(TOKEN_TYPE.XTZ);
+    
+    const [rollupType , setRollupType] = useState<ROLLUP_TYPE>(ROLLUP_TYPE.DEKU);
+    const [rollup , setRollup] = useState<RollupTORU | RollupDEKU>();
     
     //TEZOS OPERATIONS
     const [tezosLoading, setTezosLoading]  = useState(false);
     
     // MESSAGES
     const { enqueueSnackbar } = useSnackbar();
+
+    //POPUP
+    const [selectRollupPopupAnchorEl, setSelectRollupPopupAnchorEl] = React.useState<null | HTMLElement>(null);
+    const showSelectRollupPopup = (event : React.MouseEvent<HTMLButtonElement>) => {
+        setSelectRollupPopupAnchorEl(event.currentTarget);
+    };
+    const closeSelectRollupPopup = () => {
+        setSelectRollupPopupAnchorEl(null);
+    };
+    const selectRollupPopupOpen = Boolean(selectRollupPopupAnchorEl);
     
     const refreshCtezBalance = async() => {
         let ctezContract : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!);
@@ -51,18 +63,24 @@ const Deposit = ({
         setUserBalance(balance.toNumber() / 1000000); //convert mutez to tez
     }
     
-    let rollupAddress : string = process.env["REACT_APP_ROLLUP_CONTRACT"]!;
-    const refreshRollupInbox = async() => {
-        //let rollupContract : WalletContract = await Tezos.wallet.at(rollupAddress);
-        let rollup: Rollup = await TezosUtils.fetchRollup(Tezos.rpc.getRpcUrl(),rollupAddress);
-        setRollup(rollup);
+    const refreshRollup = async() => {
+        switch(rollupType){
+            case ROLLUP_TYPE.TORU : setRollup(await TezosUtils.fetchRollupTORU(Tezos.rpc.getRpcUrl(),rollupType.address));break;
+            case ROLLUP_TYPE.DEKU : {
+                setRollup(await TezosUtils.fetchRollupDEKU(Tezos,rollupType.address));break;
+            }
+        }
     }
     
     useEffect(() => {
-        refreshRollupInbox();
         refreshBalance();
         refreshCtezBalance();
+        refreshRollup();
     }, []);
+
+    useEffect(() => {
+        refreshRollup();
+    }, [rollupType]);
     
     
     const handleDeposit = async (event : MouseEvent<HTMLButtonElement>) => {
@@ -103,11 +121,20 @@ const Deposit = ({
                 }
             }
             
-            let param : ContractParameters = tokenType === TOKEN_TYPE.XTZ ? new ContractXTZParameters( ""+(quantity*1000000) ,l2Address,process.env["REACT_APP_ROLLUP_CONTRACT"]!) : new ContractFA12Parameters(""+(quantity*1000000),process.env["REACT_APP_CTEZ_CONTRACT"]!,l2Address,process.env["REACT_APP_ROLLUP_CONTRACT"]!)
+            let param : ContractParameters = 
+                    tokenType === TOKEN_TYPE.XTZ ? new ContractXTZParameters( ""+(quantity*1000000),rollupType === ROLLUP_TYPE.DEKU ? AddressType.l1_ADDRESS : AddressType.l2_ADDRESS ,l2Address,rollupType.address) 
+                    : new ContractFA12Parameters(""+(quantity*1000000),process.env["REACT_APP_CTEZ_CONTRACT"]!,rollupType === ROLLUP_TYPE.DEKU ? AddressType.l1_ADDRESS : AddressType.l2_ADDRESS,l2Address,rollupType.address)
+            
+            /* console.log("param",param);
+             let inspect = c.methods.deposit(...Object.values(param)).toTransferParams();
+             console.log("inspect",inspect);    
+             console.log("parameter signature",c.parameterSchema.ExtractSignatures());
+            */
+            
             const op = await c.methods.deposit(...Object.values(param)).send(tokenType === TOKEN_TYPE.XTZ?{amount:quantity}:{});
             await op.confirmation();
-            enqueueSnackbar("Your deposit has been accepted (wait a bit the refresh)", {variant: "success", autoHideDuration:10000});
-            await refreshRollupInbox();
+            enqueueSnackbar("Your deposit has been accepted", {variant: "success", autoHideDuration:10000});
+            await refreshRollup();
             await refreshBalance();
             await refreshCtezBalance();
         } catch (error : any) {
@@ -122,9 +149,29 @@ const Deposit = ({
         setTezosLoading(false);
     };
     
+    //just needed for the selectRollupPopup selection
+    const HoverBox = styled(Box)`&:hover {background-color: #a9a9a9;}`;
     
     return (
         <Box color="primary.main" alignContent={"space-between"} textAlign={"center"} sx={{ margin: "1em", padding : "1em",  backgroundColor : "#FFFFFFAA"}} >
+        
+        <Popover
+        id="selectRollupPopup"
+        open={selectRollupPopupOpen}
+        anchorEl={selectRollupPopupAnchorEl}
+        onClose={closeSelectRollupPopup}
+        anchorOrigin={{
+            vertical: 'top',
+            horizontal: 'left',
+        }}
+        >
+            <Paper title="Choose default rollup" sx={{padding : 1}} elevation={3}>
+                <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.DEKU);closeSelectRollupPopup();}}>{ROLLUP_TYPE.DEKU.name} : {ROLLUP_TYPE.DEKU.address}</HoverBox>
+                <hr />
+                <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.TORU);closeSelectRollupPopup();}}>{ROLLUP_TYPE.TORU.name} : {ROLLUP_TYPE.TORU.address}</HoverBox>
+            </Paper>
+        </Popover>
+        
         <Backdrop
         sx={{ color: '#fff', zIndex: (theme : any) => theme.zIndex.drawer + 1 }}
         open={tezosLoading}
@@ -212,33 +259,22 @@ const Deposit = ({
                 
                 <Grid item xs={12} md={5} >
                 <Card>
-                <CardHeader
+                <CardHeader 
                 sx={{color:"secondary.main",backgroundColor:"primary.main"}}
                 avatar={<Avatar aria-label="recipe"><CameraRoll /></Avatar>}
                 action={
-                    <IconButton aria-label="settings" onClick={()=>alert("Not yet implemented! It will be able to switch to another rollup later")}>
-                    <MoreVert />
+                    <IconButton aria-label="settings" onClick={(e)=>showSelectRollupPopup(e)}>
+                    <ArrowDropDown />
                     </IconButton>
                 }
-                title="Default rollup"
-                subheader={<div className="address"><span className="address1">{rollupAddress.substring(0,rollupAddress.length/2)}</span><span className="address2">{rollupAddress.substring(rollupAddress.length/2)}</span></div> }
+                title={rollupType.name+" default rollup"}
+                subheader={<div className="address"><span className="address1">{rollupType.address.substring(0,rollupType.address.length/2)}</span><span className="address2">{rollupType.address.substring(rollupType.address.length/2)}</span></div> }
                 />
                 <CardContent>
                 <Stack spacing={1} direction="column"  divider={<Divider orientation="horizontal" flexItem />}>
                 { 
-                
-                /* rollup.size > 0 ? 
-                    Array.from(rollup.entries()).map(([key,ticket],index) => <Chip 
-                    key={index}
-                    avatar={ticket.value==="Unit"?<Avatar src="XTZ-ticket.png"/> : <Avatar src="CTEZ-ticket.png"/>}
-                    label={<span>{ticket.amount} for <span className="address"><span className="address1">{key.substring(0,key.length/2)}</span><span className="address2">{key.substring(key.length/2)}</span></span></span>}
-                    variant="outlined" 
-                    />
-                    ) 
-                    : <span />
-            */
-           
-                    rollup !== undefined ? <TableContainer component={Paper}><Table><TableBody>
+                      rollup instanceof RollupTORU?
+                    <TableContainer component={Paper}><Table><TableBody>
                         <TableRow><TableCell>commitment_newest_hash </TableCell><TableCell>{rollup.commitment_newest_hash}</TableCell></TableRow >
                         <TableRow><TableCell>finalized_commitments </TableCell><TableCell>{rollup.finalized_commitments.next}</TableCell></TableRow >
                         <TableRow><TableCell>last_removed_commitment_hashes </TableCell><TableCell>{rollup.last_removed_commitment_hashes}</TableCell></TableRow>
@@ -248,7 +284,40 @@ const Deposit = ({
                         <TableRow><TableCell>uncommitted_inboxes </TableCell><TableCell>{rollup.uncommitted_inboxes.next}</TableCell></TableRow >
                         <TableRow><TableCell>unfinalized_commitments </TableCell><TableCell>{rollup.unfinalized_commitments.next}</TableCell></TableRow >
                         </TableBody></Table></TableContainer> 
-                       : "" }
+                       : 
+                       rollup instanceof RollupDEKU ? 
+                        <Fragment>
+                        <TableContainer component={Paper}><Table><TableBody>
+                        <TableRow><TableCell>current_block_hash </TableCell><TableCell>{rollup.root_hash.current_block_hash}</TableCell></TableRow >
+                        <TableRow><TableCell>current_block_height </TableCell><TableCell>{rollup.root_hash.current_block_height.toNumber()}</TableCell></TableRow >
+                        <TableRow><TableCell>current_handles_hash </TableCell><TableCell>{rollup.root_hash.current_handles_hash}</TableCell></TableRow >
+                        <TableRow><TableCell>current_state_hash </TableCell><TableCell>{rollup.root_hash.current_state_hash}</TableCell></TableRow >
+                        <TableRow><TableCell>current_validators </TableCell><TableCell>{rollup.root_hash.current_validators.join(", ")}</TableCell></TableRow >
+                       </TableBody></Table></TableContainer>
+                       
+                        <hr />
+                        <h3>Vault</h3>
+
+                        {rollup.vault.XTZTicket? 
+                        <Chip
+                            avatar={<Avatar src="XTZ-ticket.png"/>}
+                            label={<span>{rollup.vault.XTZTicket?.amount.toNumber()}</span>}
+                            variant="outlined" 
+                            />
+                        :""}
+                       
+                       {rollup.vault.CTEZTicket? 
+                      <Chip 
+                        avatar={<Avatar src="CTEZ-ticket.png"/>}
+                        label={<span>{rollup.vault.CTEZTicket?.amount.toNumber()}</span>}
+                        variant="outlined" 
+                        />
+                        :""}
+
+
+                        </Fragment>
+                    
+                       : "No rollup info ..." }
                     </Stack>
                     </CardContent>
                     </Card>

@@ -22,14 +22,14 @@ ligo run test ./test/unit_contract.jsligo
 ## Interact
 
 ```bash
-ligo compile parameter ./src/contract.jsligo 'Deposit(XTZ_OP({amountToTransfer : 1 as nat,l2Address : "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,rollupAddress : "txr1Q4iYZti8wfKXJi9CyagSnAHCogzX877kD" as address}))' --output-file contractParameter.tz --entry-point main
+ligo compile parameter ./src/contract.jsligo 'Deposit(XTZ_OP({amountToTransfer : 42000000 as nat,l2Address : L1_ADDRESS("tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address) ,rollupAddress : "KT1TLVFbGtkX6bS9tUKmRGPqGtf1K6SGgqXK" as address}))' --output-file contractParameter.tz 
 
 (or FA1.2
-ligo compile parameter ./src/contract.jsligo 'Deposit(FA12_OP({amountToTransfer : 1 as nat,fa12Address : "KT1WnDswMHZefo2fym6Q9c8hnL3sEuzFb2Dt" as address,l2Address : "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,rollupAddress : "txr1Q4iYZti8wfKXJi9CyagSnAHCogzX877kD" as address}))' --output-file contractParameter.tz --entry-point main
+ligo compile parameter ./src/contract.jsligo 'Deposit(FA12_OP({amountToTransfer : 1 as nat,fa12Address : "KT1WnDswMHZefo2fym6Q9c8hnL3sEuzFb2Dt" as address,l2Address : "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,rollupAddress : "txr1Q4iYZti8wfKXJi9CyagSnAHCogzX877kD" as address}))' --output-file contractParameter.tz 
 )
 
 
-tezos-client transfer 1 from myFirstKey to tzportalJakarta --arg '(Left (Right (Pair 1 "txr1Q4iYZti8wfKXJi9CyagSnAHCogzX877kD" "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk")))' --burn-cap 1
+tezos-client transfer 42 from myFirstKey to KT1Ci5heqWbRmxM98769W7jqVxCZ9zZUQ31o --arg '(Left (Right (Pair 42000000 "KT1TLVFbGtkX6bS9tUKmRGPqGtf1K6SGgqXK" (Left "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk"))))' --burn-cap 1
 ```
 
 # FA1.2 Contract
@@ -52,7 +52,7 @@ ligo run dry-run ./test/fa12.jsligo 'Transfer({from:"tz1VApBuWHuaTfDHtKzU3NBtWFY
 ## compile
 
 ```
-ligo compile contract ./test/mock_rollup.jsligo --entry-point rollupMain --output-file ./test/mock_rollup.tz
+ligo compile contract ./test/mock_deku_rollup.jsligo --entry-point main --output-file ./test/mock_deku_rollup.tz
 ```
 
 

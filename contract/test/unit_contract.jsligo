@@ -1,20 +1,21 @@
-#include "../src/contract.jsligo"
-#include "./mock_rollup.jsligo"
-#include "./fa12.jsligo"
+#import "../src/contract.jsligo" "CONTRACT"
+#import "./mock_deku_rollup.jsligo" "ROLLUP"
+#import "./fa12.jsligo" "FA12"
 
 //util function
 let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
-    return match(result,{
-      Success: (_ : nat) => false,
-      Fail: ( tee : test_exec_error ) => 
-        match(tee,{
-          Other: () => false, 
-          Rejected: (s:[michelson_program , address])=>{  Test.log (["expected error : ", message, " Actual : "]) ; Test.log(s[0]) ; return ((Test.eval(message)) == s[0]) } }) 
-      })
-    };
+  return match(result,{
+    Success: (_ : nat) => false,
+    Fail: ( tee : test_exec_error ) => 
+      match(tee,{
+        Other: (msg : string) => {Test.log("ERROR Other : "+msg) ; return false}, 
+        Balance_too_low : (record : [ address ,  tez , tez ]) => {Test.log("ERROR Balance_too_low") ; return false}, 
+        Rejected: (s:[michelson_program , address])=>{  Test.log (["expected error : ", message, " Actual : "]) ; Test.log(s[0]) ; return ((Test.eval(message)) == s[0]) } }) 
+    })
+  };
     
     // reset state
-    let _ = Test.reset_state ( 10 as nat, list([]) as list <tez> );
+    let _ = Test.reset_state (3 as nat, list([]) as list <tez> );
     let faucet = Test.nth_bootstrap_account(0);
     let sender1 : address = Test.nth_bootstrap_account(1);
     let _ = Test.log("Sender 1 has balance : ");
@@ -28,7 +29,7 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
   
   
   //mock rollup origination
-  let [trollupaddr, _, _] = Test.originate(rollupMain, Map.empty as map<address,ticket<bytes>>, 0 as tez);
+  let [trollupaddr, _, _] = Test.originate(ROLLUP.main, Map.empty as map<address,ticket<bytes>>, 0 as tez);
   let rollupContr = Test.to_contract(trollupaddr);
   let rollupAddress = Tezos.address(rollupContr);
   let _ = Test.log("rollup contract deployed with values : ");
@@ -36,7 +37,7 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
 
   //fa1.2 origination
   let fa12balance :nat = 4200 as nat;
-  let [tfa12addr, _, _] = Test.originate(fa12Main, 
+  let [tfa12addr, _, _] = Test.originate(FA12.main, 
     {tokens : Big_map.literal(list([ [sender1,fa12balance] ])) as big_map<address,nat>,allowances : Big_map.empty as big_map<[address,address],nat>,total_amount : fa12balance}
     ,0 as tez);
   let fa12Contr = Test.to_contract(tfa12addr);
@@ -46,14 +47,14 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
   let _ = Test.log(Test.get_storage_of_address(fa12Address));
 
   //contract origination
-  let [taddr, _, _] = Test.originate(main, unit, 0 as tez);
+  let [taddr, _, _] = Test.originate(CONTRACT.main, unit, 0 as tez);
   let contr = Test.to_contract(taddr);
   let _ = Test.log("contract deployed with values : ");
   let _ = Test.log(contr);
   
   // FUNCTIONS
   
-  let _testDeposit = ([s,depositOp,xTZToCheck,fA12ToCheck] : [address,depositOp,nat,nat]) : bool => {
+  let _testDeposit = ([s,depositOp,xTZToCheck,fA12ToCheck] : [address,CONTRACT.depositOp,nat,nat]) : bool => {
     Test.set_source(s);
 
     //check current value before testing
@@ -65,7 +66,8 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
     let rollupStore : michelson_program = Test.get_storage_of_address(rollupAddress); 
     Test.log(rollupStore);
 
-    let status = Test.transfer_to_contract(contr, (Deposit(depositOp)), xTZToCheck * (1 as tez));
+    Test.log(depositOp);
+    let status = Test.transfer_to_contract(contr, Deposit(depositOp), xTZToCheck * (1 as tez));
     Test.log(status);
     //FIXME, we cannot decompile a ticket =>  let rollupStore : rollupStorage = Test.get_storage(trollupaddr); 
     let rollupStore : michelson_program = Test.get_storage_of_address(rollupAddress); 
@@ -84,7 +86,7 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
         return xtzOp.l2Address},
       FA12_OP : (fa12Op:fa12Op) => {
         //check FA1.2 tokens ownership
-        let fa12Storage : fa12storage = Test.get_storage (tfa12addr); 
+        let fa12Storage : FA12.storage = Test.get_storage (tfa12addr); 
         let contractBalance = match(Map.find_opt(Tezos.address(contr),fa12Storage.tokens) as option<nat>, {
             Some : (qty: nat)=>qty,
             None : () => 0 as nat
@@ -120,7 +122,7 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
     return true;
   };
   
-  let _testDepositFail = ( [s,depositOp,tezToPay,message] : [address,depositOp,nat,string]) : bool => {
+  let _testDepositFail = ( [s,depositOp,tezToPay,message] : [address,CONTRACT.depositOp,nat,string]) : bool => {
     Test.set_source(s);
     let errorMap : map<string,string> = Map.literal(list([
       ["0", "Enter a positive and not null amount"],
@@ -137,39 +139,41 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
   };
   
   //********** TESTS *************/
-  
+  let sender2AddrType = L1_ADDRESS(sender2);
+
 
   //XTZ deposit
-  let xtzOp : xtzOp = {
+  let xtzOp : CONTRACT.xtzOp = {
         amountToTransfer: 42 as nat,
         rollupAddress: rollupAddress,
-        l2Address: sender2};
+        l2Address: sender2AddrType
+      };
   
   let testSender1Deposit42XTZToSender2 = _testDeposit(sender1,XTZ_OP(xtzOp),xtzOp.amountToTransfer,0 as nat);
   
-  let xtzOp1 : xtzOp = {...xtzOp,amountToTransfer:0 as nat};
+  let xtzOp1 : CONTRACT.xtzOp = {...xtzOp,amountToTransfer:0 as nat};
   let testSender1DepositXTZBadAmount = _testDepositFail(sender1,XTZ_OP(xtzOp1),0 as nat,"0");
   
-  let xtzOp2 : xtzOp = {...xtzOp1,amountToTransfer:xtzOp.amountToTransfer};
+  let xtzOp2 : CONTRACT.xtzOp = {...xtzOp1,amountToTransfer:xtzOp.amountToTransfer};
   let testSender1DepositNotEnoughXTZ = _testDepositFail(sender1,XTZ_OP(xtzOp2),0 as nat,"3");
 
-  let xtzOp3 : xtzOp = {...xtzOp2,rollupAddress:sender2};
+  let xtzOp3 : CONTRACT.xtzOp = {...xtzOp2,rollupAddress:sender2};
   let testSender1DepositXTZInvalidRollupAddress = _testDepositFail(sender1,XTZ_OP(xtzOp3),xtzOp.amountToTransfer,"1");
 
   //FA1.2 deposit
-  let fa12Op : fa12Op = {
+  let fa12Op : CONTRACT.fa12Op = {
     fa12Address: fa12Address,
     amountToTransfer: 42 as nat,
     rollupAddress: rollupAddress,
-    l2Address: sender2
+    l2Address: sender2AddrType
   };
 
   let testSender1Deposit42FA12ToSender2 = _testDeposit(sender1,FA12_OP(fa12Op),0 as nat, fa12Op.amountToTransfer);
 
-  let fa12Op1 : fa12Op = {...fa12Op,amountToTransfer:0 as nat};
+  let fa12Op1 : CONTRACT.fa12Op = {...fa12Op,amountToTransfer:0 as nat};
   let testSender1DepositFA12BadAmount = _testDepositFail(sender1,FA12_OP(fa12Op1),0 as nat,"0");
 
-  let fa12Op2 : fa12Op = {...fa12Op,rollupAddress:sender2};
+  let fa12Op2 : CONTRACT.fa12Op = {...fa12Op,rollupAddress:sender2};
   let testSender1DepositFA12InvalidRollupAddress = _testDepositFail(sender1,FA12_OP(fa12Op2),0 as nat,"1");
 
   //withdraw

@@ -24,8 +24,10 @@
   "scripts": {
     "start": "HTTPS=true react-app-rewired start",
     "start:jakartanet": "HTTPS=true env-cmd -f .env.jakartanet react-app-rewired start",
+    "start:ithacanet": "HTTPS=true env-cmd -f .env.ithacanet react-app-rewired start",
     "build": "react-app-rewired --max_old_space_size=2048 build",
     "build:jakartanet": "env-cmd -f .env.jakartanet react-app-rewired --max_old_space_size=2048 build",
+    "build:ithacanet": "env-cmd -f .env.ithacanet react-app-rewired --max_old_space_size=2048 build",
     "test": "react-app-rewired test",
     "eject": "react-app-rewired eject",
     "update-taquito": "ncu -u --target newest --filter '/^@taquito.*$/' && npm i"

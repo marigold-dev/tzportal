@@ -1,7 +1,8 @@
-{ parameter (pair (ticket bytes) address) ;
+{ parameter (pair address (ticket bytes)) ;
   storage (map address (ticket bytes)) ;
   code { UNPAIR ;
          UNPAIR ;
+         SWAP ;
          READ_TICKET ;
          DROP ;
          DIG 2 ;

@@ -1,0 +1,32 @@
+// DEFINITIONS  
+
+type ticketClaim = {
+  amount :nat,
+  data :bytes,
+  id: nat,
+  owner: address,
+  ticketer: address
+};
+
+type depositParameter = [address , ticket<bytes>];
+
+export type parameter =
+| ["deposit" , depositParameter]
+//| ["withdraw" , contract , ticketClaim , bytes , list<ticketClaim> ]
+//| ["update_root_hash" , int , bytes , list<key> , bytes , list<signature>, bytes , list<key_hash>]
+;
+
+export type storage = map<address,ticket<bytes>>;
+
+export type return_ =  [list<operation>, storage];
+
+export let main = (x : [parameter , storage]): return_ => {
+  let [p , store] = x ;
+  return match (p , {
+    deposit : (param : [address , ticket<bytes>]) => { 
+      let [addrp,ticket] = param;   
+      let [[_addr, [_v, _amt]], tic] : read_ticket_return = Tezos.read_ticket(ticket);
+      return [ list([]) as list<operation> , Map.update(addrp, Some(tic), store)];           }
+  });
+  
+};
