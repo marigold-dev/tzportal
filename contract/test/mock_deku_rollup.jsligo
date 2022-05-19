@@ -12,7 +12,7 @@ type depositParameter = [address , ticket<bytes>];
 
 export type parameter =
 | ["deposit" , depositParameter]
-//| ["withdraw" , contract , ticketClaim , bytes , list<ticketClaim> ]
+| ["withdraw" , contract<ticket<bytes>> , ticketClaim , bytes , list<[bytes,bytes]> ]
 //| ["update_root_hash" , int , bytes , list<key> , bytes , list<signature>, bytes , list<key_hash>]
 ;
 
@@ -26,7 +26,8 @@ export let main = (x : [parameter , storage]): return_ => {
     deposit : (param : [address , ticket<bytes>]) => { 
       let [addrp,ticket] = param;   
       let [[_addr, [_v, _amt]], tic] : read_ticket_return = Tezos.read_ticket(ticket);
-      return [ list([]) as list<operation> , Map.update(addrp, Some(tic), store)];           }
+      return [ list([]) as list<operation> , Map.update(addrp, Some(tic), store)];           },
+    withdraw : (_param : [contract<ticket<bytes>> , ticketClaim , bytes , list<[bytes,bytes]>]) => [ list([]) as list<operation> , store]
   });
   
 };

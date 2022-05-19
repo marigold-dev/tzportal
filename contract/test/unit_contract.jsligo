@@ -126,11 +126,12 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
     Test.set_source(s);
     let errorMap : map<string,string> = Map.literal(list([
       ["0", "Enter a positive and not null amount"],
-      ["1", "Invalid rollup address!"],
+      ["10", "Invalid rollup address for TORU !"],
+      ["11", "Invalid rollup address for DEKU !"],
       ["2", "Invalid FA1.2 address!"],
       ["3", "User needs to provide at least 'amountToTransfer' mutez"],
       ["4", "We only accept tickets we created!"],
-      ["5", "Cannot find the caller implicit account contract"],
+      ["5", "Cannot find the destination implicit account contract"],
       ["6", "The ticket does not contain a valid ticketType"],
       ["7","The contract does not exist or is not a valid fa1.2 contract"]
     ]));
@@ -139,14 +140,14 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
   };
   
   //********** TESTS *************/
-  let sender2AddrType = L1_ADDRESS(sender2);
+  let sender2AddrType : CONTRACT.addressType = L1_ADDRESS(sender2);
 
 
   //XTZ deposit
   let xtzOp : CONTRACT.xtzOp = {
         amountToTransfer: 42 as nat,
-        rollupAddress: rollupAddress,
-        l2Address: sender2AddrType
+        rollupAddress: rollupAddress as address,
+        l2Address: sender2AddrType as CONTRACT.addressType
       };
   
   let testSender1Deposit42XTZToSender2 = _testDeposit(sender1,XTZ_OP(xtzOp),xtzOp.amountToTransfer,0 as nat);
@@ -158,7 +159,7 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
   let testSender1DepositNotEnoughXTZ = _testDepositFail(sender1,XTZ_OP(xtzOp2),0 as nat,"3");
 
   let xtzOp3 : CONTRACT.xtzOp = {...xtzOp2,rollupAddress:sender2};
-  let testSender1DepositXTZInvalidRollupAddress = _testDepositFail(sender1,XTZ_OP(xtzOp3),xtzOp.amountToTransfer,"1");
+  let testSender1DepositXTZInvalidRollupAddress = _testDepositFail(sender1,XTZ_OP(xtzOp3),xtzOp.amountToTransfer,"11");
 
   //FA1.2 deposit
   let fa12Op : CONTRACT.fa12Op = {
@@ -174,7 +175,7 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
   let testSender1DepositFA12BadAmount = _testDepositFail(sender1,FA12_OP(fa12Op1),0 as nat,"0");
 
   let fa12Op2 : CONTRACT.fa12Op = {...fa12Op,rollupAddress:sender2};
-  let testSender1DepositFA12InvalidRollupAddress = _testDepositFail(sender1,FA12_OP(fa12Op2),0 as nat,"1");
+  let testSender1DepositFA12InvalidRollupAddress = _testDepositFail(sender1,FA12_OP(fa12Op2),0 as nat,"11");
 
   //withdraw
 
