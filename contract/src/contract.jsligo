@@ -6,7 +6,7 @@ type fa12Contract = contract<fa12ContractParameters>;
 type rollupContractParametersTORU = [ticket<bytes>,address];//[ticket<bytes>,tx_rollup_l2_address]; 
 type rollupContractParametersDEKU = [address , ticket<bytes>];//[ticket<bytes>,tx_rollup_l2_address]; 
 
-type ticketType =
+export type ticketType =
 // @layout:comb
 | ["XTZ"]
 | ["FA12", address];
@@ -40,7 +40,9 @@ export type depositOp =
 export type parameter =
 // @layout:comb
   | ["Deposit" , depositOp]
-  | ["Withdraw" , [ticket<bytes>,address]];
+  | ["WithdrawTORU" , ticket<bytes>]
+  | ["WithdrawDEKU" , ticket<bytes>]
+;
 
 export type return_ =  [list<operation>, unit];
 
@@ -140,7 +142,8 @@ let deposit = (op: depositOp): return_ => {
   });
 };
 
-let withdraw = ([ticket , destinationAddress] : [ticket<bytes>, address]) : return_ => {
+//only initiator of withdraw can claim to be reddem by a proof
+let withdraw = (ticket : ticket<bytes>) : return_ => {
   // Read/burn the ticket 
   let [[ticketerAddress, [typeBytes, qty]], _] : read_ticket_return = Tezos.read_ticket(ticket);
 
@@ -154,7 +157,7 @@ let withdraw = ([ticket , destinationAddress] : [ticket<bytes>, address]) : retu
         // try with XTZ first
         match(ticketType , {
           XTZ : () => {             
-            let destinationContract : contract<unit> = Tezos.get_contract_with_error(destinationAddress,"5");
+            let destinationContract : contract<unit> = Tezos.get_contract_with_error(Tezos.source,"5");
 
             //give back the XTZ to the destination
             return [list([Tezos.transaction(unit,qty * (1 as mutez),destinationContract)]),unit];                                               
@@ -164,7 +167,7 @@ let withdraw = ([ticket , destinationAddress] : [ticket<bytes>, address]) : retu
 
                 //send back FA1.2 token ownership to the destination
             return [list([Tezos.transaction(
-                    [Tezos.self_address, [destinationAddress, qty ]],
+                    [Tezos.self_address, [Tezos.source, qty ]],
                     0 as mutez,
                     fa12Contract
                   )]),unit]; 
@@ -182,6 +185,7 @@ let withdraw = ([ticket , destinationAddress] : [ticket<bytes>, address]) : retu
 export let main = ([action , _store]:[parameter , unit]): return_ => {
   return match (action, {
       Deposit : (op : depositOp) => deposit(op),
-      Withdraw : (params : [ticket<bytes>,address]) => withdraw(params)
+      WithdrawDEKU : (ticket : ticket<bytes>) => withdraw(ticket),
+      WithdrawTORU : (ticket : ticket<bytes>) => withdraw(ticket)
     })
 };

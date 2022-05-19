@@ -29,7 +29,7 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
   
   
   //mock rollup origination
-  let [trollupaddr, _, _] = Test.originate(ROLLUP.main, Map.empty as map<address,ticket<bytes>>, 0 as tez);
+  let [trollupaddr, rollupContrMichelson, _] = Test.originate(ROLLUP.main, Map.empty as map<address,ticket<bytes>>, 0 as tez);
   let rollupContr = Test.to_contract(trollupaddr);
   let rollupAddress = Tezos.address(rollupContr);
   let _ = Test.log("rollup contract deployed with values : ");
@@ -49,6 +49,7 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
   //contract origination
   let [taddr, _, _] = Test.originate(CONTRACT.main, unit, 0 as tez);
   let contr = Test.to_contract(taddr);
+  let contrAddress = Tezos.address(contr);
   let _ = Test.log("contract deployed with values : ");
   let _ = Test.log(contr);
   
@@ -87,11 +88,11 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
       FA12_OP : (fa12Op:fa12Op) => {
         //check FA1.2 tokens ownership
         let fa12Storage : FA12.storage = Test.get_storage (tfa12addr); 
-        let contractBalance = match(Map.find_opt(Tezos.address(contr),fa12Storage.tokens) as option<nat>, {
+        let contractBalance = match(Big_map.find_opt(Tezos.address(contr),fa12Storage.tokens) as option<nat>, {
             Some : (qty: nat)=>qty,
             None : () => 0 as nat
          });     
-        let senderBalance = match(Map.find_opt(s,fa12Storage.tokens) as option<nat>, {
+        let senderBalance = match(Big_map.find_opt(s,fa12Storage.tokens) as option<nat>, {
           Some : (qty: nat)=>qty,
           None : () => 0 as nat
          }); 
@@ -138,10 +139,34 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
     Test.log("Testing error to fail : "+ Option.unopt(Map.find_opt(message,errorMap)));
     return assert_failure(Test.transfer_to_contract(contr, (Deposit(depositOp)), tezToPay * (1 as tez)),message);
   };
+
+
+  const _testWithdraw = ([s,withdrawParam,balanceToCheck] : [address,ROLLUP.withdrawParameter,nat]) : bool => {
+    Test.set_source(s);
+
+    //check current value before testing
+    let oldSenderBalance = Test.get_balance(s);
+    let oldContractBalance = Test.get_balance(Tezos.address(contr));
+    // not possible to do, so display it on log 
+    //let oldTicketQty =         Test.log(rollupStore);
+    Test.log("*** MANUAL CHECK :  rollupStore before any test is launched ***");
+    let rollupStore : michelson_program = Test.get_storage_of_address(rollupAddress); 
+    Test.log(rollupStore);
+
+    Test.log("withdrawParam");
+    Test.log(withdrawParam);
+    let status = Test.transfer_to_contract(rollupContr, Withdraw(withdrawParam), 0 as tez);
+    Test.log(status);
+    //FIXME, we cannot decompile a ticket =>  let rollupStore : rollupStorage = Test.get_storage(trollupaddr); 
+    let rollupStore : michelson_program = Test.get_storage_of_address(rollupAddress); 
+    Test.log(rollupStore);
+
+    return true;
+  };
   
   //********** TESTS *************/
   let sender2AddrType : CONTRACT.addressType = L1_ADDRESS(sender2);
-
+/*
 
   //XTZ deposit
   let xtzOp : CONTRACT.xtzOp = {
@@ -176,7 +201,22 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
 
   let fa12Op2 : CONTRACT.fa12Op = {...fa12Op,rollupAddress:sender2};
   let testSender1DepositFA12InvalidRollupAddress = _testDepositFail(sender1,FA12_OP(fa12Op2),0 as nat,"11");
+*/
+  //withdraw (will take into account previous deposits tests)
 
-  //withdraw
+  //get withdraw entrypoint of contract
+  let ticketClaim : ROLLUP.ticketClaim =  {
+    amount : 42 as nat,
+    data : Bytes.pack(XTZ()),
+    id: 0 as nat,
+    owner: sender1,
+    ticketer: contrAddress
+  };
+  let withdrawParam : ROLLUP.withdrawParameter = [ Test.to_entrypoint("%withdrawDEKU",taddr) as contract<ticket<bytes>>, ticketClaim ,0x00 , list([]) as list<[bytes,bytes]>];
+
+
+//  let _ = Test.log(rollupContrMichelson);
+
+  let testSender1Withdraw42XTZ = _testWithdraw(sender1,withdrawParam,0 as nat);
 
   
