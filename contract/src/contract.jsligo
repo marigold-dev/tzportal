@@ -164,6 +164,7 @@ const fa12PendingDeposit = ([fa12PendingDepositParameter,store]: [fa12PendingDep
     let [fa12OpOpt, newFa12PendingDeposits] : [option<fa12Op>, fa12PendingMapType] =
     Map.get_and_update([fa12PendingDepositParameter[0],  b], (None() as option<fa12Op>), store.fa12PendingDeposits);
 
+    /*FIXME ticket DUP here !!!
     return match(fa12OpOpt,{
       None : () => failwith("12"),
       Some : (fa12Op : fa12Op) =>       
@@ -173,6 +174,8 @@ const fa12PendingDeposit = ([fa12PendingDepositParameter,store]: [fa12PendingDep
                 L2_ADDRESS : (a : address) => [list([Tezos.transaction([Tezos.create_ticket(b,fa12Op.amountToTransfer), a],0 as mutez,getRollupTORUContract(fa12Op.rollupAddress))]),  {...store,fa12PendingDeposits : newFa12PendingDeposits}    ] //remove it from storage now
               })
     });
+    */
+   return [list([]),store]; //line just to debug/compile , to remove after DUP error is fixed
 };
 
 /*
