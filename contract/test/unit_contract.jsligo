@@ -15,14 +15,21 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
   };
     
     // reset state
-    let _ = Test.reset_state (3 as nat, list([]) as list <tez> );
+    let _ = Test.reset_state (4 as nat, list([]) as list <tez> );
     let faucet = Test.nth_bootstrap_account(0);
     let sender1 : address = Test.nth_bootstrap_account(1);
     let _ = Test.log("Sender 1 has balance : ");
     let _ = Test.log(Test.get_balance(sender1));
+    let _ = Test.log(sender1);
     let sender2 : address = Test.nth_bootstrap_account(2);          
     let _ = Test.log("Sender 2 has balance : ");
     let _ = Test.log(Test.get_balance(sender2));
+    let _ = Test.log(sender2);
+    let sender3 : address = Test.nth_bootstrap_account(3);          
+    let _ = Test.log("Sender 3 has balance : ");
+    let _ = Test.log(Test.get_balance(sender3));
+    let _ = Test.log(sender3);
+
 
     let _ = Test.set_baker(faucet);
     let _ = Test.set_source(faucet);
@@ -38,7 +45,7 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
   //fa1.2 origination
   let fa12balance :nat = 4200 as nat;
   let [tfa12addr, _, _] = Test.originate(FA12.main, 
-    {tokens : Big_map.literal(list([ [sender1,fa12balance] ])) as big_map<address,nat>,allowances : Big_map.empty as big_map<[address,address],nat>,total_amount : fa12balance}
+    {tokens : Big_map.literal(list([ [sender3,fa12balance] ])) as big_map<address,nat>,allowances : Big_map.empty as big_map<[address,address],nat>,total_amount : fa12balance}
     ,0 as tez);
   let fa12Contr = Test.to_contract(tfa12addr);
   let fa12Address = Tezos.address(fa12Contr);
@@ -52,6 +59,9 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
   let contrAddress = Tezos.address(contr);
   let _ = Test.log("contract deployed with values : ");
   let _ = Test.log(contr);
+
+  const xTZType : bytes = Bytes.pack(XTZ());
+  const fA12Type : bytes  = Bytes.pack(FA12(fa12Address));  
   
   // FUNCTIONS
   
@@ -68,7 +78,7 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
     Test.log(rollupStore);
 
     Test.log(depositOp);
-    let status = Test.transfer_to_contract(contr, Deposit(depositOp), xTZToCheck * (1 as tez));
+    let status = Test.transfer_to_contract(contr, Deposit(depositOp), xTZToCheck * (1 as mutez));
     Test.log(status);
     //FIXME, we cannot decompile a ticket =>  let rollupStore : rollupStorage = Test.get_storage(trollupaddr); 
     let rollupStore : michelson_program = Test.get_storage_of_address(rollupAddress); 
@@ -81,9 +91,9 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
         Test.log (["*** MANUAL CHECK : expected additional ticket qty : ", xTZToCheck]) ;
         Test.log (["*** MANUAL CHECK : actual ticket qty for inbox rollup : ","DO COMPARE MANUALLY"]) ;
         //check contract balance. It should increase
-        assert(Test.get_balance(Tezos.address(contr)) ==  oldContractBalance + xTZToCheck * (1 as tez)) ; 
+        assert(Test.get_balance(Tezos.address(contr)) ==  oldContractBalance + (xTZToCheck * (1 as mutez))) ; 
         //check sender balance. It should decrease
-        assert(Test.get_balance(s) <= (oldSenderBalance - (xTZToCheck * (1 as tez ))));   
+        assert(Test.get_balance(s) <= (oldSenderBalance - (xTZToCheck * (1 as mutez ))));   
         return xtzOp.l2Address},
       FA12_OP : (fa12Op:fa12Op) => {
         //check FA1.2 tokens ownership
@@ -141,12 +151,27 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
   };
 
 
-  const _testWithdraw = ([s,withdrawParam,balanceToCheck] : [address,ROLLUP.withdrawParameter,nat]) : bool => {
+  const _testWithdraw = ([s,withdrawParam,remainingBalanceToCheckOncontract,remainingCtezQuantity] : [address,ROLLUP.withdrawParameter,tez,nat]) : bool => {
     Test.set_source(s);
 
     //check current value before testing
-    let oldSenderBalance = Test.get_balance(s);
-    let oldContractBalance = Test.get_balance(Tezos.address(contr));
+    let oldSenderBalance : tez = Test.get_balance(s);
+    Test.log("oldSenderBalance");
+    Test.log(oldSenderBalance);
+    let oldContractBalance : tez = Test.get_balance(Tezos.address(contr));
+    Test.log("oldContractBalance");
+    Test.log(oldContractBalance);
+
+    let fa12storage : FA12.storage = Test.get_storage(tfa12addr);
+    Test.log(fa12storage);
+
+    let oldSenderTokenBalance : nat = match(Big_map.find_opt(s,fa12storage.tokens),{None:()=>(0 as nat),Some:(n:nat)=>n});
+    Test.log("oldSenderTokenBalance");
+    Test.log(oldSenderTokenBalance);
+    let oldContractTokenBalance : nat = match(Big_map.find_opt(contrAddress,fa12storage.tokens),{None:()=>(0 as nat),Some:(n:nat)=>n});
+    Test.log("oldContractTokenBalance");
+    Test.log(oldContractTokenBalance);
+
     // not possible to do, so display it on log 
     //let oldTicketQty =         Test.log(rollupStore);
     Test.log("*** MANUAL CHECK :  rollupStore before any test is launched ***");
@@ -159,30 +184,78 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
     Test.log(status);
     //FIXME, we cannot decompile a ticket =>  let rollupStore : rollupStorage = Test.get_storage(trollupaddr); 
     let rollupStore : michelson_program = Test.get_storage_of_address(rollupAddress); 
+    Test.log("*** MANUAL CHECK :  rollupStore after any test is launched ***");
     Test.log(rollupStore);
+    //check balances for contract and user
 
-    return true;
+    const ticketType : bytes = withdrawParam[1].data; 
+    Test.log(ticketType);
+    const qty : nat = withdrawParam[1].amount;
+    Test.log(qty);     
+
+    if(ticketType == xTZType){
+        //check contract balance. It should decrease
+        assert(Test.get_balance(Tezos.address(contr)) == remainingBalanceToCheckOncontract );
+        assert(remainingBalanceToCheckOncontract == oldContractBalance - (qty * (1 as mutez))) ; 
+        //check sender balance. It should increase
+        assert(Test.get_balance(s) <= (oldSenderBalance + (qty * (1 as tez ))));   
+        return true;
+     } else if (ticketType == fA12Type) {
+        let newfa12storage : FA12.storage = Test.get_storage(tfa12addr);
+        Test.log(newfa12storage);
+        //check contract balance. It should equal to same value
+        assert(Test.get_balance(Tezos.address(contr)) == oldContractBalance );
+        //check sender token balance, it should increase
+        assert(oldSenderTokenBalance + qty == match(Big_map.find_opt(s,newfa12storage.tokens),{None:()=>(0 as nat),Some:(n:nat)=>n}));  
+        //check contract token balance, it should decrease
+        assert(abs(oldSenderTokenBalance - qty) == match(Big_map.find_opt(contrAddress,newfa12storage.tokens),{None:()=>(0 as nat),Some:(n:nat)=>n}));
+        return true;
+     } else {
+       Test.log("Cannot find the correct ticketType");
+       return false;
+     }
+  
+  };
+
+
+  const _testWithdrawFail = ([s,withdrawParam] : [address,ROLLUP.withdrawParameter]) : bool => {
+    Test.set_source(s);
+    let status = Test.transfer_to_contract(rollupContr, Withdraw(withdrawParam), 0 as tez);
+    return match(status,{
+      Success: (_ : nat) => false,
+      Fail: ( tee : test_exec_error ) => 
+        match(tee,{
+          Other: (msg : string) => {Test.log("ERROR Other : "+msg) ; return false}, 
+          Balance_too_low : (record : [ address ,  tez , tez ]) => {Test.log("ERROR Balance_too_low") ; return false}, 
+          Rejected: (s:[michelson_program , address])=>{  Test.log(s[0]) ; return true } }) 
+      });
   };
   
   //********** TESTS *************/
   let sender2AddrType : CONTRACT.addressType = L1_ADDRESS(sender2);
-/*
+  let sender3AddrType : CONTRACT.addressType = L1_ADDRESS(sender3);
+  let sender4AddrType : CONTRACT.addressType = L2_ADDRESS(faucet); //FIXME to have a real L2 address here later
+
 
   //XTZ deposit
   let xtzOp : CONTRACT.xtzOp = {
-        amountToTransfer: 42 as nat,
+        amountToTransfer: 42000000 as nat,
         rollupAddress: rollupAddress as address,
         l2Address: sender2AddrType as CONTRACT.addressType
       };
   
+  const _ = Test.log("*********************** testSender1Deposit42XTZToSender2 ***********************");
   let testSender1Deposit42XTZToSender2 = _testDeposit(sender1,XTZ_OP(xtzOp),xtzOp.amountToTransfer,0 as nat);
   
+  const _ = Test.log("*********************** testSender1DepositXTZBadAmount ***********************");
   let xtzOp1 : CONTRACT.xtzOp = {...xtzOp,amountToTransfer:0 as nat};
   let testSender1DepositXTZBadAmount = _testDepositFail(sender1,XTZ_OP(xtzOp1),0 as nat,"0");
   
+  const _ = Test.log("*********************** testSender1DepositNotEnoughXTZ ***********************");
   let xtzOp2 : CONTRACT.xtzOp = {...xtzOp1,amountToTransfer:xtzOp.amountToTransfer};
   let testSender1DepositNotEnoughXTZ = _testDepositFail(sender1,XTZ_OP(xtzOp2),0 as nat,"3");
 
+  const _ = Test.log("*********************** testSender1DepositXTZInvalidRollupAddress ***********************");
   let xtzOp3 : CONTRACT.xtzOp = {...xtzOp2,rollupAddress:sender2};
   let testSender1DepositXTZInvalidRollupAddress = _testDepositFail(sender1,XTZ_OP(xtzOp3),xtzOp.amountToTransfer,"11");
 
@@ -191,32 +264,67 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
     fa12Address: fa12Address,
     amountToTransfer: 42 as nat,
     rollupAddress: rollupAddress,
-    l2Address: sender2AddrType
+    l2Address: sender3AddrType
   };
 
-  let testSender1Deposit42FA12ToSender2 = _testDeposit(sender1,FA12_OP(fa12Op),0 as nat, fa12Op.amountToTransfer);
+  const _ = Test.log("*********************** testSender3Deposit42FA12ToSender3 ***********************");
+  let testSender3Deposit42FA12ToSender3 = _testDeposit(sender3,FA12_OP(fa12Op),0 as nat, fa12Op.amountToTransfer);
 
+  const _ = Test.log("*********************** testSender3DepositFA12BadAmount ***********************");
   let fa12Op1 : CONTRACT.fa12Op = {...fa12Op,amountToTransfer:0 as nat};
-  let testSender1DepositFA12BadAmount = _testDepositFail(sender1,FA12_OP(fa12Op1),0 as nat,"0");
+  let testSender3DepositFA12BadAmount = _testDepositFail(sender3,FA12_OP(fa12Op1),0 as nat,"0");
 
+  const _ = Test.log("*********************** testSender3DepositFA12InvalidRollupAddress ***********************");
   let fa12Op2 : CONTRACT.fa12Op = {...fa12Op,rollupAddress:sender2};
-  let testSender1DepositFA12InvalidRollupAddress = _testDepositFail(sender1,FA12_OP(fa12Op2),0 as nat,"11");
-*/
-  //withdraw (will take into account previous deposits tests)
+  let testSender3DepositFA12InvalidRollupAddress = _testDepositFail(sender3,FA12_OP(fa12Op2),0 as nat,"11");
+
+  //withdraw (will take into account previous deposits tests) ******************************************************
+
+  //XTZ
 
   //get withdraw entrypoint of contract
   let ticketClaim : ROLLUP.ticketClaim =  {
-    amount : 42 as nat,
-    data : Bytes.pack(XTZ()),
+    amount : 40000000 as nat,
+    data : xTZType,
     id: 0 as nat,
-    owner: sender1,
+    owner: sender2,
     ticketer: contrAddress
   };
-  let withdrawParam : ROLLUP.withdrawParameter = [ Test.to_entrypoint("%withdrawDEKU",taddr) as contract<ticket<bytes>>, ticketClaim ,0x00 , list([]) as list<[bytes,bytes]>];
+  let withdrawParam : ROLLUP.withdrawParameter = [ Test.to_entrypoint("withdrawDEKU",taddr) as contract<ticket<bytes>>, ticketClaim ,0x00 , list([]) as list<[bytes,bytes]>];
 
+  const _ = Test.log("*********************** testSender2Withdraw42XTZ ***********************");
+  let testSender2WithdrawPartial40XTZ = _testWithdraw(sender2,withdrawParam,2000000 as mutez, 0 as nat);
 
-//  let _ = Test.log(rollupContrMichelson);
+  const _ = Test.log("*********************** testSender2WithdrawTooMuch ***********************");
+  let testSender2WithdrawTooMuch = _testWithdrawFail(sender2,withdrawParam);
 
-  let testSender1Withdraw42XTZ = _testWithdraw(sender1,withdrawParam,0 as nat);
+  const _ = Test.log("*********************** testSender1WithdrawCannotClaim ***********************");
+  let testSender1WithdrawCannotClaim = _testWithdrawFail(sender1,withdrawParam);
 
-  
+  const _ = Test.log("*********************** testSender2WithdrawFinal2XTZ ***********************");
+  let ticketClaim2 : ROLLUP.ticketClaim =  {
+    amount : 2000000 as nat,
+    data : xTZType,
+    id: 0 as nat,
+    owner: sender2,
+    ticketer: contrAddress
+  };
+  let withdrawParam2 : ROLLUP.withdrawParameter = [ Test.to_entrypoint("withdrawDEKU",taddr) as contract<ticket<bytes>>, ticketClaim2 ,0x00 , list([]) as list<[bytes,bytes]>];
+  let testSender2WithdrawFinal2XTZ = _testWithdraw(sender2,withdrawParam2,0 as mutez, 0 as nat);
+
+  const _ = Test.log("*********************** testSender2WithdrawNoMoreXTZ ***********************");
+  let testSender2WithdrawNoMoreXTZ = _testWithdrawFail(sender2,withdrawParam);
+
+  // FA 1.2
+
+  let ticketClaim3 : ROLLUP.ticketClaim =  {
+    amount : 42 as nat,
+    data : fA12Type,
+    id: 0 as nat,
+    owner: sender3,
+    ticketer: contrAddress
+  };
+  let withdrawParam3 : ROLLUP.withdrawParameter = [ Test.to_entrypoint("withdrawDEKU",taddr) as contract<ticket<bytes>>, ticketClaim3 ,0x00 , list([]) as list<[bytes,bytes]>];
+
+  const _ = Test.log("*********************** testSender3WithdrawAll42CTEZ ***********************");
+  let testSender3WithdrawAll42CTEZ = _testWithdraw(sender3,withdrawParam3,0 as mutez,0 as nat);

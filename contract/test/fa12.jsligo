@@ -15,7 +15,7 @@ type transfer =
   /* @annot:to */ to_ : address,
   value : nat };
 
-type approve = 
+export type approve = 
 // @layout:comb
 {
     spender : address,
