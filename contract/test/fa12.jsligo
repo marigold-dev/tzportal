@@ -9,7 +9,7 @@ export type storage =
   total_amount : nat
 };
 
-type transfer =   
+export type transfer =   
 // @layout:comb
 { /* @annot:from */ from : address,
   /* @annot:to */ to_ : address,

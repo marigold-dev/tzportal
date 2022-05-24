@@ -34,7 +34,7 @@ export type xtzOp =
   l2Address: addressType
 };
 
-export type fa12PendingDepositParameter = [address,fa12Op];
+export type fa12PendingParameter = [address,fa12Op];
 
 export type depositOp =
 // @layout:comb 
@@ -44,10 +44,10 @@ export type depositOp =
 export type parameter =
 // @layout:comb
   | ["Deposit" , depositOp]
-  | ["PendingDeposit",fa12PendingDepositParameter]
+  | ["PendingDeposit",fa12PendingParameter]
   | ["WithdrawTORU" , ticket<bytes>]  //FIXME
   | ["WithdrawDEKU" , ticket<bytes>] 
-  | ["WithdrawPendingDEKU", fa12PendingDepositParameter]
+  | ["WithdrawPendingDEKU", fa12PendingParameter]
 ;
 
 export type fa12PendingMapType = map<[address,bytes],fa12Op>;
@@ -76,7 +76,7 @@ type read_ticket_return = [[address, [bytes , nat]] , ticket<bytes>];
       ["9","only the treasury can call directly this endpoint"],
       ["10", "Invalid rollup address for TORU !"],
       ["11", "Invalid rollup address for DEKU !"],
-      ["12", "Cannot find a Fa12PendingDeposit for the current inputs on contract storage"],
+      ["12", "Cannot find a Fa12PendingDeposit for the current inputs on contract storage"]
     ]));
 */
 
@@ -109,14 +109,6 @@ const getRollupTORUContract = (a : address) : contract<rollupContractParametersT
   return c;
 }
 
-const getFunds = (fa12Contract: fa12TransferContract, amt: nat) : operation => {
-  return Tezos.transaction(
-    [Tezos.source, [Tezos.self_address, amt]],
-    0 as mutez,
-    fa12Contract
-  );
-};
-
 const deposit = ([op,store]: [depositOp,storage]): return_ => {
 
  return match( op , {
@@ -145,7 +137,7 @@ const deposit = ([op,store]: [depositOp,storage]): return_ => {
   });
 };
 
-const fa12PendingDeposit = ([fa12PendingDepositParameter,store]:[fa12PendingDepositParameter,storage]) : return_ => {
+const fa12PendingDeposit = ([fa12PendingDepositParameter,store]:[fa12PendingParameter,storage]) : return_ => {
 
          //only the treasury can call directly this endpoint
          if(Tezos.sender !=  store.treasuryAddress) return failwith("9");
@@ -204,7 +196,7 @@ const withdrawDEKU = ([ticket,store]:[ticket<bytes>,storage]) : return_ => {
             
   };
 
-const withdrawPendingDEKU = ([fa12PendingDepositParameter,store]:[fa12PendingDepositParameter,storage]) : return_ => {
+const withdrawPendingDEKU = ([fa12PendingDepositParameter,store]:[fa12PendingParameter,storage]) : return_ => {
 
   //only the treasury can call directly this endpoint
   if(Tezos.sender !=  store.treasuryAddress) return failwith("9");
@@ -229,9 +221,9 @@ export const main = (params:[parameter , storage]): return_ => {
   let [action , store] = params;
   return match (action, {
       Deposit : (op : depositOp) => deposit([op,store]),
-      PendingDeposit : (fa12PendingDepositParameter:fa12PendingDepositParameter) => fa12PendingDeposit([fa12PendingDepositParameter,store]) ,
+      PendingDeposit : (fa12PendingDepositParameter:fa12PendingParameter) => fa12PendingDeposit([fa12PendingDepositParameter,store]) ,
       WithdrawDEKU : (ticket : ticket<bytes>) => withdrawDEKU(ticket,store),
-      WithdrawPendingDEKU : (fa12PendingDepositParameter:fa12PendingDepositParameter) => withdrawPendingDEKU([fa12PendingDepositParameter,store]),
+      WithdrawPendingDEKU : (fa12PendingDepositParameter:fa12PendingParameter) => withdrawPendingDEKU([fa12PendingDepositParameter,store]),
       WithdrawTORU : (_ticket : ticket<bytes>) => [list([]),store]   //FIXME to finish one day
     })
 };
