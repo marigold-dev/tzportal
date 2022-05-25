@@ -4,12 +4,14 @@
 
 ```bash
 ligo compile contract ./src/contract.jsligo --output-file contract.tz
+
+ligo compile storage ./src/contract.jsligo '{treasuryAddress : "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,fa12PendingDeposits : Map.empty as fa12PendingMapType, fa12PendingWithdrawals : Map.empty as fa12PendingMapType}' --output-file contractStorage.tz
 ```
 
 ## Deploy
 
 ```bash
-tezos-client originate contract tzportalJakarta transferring 0 from myFirstKey running contract.tz --burn-cap 1
+tezos-client originate contract tzportalIthaca transferring 0 from myFirstKey running contract.tz --init "$(cat contractStorage.tz)" --burn-cap 1
 ```
 >KT1GtawQaedzh1Nz7xv3AW6cfoHgqtsdHG4Z
 

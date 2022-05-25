@@ -107,11 +107,54 @@ export class DEKUVault {
 }
 
 export class TOKEN_TYPE {
-  public static readonly XTZ = new TOKEN_TYPE("Unit");
-  public static FA12 = new TOKEN_TYPE("FA12", "ticketer address");
+  public static readonly XTZ = new TOKEN_TYPE("XTZ");
+  public static readonly FA12 = new TOKEN_TYPE("FA12");
   
-  constructor(public readonly name: string, public readonly address?: string) {
+  constructor(public readonly name: string) {
   }
+
+
+  public async getBytes(contractAddress? : string) : Promise<string> {
+    if(this === TOKEN_TYPE.XTZ) return this.getXTZBytes();
+    else if (this === TOKEN_TYPE.FA12) return this.getFA12Bytes(contractAddress!);
+    else throw new Error("Cannot get bytes");
+  }  
+
+  public async getXTZBytes() : Promise<string> {
+    const p = new MichelCodecPacker();
+    let XTZbytes: PackDataParams = {
+      data:  {prim : "Left", args: [ {prim : "Unit"}]},
+      type: {prim: "Or",
+             args: [
+              {prim : "Unit", annots : ['%XTZ']},
+              {prim : "Address", annots : ['%FA12']}
+            ]}
+    };
+    return (await p.packData(XTZbytes)).packed ;
+  }
+
+
+  public async getFA12Bytes(contractAddress : string) : Promise<string> {
+    const p = new MichelCodecPacker();
+    let addrBytes : PackDataResponse = await p.packData({
+      data: {string : contractAddress},// process.env["REACT_APP_CTEZ_CONTRACT"]!},
+      type : {prim: "address"}
+    });
+
+    //why to remove first 12 chars ? no idea but it is like this ...
+    //console.log("addrBytes",addrBytes.packed.substring(12));
+
+    let FA12bytes : PackDataParams = {
+      data:  {prim : "Right", args: [ {bytes : addrBytes.packed.substring(12)}]}, //'01f37d4eddfff4e08fb1f19895ac9c83bc12d2b36800'}]},  
+      type: {prim: "Or",
+             args: [
+              {prim : "Unit", annots : ['%XTZ']},
+              {prim : "address", annots : ['%FA12']}
+            ]}
+    };
+    return (await p.packData(FA12bytes)).packed ;
+  }
+
 }
 
 export class ROLLUP_TYPE {
@@ -149,40 +192,9 @@ export class TezosTicket {
       let dekucontract : Contract = await Tezos.contract.at(rollupAddress);
       let rollup : RollupDEKU = await dekucontract.storage();
       
-      //FIXME taquito PACK / UNPACK function to test and compare
-      const p = new MichelCodecPacker();
 
-      //'(or (unit %XTZ) (address %FA12))'
-
-      let XTZbytes: PackDataParams = {
-        data:  {prim : "Left", args: [ {prim : "Unit"}]},
-        type: {prim: "Or",
-               args: [
-                {prim : "Unit", annots : ['%XTZ']},
-                {prim : "Address", annots : ['%FA12']}
-              ]}
-      };
-
-
-      let addrBytes : PackDataResponse = await p.packData({
-        data: {string :  process.env["REACT_APP_CTEZ_CONTRACT"]!},
-        type : {prim: "address"}
-      });
-
-      //why to remove first 12 chars ? no idea but it is like this ...
-      //console.log("addrBytes",addrBytes.packed.substring(12));
-
-      let FA12bytes : PackDataParams = {
-        data:  {prim : "Right", args: [ {bytes : addrBytes.packed.substring(12)}]}, //'01f37d4eddfff4e08fb1f19895ac9c83bc12d2b36800'}]},  
-        type: {prim: "Or",
-               args: [
-                {prim : "Unit", annots : ['%XTZ']},
-                {prim : "address", annots : ['%FA12']}
-              ]}
-      };
-
-      let XTZTicket = await rollup.vault.vault.get<TezosTicket>([process.env["REACT_APP_CONTRACT"],(await p.packData(XTZbytes)).packed]) ; //XTZ() => "050505030b" 
-      let CTEZTicket = await rollup.vault.vault.get<TezosTicket>([process.env["REACT_APP_CONTRACT"],(await p.packData(FA12bytes)).packed]) ; //FA12 CTEZ with address KT1WnDswMHZefo2fym6Q9c8hnL3sEuzFb2Dt => "0505080a0000001601f37d4eddfff4e08fb1f19895ac9c83bc12d2b36800"
+      let XTZTicket = await rollup.vault.vault.get<TezosTicket>([process.env["REACT_APP_CONTRACT"],await TOKEN_TYPE.XTZ.getBytes()]) ; //XTZ() => "050505030b" 
+      let CTEZTicket = await rollup.vault.vault.get<TezosTicket>([process.env["REACT_APP_CONTRACT"],await TOKEN_TYPE.FA12.getBytes(process.env["REACT_APP_CTEZ_CONTRACT"]!) ]) ; //FA12 CTEZ with address KT1WnDswMHZefo2fym6Q9c8hnL3sEuzFb2Dt => "0505080a0000001601f37d4eddfff4e08fb1f19895ac9c83bc12d2b36800"
 
       return new Promise( (resolve,reject) => {
         resolve(new RollupDEKU(
