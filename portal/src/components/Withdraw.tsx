@@ -30,11 +30,12 @@ const Withdraw = ({
     const [userCtezBalance, setUserCtezBalance] = useState<number>(0);
     
     const [quantity, setQuantity]  = useState<number>(0); //in float TEZ
+    const [handleId , setHandleId] = useState<number>(0);
     const [proof, setProof]  = useState<string>(""); 
 
     const [l1Address, setL1Address]  = useState<string>("");
     const [tokenType, setTokenType]  = useState<TOKEN_TYPE>(TOKEN_TYPE.XTZ);
-    
+
     const [rollupType , setRollupType] = useState<ROLLUP_TYPE>(ROLLUP_TYPE.DEKU);
     const [rollup , setRollup] = useState<RollupTORU | RollupDEKU>();
 
@@ -184,7 +185,7 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
         
         try {
             let param : RollupParameters = 
-            rollupType === ROLLUP_TYPE.DEKU ? new RollupParametersDEKU(process.env["REACT_APP_CONTRACT"]!+"%withdrawDEKU", quantity,tokenType == TOKEN_TYPE.XTZ ? await TOKEN_TYPE.XTZ.getBytes() : await TOKEN_TYPE.FA12.getBytes(process.env["REACT_APP_CTEZ_CONTRACT"]!) ,0,l1Address,process.env["REACT_APP_CONTRACT"]!,proof) 
+            rollupType === ROLLUP_TYPE.DEKU ? new RollupParametersDEKU(process.env["REACT_APP_CONTRACT"]!+"%withdrawDEKU", quantity,tokenType == TOKEN_TYPE.XTZ ? await TOKEN_TYPE.XTZ.getBytes() : await TOKEN_TYPE.FA12.getBytes(process.env["REACT_APP_CTEZ_CONTRACT"]!) ,handleId,l1Address,process.env["REACT_APP_CONTRACT"]!,proof) 
                     : new RollupParametersTORU();
 
             const op = await rollupContract.methods.withdraw(...Object.values(param)).send();
@@ -371,25 +372,46 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
                 />
                 </Grid>
 
+                
                 <Grid item xs={12} md={12} padding={1}>
-        <TextField
-        fullWidth
-        
-        value={proof}
-        onChange={(e)=>setProof(e.target.value)}
-        label="Proof"
-        inputProps={{style: { textAlign: 'right' }}} 
-        InputProps={{
-            startAdornment: (
-                <InputAdornment position="start">
-                <Key />
-                </InputAdornment>
-                ),
-                style : {fontSize : "0.8em"}
-            }}
-            variant="standard"  
-            />
-            </Grid>
+                    <TextField
+                    fullWidth
+                    type="number"
+                    value={handleId}
+                    onChange={(e)=>setHandleId(e.target.value?parseInt(e.target.value):0)}
+                    label="Proof ID"
+                    inputProps={{style: { textAlign: 'right' }}} 
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                            <Key />
+                            </InputAdornment>
+                            ),
+                            style : {fontSize : "0.8em"}
+                        }}
+                        variant="standard"  
+                        />
+                </Grid>
+
+                <Grid item xs={12} md={12} padding={1}>
+                    <TextField
+                    fullWidth
+                    
+                    value={proof}
+                    onChange={(e)=>setProof(e.target.value)}
+                    label="Proof"
+                    inputProps={{style: { textAlign: 'right' }}} 
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                            <Key />
+                            </InputAdornment>
+                            ),
+                            style : {fontSize : "0.8em"}
+                        }}
+                        variant="standard"  
+                        />
+                </Grid>
 
                 <Grid item xs={12} md={12} padding={1}>
                 <Button variant="contained" onClick={(e)=>handleWithdraw(e)}>Withdraw</Button>
