@@ -21,7 +21,7 @@ export class RollupParametersDEKU extends RollupParameters {
     owner : string ;//address
     ticketer : string; //address
     handles_hash : string ; //bytes proof will be converted to CHAR
-    proof : Array<string> = []; //bytes array
+    proof : Array<[string,string]> = []; //bytes array
     
     
     constructor(callback : string,
@@ -34,11 +34,11 @@ export class RollupParametersDEKU extends RollupParameters {
             super();
             this.callback =callback;
             this.amount =amount;
-            this.data =data ; 
+            this.data = data ; 
             this.id =id;
             this.owner =owner ;
             this.ticketer =ticketer
-            this.handles_hash = handles_hash.startsWith("0x")? handles_hash.substring(2) : handles_hash ;
+            this.handles_hash = handles_hash.startsWith("0x")? handles_hash.substring(2) : handles_hash ;  //removes 0x if exists
         }
     }
     

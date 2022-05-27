@@ -8,6 +8,11 @@ import { Schema } from "@taquito/michelson-encoder";
 
 export enum AddressType { l1_ADDRESS = "l1_ADDRESS" , l2_ADDRESS = "l2_ADDRESS" };
 
+export class AddressTypeClass {
+  l1_ADDRESS : string = "";
+  l2_ADDRESS : string = "";
+}
+
 export class RollupCounter {
   next: number;
 
@@ -112,7 +117,6 @@ export class TOKEN_TYPE {
   
   constructor(public readonly name: string) {
   }
-
 
   public async getBytes(contractAddress? : string) : Promise<string> {
     if(this === TOKEN_TYPE.XTZ) return this.getXTZBytes();

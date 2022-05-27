@@ -2,11 +2,11 @@ import React, { useState, useEffect, MouseEvent, Fragment } from "react";
 import { BigMapAbstraction, TezosToolkit, WalletContract } from "@taquito/taquito";
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import Button from "@mui/material/Button";
-import { Avatar, Backdrop, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, Hidden, IconButton, InputAdornment, ListItem, Paper, Popover, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField } from "@mui/material";
-import { AccountBalanceWallet, AccountCircle, ArrowDropDown, CameraRoll, Key, MoreVert } from "@mui/icons-material";
+import { Avatar, Backdrop, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, Hidden, IconButton, InputAdornment, ListItem, Paper, Popover, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip } from "@mui/material";
+import { AccountBalanceWallet, AccountCircle, AddShoppingCartOutlined, ArrowDropDown, CameraRoll, Key, MoreVert } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
-import {  ContractFA12Parameters, ContractParameters, ContractXTZParameters } from "./ContractParameters";
+import {  ContractFA12Parameters, ContractFA12Storage, ContractParameters, ContractStorage, ContractXTZParameters } from "./TicketerContractUtils";
 import {  AddressType, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
@@ -37,6 +37,11 @@ const Withdraw = ({
     
     const [rollupType , setRollupType] = useState<ROLLUP_TYPE>(ROLLUP_TYPE.DEKU);
     const [rollup , setRollup] = useState<RollupTORU | RollupDEKU>();
+
+    const [contractStorage, setContractStorage] = useState<ContractStorage>();
+    const [contract, setContract] =  useState<WalletContract>();
+    const [tokenBytes,setTokenBytes] = useState<Map<TOKEN_TYPE,string>>(new Map<TOKEN_TYPE,string>());
+
     
     //TEZOS OPERATIONS
     const [tezosLoading, setTezosLoading]  = useState(false);
@@ -74,49 +79,114 @@ const Withdraw = ({
             }
         }
     }
+
+    const refreshContract = async() => {
+        const c = await Tezos.wallet.at(process.env["REACT_APP_CONTRACT"]!);
+        const store : ContractStorage = {...(await c?.storage())}; //copy fields
+        setContract(c);        
+        setContractStorage(store);
+    }
     
-    useEffect(() => {
+    useEffect( () => { (async () => {
+        refreshContract();
+    
+        setTokenBytes(new Map([
+            [TOKEN_TYPE.XTZ, await TOKEN_TYPE.XTZ.getBytes()],
+            [TOKEN_TYPE.FA12, await TOKEN_TYPE.FA12.getBytes(process.env["REACT_APP_CTEZ_CONTRACT"]!)]
+        ]));
+
         refreshBalance();
         refreshCtezBalance();
         refreshRollup();
+    })();
     }, []);
 
     useEffect(() => {
         refreshRollup();
     }, [rollupType]);
     
+
+    
+const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : string,contractFA12Storage : ContractFA12Storage) => {
+    event.preventDefault();
+    
+
+
+    try{
+        setTezosLoading(true);
+
+        //1. Treasury call pending withdraw to destroy tickets
+        
+        let addressType = contractFA12Storage.l2Address.l1_ADDRESS && contractFA12Storage.l2Address.l1_ADDRESS !== "" ?  AddressType.l1_ADDRESS: AddressType.l2_ADDRESS;
+        const param = addressType == AddressType.l1_ADDRESS?
+        {
+            "address": to,
+            "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
+            "rollupAddress": contractFA12Storage.rollupAddress,
+            "l2Address": addressType,
+            "l1_ADDRESS": contractFA12Storage.l2Address.l1_ADDRESS,
+            "fa12Address": contractFA12Storage.fa12Address
+        }:
+        {
+            "address": to,
+            "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
+            "rollupAddress": contractFA12Storage.rollupAddress,
+            "l2Address": addressType,
+            "l2_ADDRESS": contractFA12Storage.l2Address.l2_ADDRESS,
+            "fa12Address": contractFA12Storage.fa12Address
+        }
+        const op = await contract!.methods.withdrawPendingDEKU(...Object.values(param)).send();
+        await op.confirmation();    
+        refreshContract();
+        refreshRollup();
+        enqueueSnackbar("Pending withdraw for "+to+" has been successfully processed", {variant: "success", autoHideDuration:10000});
+    
+    }catch (error : any) {
+        console.table(`Error: ${JSON.stringify(error, null, 2)}`);
+        let tibe : TransactionInvalidBeaconError = new TransactionInvalidBeaconError(error);
+        enqueueSnackbar(tibe.data_message, { variant:"error" , autoHideDuration:10000});
+        return;
+    }
+
+
+    try{
+        setTezosLoading(true);
+
+        //2. Treasury give back tokens
+        let fa12Contract : WalletContract = await Tezos.wallet.at(contractFA12Storage.fa12Address);
+        
+        const op = await fa12Contract.methods.transfer(contractStorage?.treasuryAddress,to,contractFA12Storage.amountToTransfer.toNumber()).send();
+        await op.confirmation();    
+        enqueueSnackbar("Treasury gave back  "+contractFA12Storage.amountToTransfer.toNumber()+" tokens to "+to, {variant: "success", autoHideDuration:10000});        
+        refreshCtezBalance();
+        setTezosLoading(false);
+    }catch (error : any) {
+        console.table(`Error: ${JSON.stringify(error, null, 2)}`);
+        let tibe : TransactionInvalidBeaconError = new TransactionInvalidBeaconError(error);
+        enqueueSnackbar(tibe.data_message, { variant:"error" , autoHideDuration:10000});
+        setTezosLoading(false);
+        return;
+    }finally{
+        setTezosLoading(false);
+    }  
+    
+
+    setTezosLoading(false);
+}
+
     
     const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
         
         event.preventDefault();
         setTezosLoading(true);
         
-        let contract : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_CONTRACT"]!);
         let rollupContract : WalletContract = await Tezos.wallet.at(rollupType === ROLLUP_TYPE.DEKU ?process.env["REACT_APP_ROLLUP_CONTRACT_DEKU"]!:process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
         
         try {
             let param : RollupParameters = 
             rollupType === ROLLUP_TYPE.DEKU ? new RollupParametersDEKU(process.env["REACT_APP_CONTRACT"]!+"%withdrawDEKU", quantity,tokenType == TOKEN_TYPE.XTZ ? await TOKEN_TYPE.XTZ.getBytes() : await TOKEN_TYPE.FA12.getBytes(process.env["REACT_APP_CTEZ_CONTRACT"]!) ,0,l1Address,process.env["REACT_APP_CONTRACT"]!,proof) 
-                    : new RollupParametersTORU()
-            
-             console.log("param",param);
-             console.log("c.methods",rollupContract.methods);
-             type StringDictionary<T> = { [key: string]: T };
-             const signatures: string[][] = rollupContract.parameterSchema.ExtractSignatures();
-                let signatureDict: StringDictionary<string[]> = {};
-                for (let i = 0; i < signatures.length; i++) {
+                    : new RollupParametersTORU();
 
-                    // 0th element is key, the rest are values of the dict
-                    signatureDict[signatures[i][0]] = signatures[i];
-                    signatureDict[signatures[i][0]].shift();
-                }
-                console.log("signatures",signatures);
-
-             //let inspect = rollupContract.methods.withdraw(...Object.values(param)).toTransferParams();
-             //console.log("inspect",inspect);    
-             //console.log("parameter signature",rollupContract.parameterSchema.ExtractSignatures());
-            
-            
             const op = await rollupContract.methods.withdraw(...Object.values(param)).send();
             await op.confirmation();
             enqueueSnackbar("Your Withdraw has been accepted", {variant: "success", autoHideDuration:10000});
@@ -226,6 +296,29 @@ const Withdraw = ({
                         />
                         :""}
 
+                        {contractStorage?.treasuryAddress == userAddress?
+                        <Fragment>
+                        <hr />
+                        <h3>Pending withdrawals operations</h3>
+
+                        {Array.from(contractStorage.fa12PendingWithdrawals.entries()).map(( [key,val]: [[string,string],ContractFA12Storage]) => 
+                                {let l2Address : string = val.l2Address.l1_ADDRESS?val.l2Address.l1_ADDRESS : val.l2Address.l2_ADDRESS;
+                                    return <div key={key[0]+key[1]+val.type}>   
+                                    <Chip 
+                                    avatar={<Avatar src={key[1] == tokenBytes.get(TOKEN_TYPE.XTZ) ?"XTZ-ticket.png" :key[1] == tokenBytes.get(TOKEN_TYPE.FA12) ?  "CTEZ-ticket.png" : ""}  />}
+                                    label={<span>{val.amountToTransfer.toNumber()} for {<span className="address"><span className="address1">{l2Address.substring(0,l2Address.length/2)}</span><span className="address2">{l2Address.substring(l2Address.length/2)}</span></span>} </span>}
+                                    variant="outlined" 
+                                    />
+                                    <Tooltip title="Collaterize user's tokens and swap to real tickets for rollup">
+                                    <Button onClick={(e)=>handlePendingWithdraw(e,key[0],val)} startIcon={<AddShoppingCartOutlined/>}></Button>
+                                    </Tooltip>
+                                    </div>
+                                }
+                                )}
+                         
+                        </Fragment>
+                        :""
+                        }
 
                         </Fragment>
                     
