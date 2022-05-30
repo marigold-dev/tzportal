@@ -204,14 +204,11 @@ const withdrawPendingDEKU = ([fa12PendingDepositParameter,store]:[fa12PendingPar
   let b = Bytes.pack(FA12(fa12PendingDepositParameter[1].fa12Address)) ;       
 
   //check pending withdraw found or not
-  let [fa12OpOpt, newFa12PendingWithdrawals] : [option<fa12Op>, fa12PendingMapType] =
+  let [_fa12OpOpt, newFa12PendingWithdrawals] : [option<fa12Op>, fa12PendingMapType] =
          Map.get_and_update([fa12PendingDepositParameter[0],  b], (None() as option<fa12Op>), store.fa12PendingWithdrawals);
 
-  return match(fa12OpOpt,{
-  None : () => failwith("12"),
-  Some : (_fa12Op : fa12Op) => [list([Tezos.transaction([Tezos.sender, [fa12PendingDepositParameter[0], fa12PendingDepositParameter[1].amountToTransfer ]],0 as mutez,getFA12TransferContract(fa12PendingDepositParameter[1].fa12Address))]),{...store,fa12PendingWithdrawals : newFa12PendingWithdrawals} ]       
-   //send back FA1.2 token ownership to the destination, leave found item out of list
-});
+  return  [list([]),{...store,fa12PendingWithdrawals : newFa12PendingWithdrawals} ];       
+   //send back FA1.2 token ownership to the destination, leave found item out of list and let treasury to do final token fa1.2 transaction
           
 };
 

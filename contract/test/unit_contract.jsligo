@@ -311,6 +311,9 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
       Some : (qty: nat)=>qty,
       None : () => 0 as nat
    });
+    Test.log("oldTreasuryBalance");
+    Test.log(oldTreasuryBalance);
+
 
     //check current value before testing
     let oldSenderBalance : tez = Test.get_balance(s);
@@ -350,8 +353,8 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
     Test.log(newfa12storage);
     //check contract balance. It should equal to same value
     assert(Test.get_balance(Tezos.address(contr)) == oldContractBalance );
-    //check treasury token balance, it should be decreased as it reddem back the tokens
-    assert( abs(oldTreasuryBalance - qty) == match(Big_map.find_opt((Test.get_storage(taddr)).treasuryAddress,newfa12storage.tokens),{None:()=>(0 as nat),Some:(n:nat)=>n}));
+    //check treasury token balance, it should be the same until Treasury is doing manually last final transfer of token himself
+    assert( oldTreasuryBalance == match(Big_map.find_opt((Test.get_storage(taddr)).treasuryAddress,newfa12storage.tokens),{None:()=>(0 as nat),Some:(n:nat)=>n}));
     return true;
   };
 

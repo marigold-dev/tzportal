@@ -341,38 +341,21 @@
                               GET 6 ;
                               RIGHT unit ;
                               PACK ;
-                              DUP 5 ;
+                              DIG 4 ;
                               CAR ;
                               PAIR ;
                               GET_AND_UPDATE ;
-                              IF_NONE
-                                { DROP 3 ; PUSH string "12" ; FAILWITH }
-                                { DROP ;
-                                  SWAP ;
-                                  DUP ;
-                                  DUG 2 ;
-                                  CDR ;
-                                  SWAP ;
-                                  DIG 2 ;
-                                  CAR ;
-                                  CAR ;
-                                  PAIR ;
-                                  PAIR ;
-                                  NIL operation ;
-                                  DUP 3 ;
-                                  CDR ;
-                                  GET 6 ;
-                                  CONTRACT %transfer (pair address (pair address nat)) ;
-                                  IF_NONE { PUSH string "7" ; FAILWITH } {} ;
-                                  PUSH mutez 0 ;
-                                  DIG 4 ;
-                                  CDR ;
-                                  CAR ;
-                                  SOURCE ;
-                                  PAIR ;
-                                  SELF_ADDRESS ;
-                                  PAIR ;
-                                  TRANSFER_TOKENS ;
-                                  CONS ;
-                                  PAIR } } } } } } } }
+                              DROP ;
+                              SWAP ;
+                              DUP ;
+                              DUG 2 ;
+                              CDR ;
+                              SWAP ;
+                              DIG 2 ;
+                              CAR ;
+                              CAR ;
+                              PAIR ;
+                              PAIR ;
+                              NIL operation ;
+                              PAIR } } } } } } }
 

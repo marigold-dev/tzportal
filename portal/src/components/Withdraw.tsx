@@ -115,7 +115,6 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
     event.preventDefault();
     
 
-
     try{
         setTezosLoading(true);
 
@@ -139,6 +138,10 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
             "l2_ADDRESS": contractFA12Storage.l2Address.l2_ADDRESS,
             "fa12Address": contractFA12Storage.fa12Address
         }
+
+        console.log("param",param);
+
+
         const op = await contract!.methods.withdrawPendingDEKU(...Object.values(param)).send();
         await op.confirmation();    
         refreshContract();
@@ -158,6 +161,9 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
 
         //2. Treasury give back tokens
         let fa12Contract : WalletContract = await Tezos.wallet.at(contractFA12Storage.fa12Address);
+
+        console.log("contractFA12Storage.fa12Address",contractFA12Storage.fa12Address);
+
         
         const op = await fa12Contract.methods.transfer(contractStorage?.treasuryAddress,to,contractFA12Storage.amountToTransfer.toNumber()).send();
         await op.confirmation();    
@@ -311,7 +317,7 @@ const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
                                     return <div key={key[0]+key[1]+val.type}>   
                                     <Chip 
                                     avatar={<Avatar src={key[1] == tokenBytes.get(TOKEN_TYPE.XTZ) ?"XTZ-ticket.png" :key[1] == tokenBytes.get(TOKEN_TYPE.FA12) ?  "CTEZ-ticket.png" : ""}  />}
-                                    label={<span>{val.amountToTransfer.toNumber()} for {<span className="address"><span className="address1">{l2Address.substring(0,l2Address.length/2)}</span><span className="address2">{l2Address.substring(l2Address.length/2)}</span></span>} </span>}
+                                    label={<span>{val.amountToTransfer.toNumber()} for {<span className="address"><span className="address1">{key[0].substring(0,key[0].length/2)}</span><span className="address2">{key[0].substring(key[0].length/2)}</span></span>} </span>}
                                     variant="outlined" 
                                     />
                                     <Tooltip title="Redeem collaterized user's tokens from tickets' rollup">

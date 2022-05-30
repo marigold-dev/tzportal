@@ -13,7 +13,7 @@ ligo compile storage ./src/contract.jsligo '{treasuryAddress : "tz1VApBuWHuaTfDH
 ```bash
 tezos-client originate contract tzportalIthaca transferring 0 from myFirstKey running contract.tz --init "$(cat contractStorage.tz)" --burn-cap 1
 ```
->KT1GtawQaedzh1Nz7xv3AW6cfoHgqtsdHG4Z
+>KT1HWvpETEPdTpoCzNjGkAk7H6rQ6NdVyCe1
 
 ## Run tests 
 
