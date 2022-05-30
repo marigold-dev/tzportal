@@ -209,7 +209,7 @@ const withdrawPendingDEKU = ([fa12PendingDepositParameter,store]:[fa12PendingPar
 
   return match(fa12OpOpt,{
   None : () => failwith("12"),
-  Some : (_fa12Op : fa12Op) => [list([Tezos.transaction([Tezos.self_address, [Tezos.source, fa12PendingDepositParameter[1].amountToTransfer ]],0 as mutez,getFA12TransferContract(fa12PendingDepositParameter[1].fa12Address))]),{...store,fa12PendingWithdrawals : newFa12PendingWithdrawals} ]       
+  Some : (_fa12Op : fa12Op) => [list([Tezos.transaction([Tezos.sender, [fa12PendingDepositParameter[0], fa12PendingDepositParameter[1].amountToTransfer ]],0 as mutez,getFA12TransferContract(fa12PendingDepositParameter[1].fa12Address))]),{...store,fa12PendingWithdrawals : newFa12PendingWithdrawals} ]       
    //send back FA1.2 token ownership to the destination, leave found item out of list
 });
           

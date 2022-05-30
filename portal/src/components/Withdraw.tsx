@@ -2,8 +2,8 @@ import React, { useState, useEffect, MouseEvent, Fragment } from "react";
 import { BigMapAbstraction, TezosToolkit, WalletContract } from "@taquito/taquito";
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import Button from "@mui/material/Button";
-import { Avatar, Backdrop, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, Hidden, IconButton, InputAdornment, ListItem, Paper, Popover, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip } from "@mui/material";
-import { AccountBalanceWallet, AccountCircle, AddShoppingCartOutlined, ArrowDropDown, CameraRoll, Key, MoreVert } from "@mui/icons-material";
+import { Avatar, Backdrop, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, FormLabel, Grid, Hidden, IconButton, InputAdornment, InputLabel, ListItem, Paper, Popover, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip } from "@mui/material";
+import { AccountBalanceWallet, AccountCircle, Add, AddShoppingCartOutlined, ArrowDropDown, CameraRoll, Delete, Key, Label, MoreVert } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 import {  ContractFA12Parameters, ContractFA12Storage, ContractParameters, ContractStorage, ContractXTZParameters } from "./TicketerContractUtils";
@@ -32,6 +32,10 @@ const Withdraw = ({
     const [quantity, setQuantity]  = useState<number>(0); //in float TEZ
     const [handleId , setHandleId] = useState<number>(0);
     const [proof, setProof]  = useState<string>(""); 
+    const [proofList, setProofList] = useState<Array<[string,string]>>([]);
+    const [inputProof1,setInputProof1] = useState<string>("");
+    const [inputProof2,setInputProof2] = useState<string>("");
+
 
     const [l1Address, setL1Address]  = useState<string>("");
     const [tokenType, setTokenType]  = useState<TOKEN_TYPE>(TOKEN_TYPE.XTZ);
@@ -105,7 +109,6 @@ const Withdraw = ({
     useEffect(() => {
         refreshRollup();
     }, [rollupType]);
-    
 
     
 const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : string,contractFA12Storage : ContractFA12Storage) => {
@@ -176,7 +179,7 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
 }
 
     
-    const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
+const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
         
         event.preventDefault();
         setTezosLoading(true);
@@ -185,7 +188,7 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
         
         try {
             let param : RollupParameters = 
-            rollupType === ROLLUP_TYPE.DEKU ? new RollupParametersDEKU(process.env["REACT_APP_CONTRACT"]!+"%withdrawDEKU", quantity,tokenType == TOKEN_TYPE.XTZ ? await TOKEN_TYPE.XTZ.getBytes() : await TOKEN_TYPE.FA12.getBytes(process.env["REACT_APP_CTEZ_CONTRACT"]!) ,handleId,l1Address,process.env["REACT_APP_CONTRACT"]!,proof) 
+            rollupType === ROLLUP_TYPE.DEKU ? new RollupParametersDEKU(process.env["REACT_APP_CONTRACT"]!+"%withdrawDEKU", quantity,tokenType == TOKEN_TYPE.XTZ ? await TOKEN_TYPE.XTZ.getBytes() : await TOKEN_TYPE.FA12.getBytes(process.env["REACT_APP_CTEZ_CONTRACT"]!) ,handleId,l1Address,process.env["REACT_APP_CONTRACT"]!,proof,proofList) 
                     : new RollupParametersTORU();
 
             const op = await rollupContract.methods.withdraw(...Object.values(param)).send();
@@ -194,6 +197,7 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
             await refreshRollup();
             await refreshBalance();
             await refreshCtezBalance();
+            await refreshContract();
         } catch (error : any) {
             console.table(`Error: ${JSON.stringify(error, null, 2)}`);
             let tibe : TransactionInvalidBeaconError = new TransactionInvalidBeaconError(error);
@@ -310,7 +314,7 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
                                     label={<span>{val.amountToTransfer.toNumber()} for {<span className="address"><span className="address1">{l2Address.substring(0,l2Address.length/2)}</span><span className="address2">{l2Address.substring(l2Address.length/2)}</span></span>} </span>}
                                     variant="outlined" 
                                     />
-                                    <Tooltip title="Collaterize user's tokens and swap to real tickets for rollup">
+                                    <Tooltip title="Redeem collaterized user's tokens from tickets' rollup">
                                     <Button onClick={(e)=>handlePendingWithdraw(e,key[0],val)} startIcon={<AddShoppingCartOutlined/>}></Button>
                                     </Tooltip>
                                     </div>
@@ -335,7 +339,7 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
         <Grid item xs={12} md={12} padding={1}>
         <TextField
         fullWidth
-        
+        required
         value={l1Address}
         onChange={(e)=>setL1Address(e.target.value)}
         label="L1 address"
@@ -354,7 +358,7 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
             
             <Grid item xs={12} md={12} padding={1}>
             <TextField
-            
+            required
             fullWidth
             type="number"
             onChange={(e)=>setQuantity(e.target.value?parseFloat(e.target.value):0)}
@@ -374,7 +378,7 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
 
                 
                 <Grid item xs={12} md={12} padding={1}>
-                    <TextField
+                    <TextField required
                     fullWidth
                     type="number"
                     value={handleId}
@@ -396,10 +400,10 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
                 <Grid item xs={12} md={12} padding={1}>
                     <TextField
                     fullWidth
-                    
+                    required
                     value={proof}
                     onChange={(e)=>setProof(e.target.value)}
-                    label="Proof"
+                    label="Proof hash"
                     inputProps={{style: { textAlign: 'right' }}} 
                     InputProps={{
                         startAdornment: (
@@ -411,6 +415,40 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
                         }}
                         variant="standard"  
                         />
+                </Grid>
+
+
+                
+
+                <Grid item xs={12} md={12} padding={1}>
+                
+                <span style={{textAlign:"left"}}>
+                <InputLabel style={{fontSize : "0.8em"}} required >Proof List</InputLabel>
+                
+                
+                <TextField required value={inputProof1} label="Proof 1" 
+                inputProps={{style: { textAlign: 'right' }}} 
+                    variant="standard"
+                onChange={(e) => setInputProof1(e.target.value)} ></TextField>
+                <TextField required sx={{ marginLeft: "0.5em" }} value={inputProof2}  label="Proof 2" 
+                 inputProps={{style: { textAlign: 'right' }}} 
+                 variant="standard"
+                onChange={(e) => setInputProof2(e.target.value)} ></TextField>
+                <Button sx={{ marginLeft: "0.5em" }}  variant="outlined" onClick={()=>{setProofList(proofList.concat([[inputProof1,inputProof2]]));setInputProof1("");setInputProof2("");}}><Add style={{padding : "0.3em 0em"}}/></Button>
+                </span>
+                    {  proofList.map( ([proofItem1,proofItem2] : [string,string],index : number) =>
+                            
+                            <div key={proofItem1+proofItem2}>
+                            <hr />
+                            <span> 
+                            <InputLabel style={{maxWidth : "40%" , display: "inline-block"}} >{proofItem1}</InputLabel>&nbsp;
+                            <InputLabel style={{maxWidth : "40%" , display: "inline-block"}} >{proofItem2}</InputLabel>
+                            <Delete onClick={()=>{proofList.splice(index, 1);setProofList(Object.assign([], proofList))}}/>
+                            </span>
+                            </div>
+                                )
+                    }
+                    
                 </Grid>
 
                 <Grid item xs={12} md={12} padding={1}>

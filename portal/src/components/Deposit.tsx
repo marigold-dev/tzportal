@@ -301,7 +301,7 @@ return (
     <Grid item xs={12} md={12} padding={1}>
     <TextField
     fullWidth
-    
+    required
     value={l2Address}
     onChange={(e)=>setL2Address(e.target.value)}
     label="L2 address"
@@ -320,7 +320,7 @@ return (
         
         <Grid item xs={12} md={12} padding={1}>
         <TextField
-        
+        required
         fullWidth
         type="number"
         onChange={(e)=>setQuantity(e.target.value?parseFloat(e.target.value):0)}
