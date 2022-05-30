@@ -4,4 +4,4 @@
 
 Run the web app
 
-`yarn run start:mondaynet`
+`yarn run start:jakartanet`

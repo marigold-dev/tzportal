@@ -17,15 +17,17 @@ import Tooltip from '@mui/material/Tooltip';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import MenuIcon from '@mui/icons-material/Menu';
-import { ArchiveOutlined } from '@mui/icons-material';
+import { ArchiveOutlined, SettingsBackupRestoreOutlined } from '@mui/icons-material';
 import { Button } from '@mui/material';
 import Deposit from './components/Deposit';
 import { NetworkType} from "@airgap/beacon-types";
+import Withdraw from './components/Withdraw';
 
 
 export enum PAGES {
   "WELCOME",
-  "DEPOSIT"
+  "DEPOSIT",
+  "WITHDRAW"
 };
 
 function App() {
@@ -68,7 +70,13 @@ function App() {
           
           <Tooltip enterTouchDelay={0} title="DEPOSIT">
           <Button onClick={()=>setActivePage(PAGES.DEPOSIT)}>
-          <ArchiveOutlined  color="secondary"  sx={{ width: 32, height: 32 }}/>
+          <ArchiveOutlined  color={activePage === PAGES.DEPOSIT ? "primary" : "secondary"}  sx={{ width: 32, height: 32 }}/>
+          </Button>
+          </Tooltip>
+
+          <Tooltip enterTouchDelay={0} title="WITHDRAW">
+          <Button onClick={()=>setActivePage(PAGES.WITHDRAW)}>
+          <SettingsBackupRestoreOutlined  color={activePage === PAGES.WITHDRAW ? "primary" : "secondary"}  sx={{ width: 32, height: 32 }}/>
           </Button>
           </Tooltip>
 
@@ -161,7 +169,15 @@ function App() {
       wallet={wallet}
       userAddress={userAddress}
       />
-      : activePage === PAGES.WELCOME ? 
+      :
+      activePage === PAGES.WITHDRAW ? 
+      <Withdraw 
+      Tezos={Tezos}
+      wallet={wallet}
+      userAddress={userAddress}
+      />
+      :
+      activePage === PAGES.WELCOME ? 
       <Box color="primary.main" alignContent={"space-between"} textAlign={"center"} sx={{ margin: "1em", padding : "1em",  backgroundColor : "#FFFFFFAA"}} >
       <h1>WELCOME to TzPortal</h1>
       <h2>Basic transfer to deposit TOKENS from Layer 1 to Layer 2 and withdrawal</h2>

@@ -1,0 +1,49 @@
+// DEFINITIONS  
+
+export type ticketClaim = {
+  amount :nat,
+  data :bytes,
+  id: nat,
+  owner: address,
+  ticketer: address
+};
+
+export type depositParameter = [address , ticket<bytes>];
+export type withdrawParameter = [contract<ticket<bytes>> , ticketClaim , bytes , list<[bytes,bytes]>];
+
+export type parameter =
+| ["deposit" , depositParameter]
+| ["Withdraw" , withdrawParameter ]
+//| ["update_root_hash" , int , bytes , list<key> , bytes , list<signature>, bytes , list<key_hash>]
+;
+
+export type storage = map<address,ticket<bytes>>;
+
+export type return_ =  [list<operation>, storage];
+
+export let main = (x : [parameter , storage]): return_ => {
+  let [p , store] = x ;
+  return match (p , {
+    deposit : (param : depositParameter) => { 
+      let [addrp,ticket] = param;   
+      let [[_addr, [_v, _amt]], tic] : read_ticket_return = Tezos.read_ticket(ticket);
+      return [ list([]) as list<operation> , Map.update(addrp, Some(tic), store)];           },
+    Withdraw : (param : withdrawParameter) => {
+      let [callbackContract,claim,proof,_] = param;
+      let [ticketOpt,updatedStore] = Map.get_and_update(claim.owner,None() as option<ticket<bytes>>,store);
+      match(ticketOpt, {
+        None : () => failwith("Cannot find the claimer of ticket on storage"),
+        Some : (t : ticket<bytes>) => {  
+          let [[_addr, [_v, amt]], tic] : read_ticket_return = Tezos.read_ticket(t);
+          //just extract necessary qty, and return it, keep the rest on storage for assertion tests
+          if( amt == claim.amount ){ /* perfect match, forward the full ticket */  return [ list([Tezos.transaction(tic,0 as mutez,callbackContract)]) as list<operation> , updatedStore] }
+          else if( amt > claim.amount ) { /* extract only necessary */ return match(Tezos.split_ticket(tic,[claim.amount,abs(amt-claim.amount)]) , {
+              None : () => failwith("Cannot split ticket"),
+              Some : (ticsplit:[ticket<bytes>,ticket<bytes>]) => { let [ticTosend,ticToKeep] = ticsplit   ; return [ list([Tezos.transaction(ticTosend,0 as mutez,callbackContract)]) as list<operation> , Map.add(claim.owner,ticToKeep,updatedStore)]}
+          })}
+          else failwith("amont claiming is > available quantity");          
+        }
+      }); 
+    } 
+  });
+};
