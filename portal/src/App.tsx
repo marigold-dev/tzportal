@@ -179,10 +179,13 @@ function App() {
       :
       activePage === PAGES.WELCOME ? 
       <Box color="primary.main" alignContent={"space-between"} textAlign={"center"} sx={{ margin: "1em", padding : "1em",  backgroundColor : "#FFFFFFAA"}} >
-      <h1>WELCOME to TzPortal</h1>
-      <h2>Basic transfer to deposit TOKENS from Layer 1 to Layer 2 and withdrawal</h2>
-      <p>Designed for TORU rollups</p>
-      <p>Want to know how TORU works ? <a href="https://tezos.gitlab.io/alpha/transaction_rollups.html">Click here</a></p>
+      <h1>Tezos Layer 1&2 bridge</h1>
+      <p>Transfer tokens via deposit and withdrawal operations</p>
+      <p>Designed for :</p>
+      <ul style={{listStylePosition: "inside"}}>
+        <li>TORU rollups : <a href="https://tezos.gitlab.io/alpha/transaction_rollups.html">TORU documentation</a></li>
+        <li>DEKU rollups : <a href="https://www.marigold.dev/project/deku-sidechain">DEKU documentation</a></li>
+      </ul>
       </Box>
       : "PAGE NOT FOUND" 
     }

@@ -303,7 +303,7 @@ return (
     fullWidth
     required
     value={l2Address}
-    onChange={(e)=>setL2Address(e.target.value)}
+    onChange={(e)=>setL2Address(e.target.value?e.target.value.trim():"")}
     label="L2 address"
     inputProps={{style: { textAlign: 'right' }}} 
     InputProps={{

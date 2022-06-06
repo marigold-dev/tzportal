@@ -347,7 +347,7 @@ const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
         fullWidth
         required
         value={l1Address}
-        onChange={(e)=>setL1Address(e.target.value)}
+        onChange={(e)=>setL1Address(e.target.value?e.target.value.trim():"")}
         label="L1 address"
         inputProps={{style: { textAlign: 'right' }}} 
         InputProps={{
@@ -408,7 +408,7 @@ const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
                     fullWidth
                     required
                     value={proof}
-                    onChange={(e)=>setProof(e.target.value)}
+                    onChange={(e)=>setProof(e.target.value?e.target.value.trim():"")}
                     label="Proof hash"
                     inputProps={{style: { textAlign: 'right' }}} 
                     InputProps={{
@@ -435,12 +435,16 @@ const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
                 <TextField required value={inputProof1} label="Proof 1" 
                 inputProps={{style: { textAlign: 'right' }}} 
                     variant="standard"
-                onChange={(e) => setInputProof1(e.target.value)} ></TextField>
+                onChange={(e) => setInputProof1(e.target.value?e.target.value.trim():"")} ></TextField>
                 <TextField required sx={{ marginLeft: "0.5em" }} value={inputProof2}  label="Proof 2" 
                  inputProps={{style: { textAlign: 'right' }}} 
                  variant="standard"
-                onChange={(e) => setInputProof2(e.target.value)} ></TextField>
-                <Button sx={{ marginLeft: "0.5em" }}  variant="outlined" onClick={()=>{setProofList(proofList.concat([[inputProof1,inputProof2]]));setInputProof1("");setInputProof2("");}}><Add style={{padding : "0.3em 0em"}}/></Button>
+                onChange={(e) => setInputProof2(e.target.value?e.target.value.trim():"")} ></TextField>
+                <Button sx={{ marginLeft: "0.5em" }}  variant="outlined" onClick={()=>{setProofList(
+                    proofList.concat([
+                        [inputProof1.startsWith("0x")?inputProof1.substring(2):inputProof1,
+                        inputProof2.startsWith("0x")?inputProof2.substring(2):inputProof2]
+                    ]));setInputProof1("");setInputProof2("");}}><Add style={{padding : "0.3em 0em"}}/></Button>
                 </span>
                     {  proofList.map( ([proofItem1,proofItem2] : [string,string],index : number) =>
                             
