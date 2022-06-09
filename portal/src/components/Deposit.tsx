@@ -10,8 +10,7 @@ import {  ContractFA12Parameters, ContractFA12Storage, ContractParameters, Contr
 import {  AddressType, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
-import { maxWidth, styled, width } from "@mui/system";
-import { BytesToken } from "@taquito/michelson-encoder/dist/types/tokens/comparable/bytes";
+import {  styled } from "@mui/system";
 
 
 type DepositProps = {
@@ -33,7 +32,7 @@ const Deposit = ({
     const [l2Address, setL2Address]  = useState<string>("");
     const [tokenType, setTokenType]  = useState<TOKEN_TYPE>(TOKEN_TYPE.XTZ);
     
-    const [rollupType , setRollupType] = useState<ROLLUP_TYPE>(ROLLUP_TYPE.DEKU);
+    const [rollupType , setRollupType] = useState<ROLLUP_TYPE>(ROLLUP_TYPE.TORU);
     const [rollup , setRollup] = useState<RollupTORU | RollupDEKU>();
     
     const [contractStorage, setContractStorage] = useState<ContractStorage>();
