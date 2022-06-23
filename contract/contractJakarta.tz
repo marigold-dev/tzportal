@@ -71,13 +71,14 @@
                       DUP 4 ;
                       CAR ;
                       CDR ;
-                      DIG 4 ;
-                      CAR ;
-                      CAR ;
-                      DIG 4 ;
-                      DIG 4 ;
+                      DIG 3 ;
+                      DIG 3 ;
                       SOURCE ;
                       PAIR ;
+                      DIG 4 ;
+                      CAR ;
+                      CAR ;
+                      DUG 2 ;
                       SWAP ;
                       SOME ;
                       SWAP ;
@@ -245,8 +246,9 @@
                                 { DROP 3 ; PUSH string "6" ; FAILWITH }
                                 { IF_LEFT
                                     { DROP 2 ;
-                                      PUSH string "5" ;
                                       SOURCE ;
+                                      PUSH string "5" ;
+                                      SWAP ;
                                       CONTRACT unit ;
                                       IF_NONE { FAILWITH } { SWAP ; DROP } ;
                                       DIG 2 ;
@@ -258,12 +260,15 @@
                                       UNIT ;
                                       TRANSFER_TOKENS ;
                                       CONS }
-                                    { DUP 4 ;
-                                      CAR ;
-                                      CDR ;
-                                      DUP 3 ;
+                                    { SWAP ;
+                                      DUP ;
+                                      DUG 2 ;
                                       SOURCE ;
                                       PAIR ;
+                                      DUP 5 ;
+                                      CAR ;
+                                      CDR ;
+                                      SWAP ;
                                       GET ;
                                       IF_NONE
                                         { DUP 4 ;

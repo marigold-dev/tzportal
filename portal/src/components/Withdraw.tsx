@@ -1,5 +1,5 @@
 import React, { useState, useEffect, MouseEvent, Fragment } from "react";
-import { BigMapAbstraction, TezosToolkit, WalletContract } from "@taquito/taquito";
+import { BigMapAbstraction, TezosToolkit, WalletContract, WalletOperationBatch, WalletParamsWithKind } from "@taquito/taquito";
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import Button from "@mui/material/Button";
 import { Avatar, Backdrop, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, FormLabel, Grid, Hidden, IconButton, InputAdornment, InputLabel, ListItem, Paper, Popover, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip } from "@mui/material";
@@ -12,6 +12,7 @@ import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
 import { maxWidth, styled, width } from "@mui/system";
 import { RollupParameters, RollupParametersDEKU, RollupParametersTORU } from "./RollupParameters";
+import { OpKind } from "@taquito/rpc";
 
 
 type WithdrawProps = {
@@ -114,6 +115,7 @@ const Withdraw = ({
 const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : string,contractFA12Storage : ContractFA12Storage) => {
     event.preventDefault();
     
+    const operations : WalletParamsWithKind[]= [];
 
     try{
         setTezosLoading(true);
@@ -139,14 +141,16 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
             "fa12Address": contractFA12Storage.fa12Address
         }
 
-        console.log("param",param);
-
-
-        const op = await contract!.methods.withdrawPendingDEKU(...Object.values(param)).send();
-        await op.confirmation();    
+        //console.log("param",param);
+        
+        operations.push({
+            kind: OpKind.TRANSACTION,
+            ...contract!.methods.withdrawPendingDEKU(...Object.values(param)).toTransferParams()
+        })
+        
         refreshContract();
         refreshRollup();
-        enqueueSnackbar("Pending withdraw for "+to+" has been successfully processed", {variant: "success", autoHideDuration:10000});
+        enqueueSnackbar("Pending withdraw for "+to+" has been successfully batched", {variant: "success", autoHideDuration:10000});
     
     }catch (error : any) {
         console.table(`Error: ${JSON.stringify(error, null, 2)}`);
@@ -163,10 +167,16 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
         let fa12Contract : WalletContract = await Tezos.wallet.at(contractFA12Storage.fa12Address);
 
         console.log("contractFA12Storage.fa12Address",contractFA12Storage.fa12Address);
-
         
-        const op = await fa12Contract.methods.transfer(contractStorage?.treasuryAddress,to,contractFA12Storage.amountToTransfer.toNumber()).send();
-        await op.confirmation();    
+        operations.push({
+            kind: OpKind.TRANSACTION,
+            ...fa12Contract.methods.transfer(contractStorage?.treasuryAddress,to,contractFA12Storage.amountToTransfer.toNumber()).toTransferParams()
+        })
+
+        const batch : WalletOperationBatch = await Tezos.wallet.batch(operations);
+        const batchOp = await batch.send();
+        const br = await batchOp.confirmation(1);
+        
         enqueueSnackbar("Treasury gave back  "+contractFA12Storage.amountToTransfer.toNumber()+" tokens to "+to, {variant: "success", autoHideDuration:10000});        
         refreshCtezBalance();
         setTezosLoading(false);

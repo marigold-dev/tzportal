@@ -1,5 +1,5 @@
 import React, { useState, useEffect, MouseEvent, Fragment } from "react";
-import { BigMapAbstraction, TezosToolkit, WalletContract } from "@taquito/taquito";
+import { BigMapAbstraction, OpKind, TezosToolkit, WalletContract, WalletOperationBatch, WalletParamsWithKind } from "@taquito/taquito";
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import Button from "@mui/material/Button";
 import { Avatar, Backdrop, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, Hidden, IconButton, InputAdornment, ListItem, Paper, Popover, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip } from "@mui/material";
@@ -10,8 +10,8 @@ import {  ContractFA12Parameters, ContractFA12Storage, ContractParameters, Contr
 import {  AddressType, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
-import { maxWidth, styled, width } from "@mui/system";
-import { BytesToken } from "@taquito/michelson-encoder/dist/types/tokens/comparable/bytes";
+import {  styled } from "@mui/system";
+import { OperationContentsAndResultTransaction, OperationEntry , OperationResultTransaction} from "@taquito/rpc";
 
 
 type DepositProps = {
@@ -104,16 +104,21 @@ useEffect(() => {
 
 const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from : string,contractFA12Storage : ContractFA12Storage) => {
     event.preventDefault();
+
+    const operations : WalletParamsWithKind[]= [];
     
     try{
         setTezosLoading(true);
-
+        
         //1. Treasury takes tokens
         let fa12Contract : WalletContract = await Tezos.wallet.at(contractFA12Storage.fa12Address);
         
-        const op = await fa12Contract.methods.transfer(from,contractStorage?.treasuryAddress,contractFA12Storage.amountToTransfer.toNumber()).send();
-        await op.confirmation();    
-        enqueueSnackbar("Treasury collaterized "+contractFA12Storage.amountToTransfer.toNumber()+" tokens from "+from, {variant: "success", autoHideDuration:10000});        
+        operations.push({
+            kind: OpKind.TRANSACTION,
+            ...fa12Contract.methods.transfer(from,contractStorage?.treasuryAddress,contractFA12Storage.amountToTransfer.toNumber()).toTransferParams()
+        })
+        
+        enqueueSnackbar("Treasury has batched collaterization "+contractFA12Storage.amountToTransfer.toNumber()+" tokens from "+from, {variant: "success", autoHideDuration:10000});        
         refreshCtezBalance();
         setTezosLoading(false);
     }catch (error : any) {
@@ -123,10 +128,10 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
         setTezosLoading(false);
         return;
     } 
-
+    
     try{
         setTezosLoading(true);
-
+        
         //2. Treasury call pending deposit to create tickets and send it
         
         let addressType = contractFA12Storage.l2Address.l1_ADDRESS && contractFA12Storage.l2Address.l1_ADDRESS !== "" ?  AddressType.l1_ADDRESS: AddressType.l2_ADDRESS;
@@ -147,12 +152,20 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
             "l2_ADDRESS": contractFA12Storage.l2Address.l2_ADDRESS,
             "fa12Address": contractFA12Storage.fa12Address
         }
-        const op = await contract!.methods.pendingDeposit(...Object.values(param)).send();
-        await op.confirmation();    
+        
+        operations.push({
+            kind: OpKind.TRANSACTION,
+            ...contract!.methods.pendingDeposit(...Object.values(param)).toTransferParams()
+        })
+
+        const batch : WalletOperationBatch = await Tezos.wallet.batch(operations);
+        const batchOp = await batch.send();
+        const br = await batchOp.confirmation(1);
+
         refreshContract();
         refreshRollup();
         enqueueSnackbar("Pending deposit from "+from+" has been successfully processed", {variant: "success", autoHideDuration:10000});
-    
+        
     }catch (error : any) {
         console.table(`Error: ${JSON.stringify(error, null, 2)}`);
         let tibe : TransactionInvalidBeaconError = new TransactionInvalidBeaconError(error);
@@ -162,7 +175,7 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
         setTezosLoading(false);
     } 
     
-
+    
     setTezosLoading(false);
 }
 
@@ -173,7 +186,8 @@ const handleDeposit = async (event : MouseEvent<HTMLButtonElement>) => {
     setTezosLoading(true);
     
     let c : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_CONTRACT"]!);
-    
+    const operations : WalletParamsWithKind[]= [];
+
     try {
         
         //in case of FA1.2 an allowance should be granted with minimum tokens
@@ -188,16 +202,27 @@ const handleDeposit = async (event : MouseEvent<HTMLButtonElement>) => {
                 enqueueSnackbar("Allowance ("+allowance+") is not enough for requested collateral of "+(quantity*1000000)+", please allow an allowance first", {variant: "warning", autoHideDuration:10000});        
                 
                 if(allowance === undefined || allowance.toNumber() == 0){
-                    const op = await fa12Contract.methods.approve(contractStorage?.treasuryAddress,quantity*1000000).send();
-                    await op.confirmation();    
-                    enqueueSnackbar("Your allowance of "+quantity*1000000+" has been accepted for Treasury "+contractStorage?.treasuryAddress, {variant: "success", autoHideDuration:10000});        
+
+                    operations.push({
+                        kind: OpKind.TRANSACTION,
+                        ...fa12Contract.methods.approve(contractStorage?.treasuryAddress,quantity*1000000).toTransferParams(),
+                    })
+
+                    enqueueSnackbar("Your allowance of "+quantity*1000000+" has been batched for Treasury "+contractStorage?.treasuryAddress, {variant: "success", autoHideDuration:10000});        
                 }else{//need to reset allowance to zero, then reset allowance back to avoid HACK
                     enqueueSnackbar("As allowance is not null, we need to reset allowance to zero, then reset allowance back to quantity to avoid HACK", {variant: "warning", autoHideDuration:10000});        
-                    const op = await fa12Contract.methods.approve(contractStorage?.treasuryAddress,0).send();
-                    await op.confirmation();
-                    const op2 = await fa12Contract.methods.approve(contractStorage?.treasuryAddress,quantity*1000000).send();
-                    await op2.confirmation();        
-                    enqueueSnackbar("Your allowance of "+quantity*1000000+" has been accepted for Treasury "+contractStorage?.treasuryAddress, {variant: "success", autoHideDuration:10000});        
+                    
+                    operations.push({
+                        kind: OpKind.TRANSACTION,
+                        ...fa12Contract.methods.approve(contractStorage?.treasuryAddress,0).toTransferParams(),
+                    })
+
+                    operations.push({
+                        kind: OpKind.TRANSACTION,
+                        ...fa12Contract.methods.approve(contractStorage?.treasuryAddress,quantity*1000000).toTransferParams(),
+                    })
+                                       
+                    enqueueSnackbar("Your allowance of "+quantity*1000000+" has been batched for Treasury "+contractStorage?.treasuryAddress, {variant: "success", autoHideDuration:10000});        
                 }
                 
             }else{
@@ -215,9 +240,48 @@ const handleDeposit = async (event : MouseEvent<HTMLButtonElement>) => {
         console.log("parameter signature",c.parameterSchema.ExtractSignatures());
         */
         
-        const op = await c.methods.deposit(...Object.values(param)).send(tokenType === TOKEN_TYPE.XTZ?{amount:quantity}:{});
-        await op.confirmation();
+        operations.push({
+            kind: OpKind.TRANSACTION,
+            ...c.methods.deposit(...Object.values(param)).toTransferParams(),
+            amount: tokenType === TOKEN_TYPE.XTZ?quantity:0,
+        })
+
+        const batch : WalletOperationBatch = await Tezos.wallet.batch(operations);
+        const batchOp = await batch.send();
+        const br = await batchOp.confirmation(1);
         enqueueSnackbar(tokenType === TOKEN_TYPE.XTZ?"Your deposit has been accepted":"Your deposit is in pending, waiting for Treasury to get your tokens in collateral and continue process", {variant: "success", autoHideDuration:10000});
+        
+        if(rollupType === ROLLUP_TYPE.TORU){//need to fecth the ticket hash to give it to the user 
+            
+            //seacrh for the ticket hash
+            let ticketHash = "";
+            for(const opLine of br.block.operations){
+                for (const op of opLine){
+                    for (const content of op.contents){
+                        switch (content.kind) {
+                            // @ts-ignore
+                            case OpKind.TRANSACTION: {
+                                if("metadata" in content){
+                                    const iorArray = (content as OperationContentsAndResultTransaction).metadata.internal_operation_results;
+                                    if(iorArray && iorArray.length > 0 ){
+                                        for( const ior of iorArray){
+                                            ticketHash = (ior.result as OperationResultTransaction).ticket_hash!;
+                                            break;
+                                        }
+                                    } 
+                                    else continue;
+                                    
+                                } else continue;
+                            }
+                            default : continue;
+                        }
+                    }
+                }
+            }
+                        
+            enqueueSnackbar("Store your ticket hash somewhere, you will need it later : "+ticketHash, {variant: "success", autoHideDuration:10000});
+        }
+        
         await refreshRollup();
         await refreshBalance();
         await refreshCtezBalance();
