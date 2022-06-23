@@ -10,6 +10,7 @@
     "@mui/material": "^5.5.1",
     "@mui/styles": "^5.5.1",
     "@taquito/beacon-wallet": "13.0.0-beta-RC.0",
+    "@taquito/rpc": "^13.0.0",
     "@taquito/taquito": "13.0.0-beta-RC.0",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^12.0.0",

@@ -116,12 +116,12 @@ const deposit = ([op,store]: [depositOp,storage]): return_ => {
       if(fa12Op.amountToTransfer < (1 as nat)) return failwith("0");
       
       const b = Bytes.pack(FA12(fa12Op.fa12Address));       
-      return [list([]), {...store,fa12PendingDeposits : Map.add([Tezos.source,b], fa12Op ,store.fa12PendingDeposits)}]; //we just keep this on storage and wait for the treasury user to continue the flow
+      return [list([]), {...store,fa12PendingDeposits : Map.add([Tezos.get_source(),b], fa12Op ,store.fa12PendingDeposits)}]; //we just keep this on storage and wait for the treasury user to continue the flow
    },
 
    XTZ_OP : (xtzOp : xtzOp) => {
     if(xtzOp.amountToTransfer < (1 as nat)) return failwith("0");
-    if(Tezos.amount < (xtzOp.amountToTransfer * (1 as mutez))) return failwith("3");
+    if(Tezos.get_amount() < (xtzOp.amountToTransfer * (1 as mutez))) return failwith("3");
     
     //create XTZ ticket
     let tic: ticket<bytes> = Tezos.create_ticket(Bytes.pack(XTZ()),xtzOp.amountToTransfer);
@@ -141,7 +141,7 @@ const deposit = ([op,store]: [depositOp,storage]): return_ => {
 const fa12PendingDeposit = ([fa12PendingDepositParameter,store]:[fa12PendingParameter,storage]) : return_ => {
 
          //only the treasury can call directly this endpoint
-         if(Tezos.sender !=  store.treasuryAddress) return failwith("9");
+         if(Tezos.get_sender() !=  store.treasuryAddress) return failwith("9");
     
          let b = Bytes.pack(FA12(fa12PendingDepositParameter[1].fa12Address)) ;       
      
@@ -165,7 +165,7 @@ const withdrawDEKU = ([ticket,store]:[ticket<bytes>,storage]) : return_ => {
  let [[ticketerAddress, [typeBytes, qty]], _] : read_ticket_return = Tezos.read_ticket(ticket);
 
  // check if we are the ticketer
- if(ticketerAddress != Tezos.self_address) return failwith("4");
+ if(ticketerAddress != Tezos.get_self_address()) return failwith("4");
 
  let typeOpt: option<ticketType> = Bytes.unpack(typeBytes);
  return match (typeOpt ,{
@@ -173,20 +173,20 @@ const withdrawDEKU = ([ticket,store]:[ticket<bytes>,storage]) : return_ => {
        // try with XTZ first
        match(ticketType , {
          XTZ : () => {             
-           let destinationContract : contract<unit> = Tezos.get_contract_with_error(Tezos.source,"5");
+           let destinationContract : contract<unit> = Tezos.get_contract_with_error(Tezos.get_source(),"5");
            //give back the XTZ to the destination
            return [list([Tezos.transaction(unit,qty * (1 as mutez),destinationContract)]),store];                                               
          },
          FA12 : (fa12Address : address) => 
            //look if already have something to aggregate
-           match( Map.find_opt([Tezos.source,typeBytes],store.fa12PendingWithdrawals), {
-              None : () => [list([]), {...store,fa12PendingWithdrawals : Map.add([Tezos.source,typeBytes],{
+           match( Map.find_opt([Tezos.get_source(),typeBytes],store.fa12PendingWithdrawals), {
+              None : () => [list([]), {...store,fa12PendingWithdrawals : Map.add([Tezos.get_source(),typeBytes],{
                 amountToTransfer: qty, //in mutez
-                rollupAddress: Tezos.sender,
-                l2Address: L1_ADDRESS(Tezos.sender),
+                rollupAddress: Tezos.get_sender(),
+                l2Address: L1_ADDRESS(Tezos.get_sender()),
                 fa12Address: fa12Address
               } ,store.fa12PendingWithdrawals)}],
-              Some : (existing : fa12Op) =>  [list([]), {...store,fa12PendingWithdrawals : Map.add([Tezos.source,typeBytes],{...existing,
+              Some : (existing : fa12Op) =>  [list([]), {...store,fa12PendingWithdrawals : Map.add([Tezos.get_source(),typeBytes],{...existing,
                 amountToTransfer: qty + existing.amountToTransfer
               },store.fa12PendingWithdrawals)}]
            })
@@ -200,7 +200,7 @@ const withdrawDEKU = ([ticket,store]:[ticket<bytes>,storage]) : return_ => {
 const withdrawPendingDEKU = ([fa12PendingDepositParameter,store]:[fa12PendingParameter,storage]) : return_ => {
 
   //only the treasury can call directly this endpoint
-  if(Tezos.sender !=  store.treasuryAddress) return failwith("9");
+  if(Tezos.get_sender() !=  store.treasuryAddress) return failwith("9");
 
   let b = Bytes.pack(FA12(fa12PendingDepositParameter[1].fa12Address)) ;       
 

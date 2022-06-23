@@ -1924,6 +1924,13 @@
     "@taquito/taquito" "^13.0.0-beta-RC.0"
     libsodium-wrappers "0.7.9"
 
+"@taquito/http-utils@^13.0.0":
+  version "13.0.0"
+  resolved "https://registry.yarnpkg.com/@taquito/http-utils/-/http-utils-13.0.0.tgz#bbad571ef07740b52c8bc56c7663fc6568b4b66c"
+  integrity sha512-WNCGi0HyocFkNSLekBfHqKqnGB2kQ5gCKgIXoh2UVyuHTq3W5dWJO7pMVfeVSf9nYLVnsoIIfEC/d7jY7HIYQw==
+  dependencies:
+    axios "^0.26.0"
+
 "@taquito/http-utils@^13.0.0-beta-RC.0":
   version "13.0.0-beta-RC.0"
   resolved "https://registry.yarnpkg.com/@taquito/http-utils/-/http-utils-13.0.0-beta-RC.0.tgz#d269d28ee86137d258bbf7a5176140f24d818872"
@@ -1954,6 +1961,15 @@
     bignumber.js "^9.0.2"
     fast-json-stable-stringify "^2.1.0"
 
+"@taquito/rpc@^13.0.0":
+  version "13.0.0"
+  resolved "https://registry.yarnpkg.com/@taquito/rpc/-/rpc-13.0.0.tgz#0917bbc9d7c7d42e5954c28bb9b0c9a7293b3fb8"
+  integrity sha512-g3CmrdCCEH5KiXIaAeZJ4RYYPtpitqTiv7GeDyYypOdUDQ1OBF/3c8d/Apx92bvSwbI/0I7nX46wtZHahWavmg==
+  dependencies:
+    "@taquito/http-utils" "^13.0.0"
+    "@taquito/utils" "^13.0.0"
+    bignumber.js "^9.0.2"
+
 "@taquito/rpc@^13.0.0-beta-RC.0":
   version "13.0.0-beta-RC.0"
   resolved "https://registry.yarnpkg.com/@taquito/rpc/-/rpc-13.0.0-beta-RC.0.tgz#1be1a322e8229bcde57a2316a54cdf2cb5f98fad"
@@ -1976,6 +1992,20 @@
     "@taquito/utils" "^13.0.0-beta-RC.0"
     bignumber.js "^9.0.2"
     rxjs "^6.6.3"
+
+"@taquito/utils@^13.0.0":
+  version "13.0.0"
+  resolved "https://registry.yarnpkg.com/@taquito/utils/-/utils-13.0.0.tgz#1b39f8f2227dbdc98e4729ff8cbd7f4fdeff937a"
+  integrity sha512-b6uD3VOb8YSrExEH5beicDSNGuEfuH2qvJYx4FX5OI+EfXa9EfORfUNNsHzkEn/Rh3Ue3jKFbymPvkFhM95uiw==
+  dependencies:
+    "@stablelib/blake2b" "^1.0.1"
+    "@stablelib/ed25519" "^1.0.2"
+    "@types/bs58check" "^2.1.0"
+    blakejs "^1.1.1"
+    bs58check "^2.1.2"
+    buffer "^6.0.3"
+    elliptic "^6.5.4"
+    typedarray-to-buffer "^4.0.0"
 
 "@taquito/utils@^13.0.0-beta-RC.0":
   version "13.0.0-beta-RC.0"
