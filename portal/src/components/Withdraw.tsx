@@ -384,7 +384,7 @@ const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
             InputProps={{
                 startAdornment: (
                     <InputAdornment position="start">
-                    <Avatar sx={{height:"24px", width:"24px"}} src={ tokenType === TOKEN_TYPE.XTZ ? "XTZ.png":"CTEZ.png"} />
+                    <Avatar sx={{height:"24px", width:"24px"}} src={ tokenType === TOKEN_TYPE.XTZ ? "XTZ-ticket.png":"CTEZ-ticket.png"} />
                     </InputAdornment>
                     ),
                 }}

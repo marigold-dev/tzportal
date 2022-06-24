@@ -2,8 +2,8 @@ import React, { useState, useEffect, MouseEvent, Fragment } from "react";
 import { BigMapAbstraction, OpKind, TezosToolkit, WalletContract, WalletOperationBatch, WalletParamsWithKind } from "@taquito/taquito";
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import Button from "@mui/material/Button";
-import { Avatar, Backdrop, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, Hidden, IconButton, InputAdornment, ListItem, Paper, Popover, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip } from "@mui/material";
-import { AccountBalanceWallet, AccountCircle, AddShoppingCartOutlined, ArrowDropDown, CameraRoll, MoreVert } from "@mui/icons-material";
+import { Avatar, Backdrop, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, IconButton, InputAdornment, ListItem, Paper, Popover, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip } from "@mui/material";
+import { AccountBalanceWallet, AccountCircle, AddShoppingCartOutlined, ArrowDropDown, CameraRoll } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 import {  ContractFA12Parameters, ContractFA12Storage, ContractParameters, ContractStorage, ContractXTZParameters } from "./TicketerContractUtils";
@@ -11,7 +11,7 @@ import {  AddressType, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TY
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
 import {  styled } from "@mui/system";
-import { OperationContentsAndResultTransaction, OperationEntry , OperationResultTransaction} from "@taquito/rpc";
+import { OperationContentsAndResultTransaction , OperationResultTransaction} from "@taquito/rpc";
 
 
 type DepositProps = {
@@ -102,6 +102,15 @@ useEffect(() => {
 }, [rollupType]);
 
 
+const isDepositButtonDisabled = () : boolean | undefined => {
+    let isDisabled = true;
+    switch(tokenType){
+        case TOKEN_TYPE.XTZ : isDisabled= (quantity === 0 || quantity > userBalance);break;
+        case TOKEN_TYPE.FA12 : isDisabled= (quantity === 0 || quantity > userCtezBalance);break;
+    }
+    return isDisabled;
+}
+
 const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from : string,contractFA12Storage : ContractFA12Storage) => {
     event.preventDefault();
 
@@ -180,7 +189,7 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
 }
 
 
-const handleDeposit = async (event : MouseEvent<HTMLButtonElement>) => {
+const handleDeposit = async (event : MouseEvent) => {
     
     event.preventDefault();
     setTezosLoading(true);
@@ -402,7 +411,7 @@ return (
             />
             </Grid>
             <Grid item xs={12} md={12} padding={1}>
-            <Button variant="contained" onClick={(e)=>handleDeposit(e)}>DEPOSIT</Button>
+            <Button variant="contained" disabled={isDepositButtonDisabled()} onClick={(e)=>handleDeposit(e)}>DEPOSIT</Button>
             </Grid>
             </Grid>
             
