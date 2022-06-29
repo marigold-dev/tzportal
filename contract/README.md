@@ -11,7 +11,7 @@ ligo compile storage ./src/contract.jsligo '{treasuryAddress : "tz1VApBuWHuaTfDH
 ## Deploy
 
 ```bash
-tezos-client originate contract tzportalIthaca transferring 0 from myFirstKey running contract.tz --init "$(cat contractStorage.tz)" --burn-cap 1 --force
+tezos-client originate contract tzportalJakartaChusai transferring 0 from myFirstKey running contract.tz --init "$(cat contractStorage.tz)" --burn-cap 1 --force
 ```
 > - Ithaca : KT1Kk2QwSaF8SU89DqWBFG6qtB73yeWLFT9d
 > - Jakarta : KT1CLTN23c3DEwUKWeUfw7QQS3dqc36eYZT3
