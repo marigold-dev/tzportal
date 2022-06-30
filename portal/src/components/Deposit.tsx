@@ -341,7 +341,7 @@ return (
     <hr />
     <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.TORU);closeSelectRollupPopup();}}>{ROLLUP_TYPE.TORU.name} : {ROLLUP_TYPE.TORU.address}</HoverBox>
     <hr />
-    <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.CHUSAI);closeSelectRollupPopup();}}>{ROLLUP_TYPE.CHUSAI.name} : {ROLLUP_TYPE.CHUSAI.address}</HoverBox>
+    <HoverBox onClick={()=>{setL2Address(userAddress);setRollupType(ROLLUP_TYPE.CHUSAI);closeSelectRollupPopup();}}>{ROLLUP_TYPE.CHUSAI.name} : {ROLLUP_TYPE.CHUSAI.address}</HoverBox>
     </Paper>
     </Popover>
     
@@ -391,6 +391,7 @@ return (
     fullWidth
     required
     value={l2Address}
+    disabled={rollupType == ROLLUP_TYPE.CHUSAI}
     onChange={(e)=>setL2Address(e.target.value?e.target.value.trim():"")}
     label="L2 address"
     inputProps={{style: { textAlign: 'right' }}} 
