@@ -1,17 +1,16 @@
-import { BigMapAbstraction, Context, Contract, MichelCodecPacker, MichelCodecParser, TezosToolkit, WalletContract } from "@taquito/taquito";
-import {unpackDataBytes,unpackData} from "@taquito/michel-codec";
+import { BigMapAbstraction, Contract, MichelCodecPacker, TezosToolkit } from "@taquito/taquito";
 import BigNumber from 'bignumber.js';
-import { BigMapKey } from "@dipdup/tzkt-api";
-import { MichelsonV1Expression, PackDataParams, PackDataResponse } from "@taquito/rpc";
-import { Schema } from "@taquito/michelson-encoder";
+import {  PackDataParams, PackDataResponse } from "@taquito/rpc";
 
 
-export enum AddressType { l1_ADDRESS = "l1_ADDRESS" , l2_ADDRESS = "l2_ADDRESS" };
 
-export class AddressTypeClass {
-  l1_ADDRESS : string = "";
-  l2_ADDRESS : string = "";
-}
+export enum LAYER2Type { L2_DEKU = "l2_DEKU" , L2_TORU = "l2_TORU" , L2_CHUSAI = "l2_CHUSAI"};
+
+export class LAYER2TypeClass {
+  L2_DEKU : string = "";
+  L2_TORU : string = "";
+  L2_CHUSAI : string = "";
+};
 
 export class RollupCounter {
   next: number;
@@ -19,7 +18,7 @@ export class RollupCounter {
   constructor(next: number){
     this.next=next;
   }
-}
+};
 
 export class RollupTORU {
   last_removed_commitment_hashes: any;
@@ -58,7 +57,7 @@ export class RollupTORU {
       this.commitments_watermark=commitments_watermark;
       
     }
-  }
+  };
   
   export class RollupDEKU {
     root_hash : DEKUHeader;
@@ -69,7 +68,7 @@ export class RollupTORU {
         this.root_hash = root_hash;
         this.vault = vault;
       }
-    }
+    };
     
     export class DEKUHeader {
       current_block_hash : string;
@@ -89,7 +88,7 @@ export class RollupTORU {
           this.current_state_hash=current_state_hash;
           this.current_validators=current_validators;
         }
-      }
+      };
       
       export class DEKUVault {
         known_handles_hash : any;
@@ -109,7 +108,30 @@ export class RollupTORU {
             this.XTZTicket=XTZTicket;
             this.CTEZTicket=CTEZTicket;
           }
-        }
+        };
+        
+        
+        export class RollupCHUSAI {
+          fixed_ticket_key : CHUSAITicketKey;
+          messages : BigMapAbstraction;
+          rollup_level : BigNumber;
+          ticket : TezosTicket;
+
+          constructor(fixed_ticket_key : CHUSAITicketKey,
+            messages : BigMapAbstraction,
+            rollup_level : BigNumber,
+            ticket : TezosTicket){
+              this.fixed_ticket_key = fixed_ticket_key;
+              this.rollup_level = rollup_level;
+              this.messages = messages;
+              this.ticket = ticket;
+          }
+        };
+
+        export class CHUSAITicketKey{
+        mint_address! : string;
+        payload! : string //bytes
+      };
         
         export class TOKEN_TYPE {
           public static readonly XTZ = new TOKEN_TYPE("XTZ");
@@ -159,13 +181,14 @@ export class RollupTORU {
             return (await p.packData(FA12bytes)).packed ;
           }
           
-        }
+        };
         
         export class ROLLUP_TYPE {
           public static readonly TORU = new ROLLUP_TYPE("TORU",process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
           public static readonly DEKU = new ROLLUP_TYPE("DEKU",process.env["REACT_APP_ROLLUP_CONTRACT_DEKU"]!);
+          public static readonly CHUSAI = new ROLLUP_TYPE("CHUSAI",process.env["REACT_APP_ROLLUP_CONTRACT_CHUSAI"]!);
           private constructor(public readonly name: string, public readonly address: string) {}
-        }
+        };
         
         
         export class TezosTicket {
@@ -180,7 +203,7 @@ export class RollupTORU {
               this.value =value ;
               this.amount =amount ;
             }
-          }
+          };
           
           export abstract class TezosUtils{
             
@@ -208,4 +231,17 @@ export class RollupTORU {
                   new DEKUVault(rollup.vault.known_handles_hash,rollup.vault.used_handles,rollup.vault.vault,XTZTicket,CTEZTicket))); });
                 }
                 
-              }
+                
+                static async fetchRollupCHUSAI(Tezos : TezosToolkit, rollupAddress : string) : Promise<RollupCHUSAI|undefined> {
+                  let contract : Contract = await Tezos.contract.at(rollupAddress);
+                  let rollup : RollupCHUSAI = await contract.storage();
+                                    console.log("rollup",rollup);
+                  return new Promise( (resolve,reject) => {
+                    resolve(new RollupCHUSAI(rollup.fixed_ticket_key,rollup.messages,rollup.rollup_level,rollup.ticket)); });
+                    }
+                    
+                    
+                  };
+                  
+                  
+                  
