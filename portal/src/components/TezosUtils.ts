@@ -7,9 +7,9 @@ import {  PackDataParams, PackDataResponse } from "@taquito/rpc";
 export enum LAYER2Type { L2_DEKU = "l2_DEKU" , L2_TORU = "l2_TORU" , L2_CHUSAI = "l2_CHUSAI"};
 
 export class LAYER2TypeClass {
-  L2_DEKU : string = "";
-  L2_TORU : string = "";
-  L2_CHUSAI : string = "";
+  l2_DEKU : string = "";
+  l2_TORU : string = "";
+  l2_CHUSAI : string = "";
 };
 
 export class RollupCounter {

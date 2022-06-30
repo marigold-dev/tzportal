@@ -142,15 +142,15 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
         setTezosLoading(true);
         
         //2. Treasury call pending deposit to create tickets and send it
-        let l2Type : LAYER2Type = contractFA12Storage.l2Type.L2_TORU && contractFA12Storage.l2Type.L2_TORU !== "" ?  
-        LAYER2Type.L2_TORU: contractFA12Storage.l2Type.L2_DEKU && contractFA12Storage.l2Type.L2_DEKU !== "" ? LAYER2Type.L2_DEKU :LAYER2Type.L2_CHUSAI ;
+        let l2Type : LAYER2Type = contractFA12Storage.l2Type.l2_TORU && contractFA12Storage.l2Type.l2_TORU !== "" ?  
+        LAYER2Type.L2_TORU: contractFA12Storage.l2Type.l2_DEKU && contractFA12Storage.l2Type.l2_DEKU !== "" ? LAYER2Type.L2_DEKU :LAYER2Type.L2_CHUSAI ;
         const param = l2Type == LAYER2Type.L2_TORU?
         {
             "address": from,
             "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
             "rollupAddress": contractFA12Storage.rollupAddress,
             "l2Type": l2Type,
-            "l2_TORU": contractFA12Storage.l2Type.L2_TORU,
+            "l2_TORU": contractFA12Storage.l2Type.l2_TORU,
             "fa12Address": contractFA12Storage.fa12Address
         }: l2Type == LAYER2Type.L2_DEKU?
         {
@@ -158,7 +158,7 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
             "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
             "rollupAddress": contractFA12Storage.rollupAddress,
             "l2Type": l2Type,
-            "l2_DEKU": contractFA12Storage.l2Type.L2_DEKU,
+            "l2_DEKU": contractFA12Storage.l2Type.l2_DEKU,
             "fa12Address": contractFA12Storage.fa12Address
         }:
         {
@@ -166,7 +166,7 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
             "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
             "rollupAddress": contractFA12Storage.rollupAddress,
             "l2Type": l2Type,
-            "l2_CHUSAI": contractFA12Storage.l2Type.L2_CHUSAI,
+            "l2_CHUSAI": contractFA12Storage.l2Type.l2_CHUSAI,
             "fa12Address": contractFA12Storage.fa12Address
         }
         
@@ -493,13 +493,13 @@ return (
                             <hr />
                             <h3>Pending deposit operations</h3>
                             
-                            
                             {Array.from(contractStorage.fa12PendingDeposits.entries()).map(( [key,val]: [[string,string],ContractFA12Storage]) => 
-                                {let l2Address : string = val.l2Type.L2_DEKU?val.l2Type.L2_DEKU : val.l2Type.L2_TORU;
+                                {let l2Address : string = val.l2Type.l2_DEKU?val.l2Type.l2_DEKU : val.l2Type.l2_TORU;
+
                                     return <div key={key[0]+key[1]+val.type}>   
                                     <Chip 
                                     avatar={<Avatar src={key[1] == tokenBytes.get(TOKEN_TYPE.XTZ) ?"XTZ-ticket.png" :key[1] == tokenBytes.get(TOKEN_TYPE.FA12) ?  "CTEZ-ticket.png" : ""}  />}
-                                    label={<span>{val.amountToTransfer.toNumber()} for {<span className="address"><span className="address1">{l2Address.substring(0,l2Address.length/2)}</span><span className="address2">{l2Address.substring(l2Address.length/2)}</span></span>} </span>}
+                                    label={<span>{val.amountToTransfer.toNumber()} for {<span className="address"><span className="address1">{l2Address?.substring(0,l2Address.length/2)}</span><span className="address2">{l2Address?.substring(l2Address.length/2)}</span></span>} </span>}
                                     variant="outlined" 
                                     />
                                     <Tooltip title="Collaterize user's tokens and swap to real tickets for rollup">

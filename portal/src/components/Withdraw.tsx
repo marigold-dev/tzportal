@@ -122,8 +122,8 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
 
         //1. Treasury call pending withdraw to destroy tickets
                 
-        let l2Type : LAYER2Type = contractFA12Storage.l2Type.L2_TORU && contractFA12Storage.l2Type.L2_TORU !== "" ?  
-        LAYER2Type.L2_TORU: contractFA12Storage.l2Type.L2_DEKU && contractFA12Storage.l2Type.L2_DEKU !== "" ? LAYER2Type.L2_DEKU :LAYER2Type.L2_CHUSAI ;
+        let l2Type : LAYER2Type = contractFA12Storage.l2Type.l2_TORU && contractFA12Storage.l2Type.l2_TORU !== "" ?  
+        LAYER2Type.L2_TORU: contractFA12Storage.l2Type.l2_DEKU && contractFA12Storage.l2Type.l2_DEKU !== "" ? LAYER2Type.L2_DEKU :LAYER2Type.L2_CHUSAI ;
         
         const param = l2Type == LAYER2Type.L2_TORU?
         {
@@ -131,7 +131,7 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
             "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
             "rollupAddress": contractFA12Storage.rollupAddress,
             "l2Type": l2Type,
-            "l2_TORU": contractFA12Storage.l2Type.L2_TORU,
+            "l2_TORU": contractFA12Storage.l2Type.l2_TORU,
             "fa12Address": contractFA12Storage.fa12Address
         }: l2Type == LAYER2Type.L2_DEKU?
         {
@@ -139,7 +139,7 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
             "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
             "rollupAddress": contractFA12Storage.rollupAddress,
             "l2Type": l2Type,
-            "l2_DEKU": contractFA12Storage.l2Type.L2_DEKU,
+            "l2_DEKU": contractFA12Storage.l2Type.l2_DEKU,
             "fa12Address": contractFA12Storage.fa12Address
         }:
         {
@@ -147,7 +147,7 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
             "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
             "rollupAddress": contractFA12Storage.rollupAddress,
             "l2Type": l2Type,
-            "l2_CHUSAI": contractFA12Storage.l2Type.L2_CHUSAI,
+            "l2_CHUSAI": contractFA12Storage.l2Type.l2_CHUSAI,
             "fa12Address": contractFA12Storage.fa12Address
         }
 
@@ -333,7 +333,7 @@ const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
                         <h3>Pending withdrawals operations</h3>
 
                         {Array.from(contractStorage.fa12PendingWithdrawals.entries()).map(( [key,val]: [[string,string],ContractFA12Storage]) => 
-                                {let l2Address : string = val.l2Type.L2_DEKU?val.l2Type.L2_DEKU : val.l2Type.L2_TORU;
+                                {let l2Address : string = val.l2Type.l2_DEKU?val.l2Type.l2_DEKU : val.l2Type.l2_TORU;
                                     return <div key={key[0]+key[1]+val.type}>   
                                     <Chip 
                                     avatar={<Avatar src={key[1] == tokenBytes.get(TOKEN_TYPE.XTZ) ?"XTZ-ticket.png" :key[1] == tokenBytes.get(TOKEN_TYPE.FA12) ?  "CTEZ-ticket.png" : ""}  />}
