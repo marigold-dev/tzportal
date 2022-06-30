@@ -7,22 +7,25 @@ type fa12ApproveContract = contract<fa12ApproveContractParameters>;
 
 type rollupContractParametersTORU = [ticket<bytes>,tx_rollup_l2_address];//[ticket<bytes>,address]; 
 type rollupContractParametersDEKU = [address , ticket<bytes>];//[ticket<bytes>,tx_rollup_l2_address]; 
+type rollupContractParametersCHUSAI = ticket<bytes>;
 
 export type ticketType =
 // @layout:comb
 | ["XTZ"]
 | ["FA12", address];
 
-export type addressType = 
-| [ "L1_ADDRESS" , address]  
-| [ "L2_ADDRESS" , tx_rollup_l2_address]; //address];
+export type l2Type = 
+| [ "L2_DEKU" , address]  
+| [ "L2_TORU" , tx_rollup_l2_address]
+| [ "L2_CHUSAI"]
+;    
 
 export type fa12Op = 
 // @layout:comb
 {
   amountToTransfer: nat, //in mutez
   rollupAddress: address,
-  l2Address: addressType,
+  l2Type: l2Type,
   fa12Address: address
 };
 
@@ -31,7 +34,7 @@ export type xtzOp =
 {
   amountToTransfer: nat, //in mutez
   rollupAddress: address,
-  l2Address: addressType
+  l2Type: l2Type
 };
 
 export type fa12PendingParameter = [address,fa12Op];
@@ -76,7 +79,9 @@ type read_ticket_return = [[address, [bytes , nat]] , ticket<bytes>];
       ["9","only the treasury can call directly this endpoint"],
       ["10", "Invalid rollup address for TORU !"],
       ["11", "Invalid rollup address for DEKU !"],
-      ["12", "Cannot find a Fa12PendingDeposit for the current inputs on contract storage"]
+      ["12", "Cannot find a Fa12PendingDeposit for the current inputs on contract storage"],
+      ["13", "Invalid rollup address for CHUSAI !"],
+      ["14", "CHUSAI is not ready for FA1.2"],
     ]));
 */
 
@@ -127,10 +132,10 @@ const deposit = ([op,store]: [depositOp,storage]): return_ => {
     let tic: ticket<bytes> = Tezos.create_ticket(Bytes.pack(XTZ()),xtzOp.amountToTransfer);
 
     //send ticket to rollup
-    let op : operation = match(xtzOp.l2Address , {
-      L1_ADDRESS : (a : address) => Tezos.transaction([a, tic],0 as mutez,getRollupDEKUContract(xtzOp.rollupAddress)),
-      L2_ADDRESS : (a : tx_rollup_l2_address) => Tezos.transaction([tic, a],0 as mutez,getRollupTORUContract(xtzOp.rollupAddress))
-      //L2_ADDRESS : (a : address) => Tezos.transaction([tic, a],0 as mutez,getRollupTORUContract(xtzOp.rollupAddress))
+    let op : operation = match(xtzOp.l2Type , {
+      L2_DEKU : (a : address) => Tezos.transaction([a, tic],0 as mutez,getRollupDEKUContract(xtzOp.rollupAddress)),
+      L2_TORU : (a : tx_rollup_l2_address) => Tezos.transaction([tic, a],0 as mutez,getRollupTORUContract(xtzOp.rollupAddress)),
+      L2_CHUSAI : () => Tezos.transaction(tic,0 as mutez,Tezos.get_contract_with_error(xtzOp.rollupAddress,"14") as contract<rollupContractParametersCHUSAI>)
     }); 
 
     return [list([op]),store];
@@ -152,9 +157,10 @@ const fa12PendingDeposit = ([fa12PendingDepositParameter,store]:[fa12PendingPara
            None : () => failwith("12"),
            Some : (fa12Op : fa12Op) =>       
                    //send ticket to rollup
-                   match(fa12Op.l2Address , {
-                     L1_ADDRESS : (a : address) => [list([Tezos.transaction([a, Tezos.create_ticket(b,fa12Op.amountToTransfer)],0 as mutez,getRollupDEKUContract(fa12Op.rollupAddress))]),  {...store,fa12PendingDeposits : newFa12PendingDeposits}    ], //remove it from storage now
-                     L2_ADDRESS : (a : address) => [list([Tezos.transaction([Tezos.create_ticket(b,fa12Op.amountToTransfer), a],0 as mutez,getRollupTORUContract(fa12Op.rollupAddress))]),  {...store,fa12PendingDeposits : newFa12PendingDeposits}    ] //remove it from storage now
+                   match(fa12Op.l2Type , {
+                     L2_DEKU : (a : address) => [list([Tezos.transaction([a, Tezos.create_ticket(b,fa12Op.amountToTransfer)],0 as mutez,getRollupDEKUContract(fa12Op.rollupAddress))]),  {...store,fa12PendingDeposits : newFa12PendingDeposits}    ], //remove it from storage now
+                     L2_TORU : (a : tx_rollup_l2_address) => [list([Tezos.transaction([Tezos.create_ticket(b,fa12Op.amountToTransfer), a],0 as mutez,getRollupTORUContract(fa12Op.rollupAddress))]),  {...store,fa12PendingDeposits : newFa12PendingDeposits}    ], //remove it from storage now
+                     L2_CHUSAI : () => failwith("14")
                    })
          });
 };
@@ -183,7 +189,7 @@ const withdrawDEKU = ([ticket,store]:[ticket<bytes>,storage]) : return_ => {
               None : () => [list([]), {...store,fa12PendingWithdrawals : Map.add([Tezos.get_source(),typeBytes],{
                 amountToTransfer: qty, //in mutez
                 rollupAddress: Tezos.get_sender(),
-                l2Address: L1_ADDRESS(Tezos.get_sender()),
+                l2Type: L2_DEKU(Tezos.get_sender()),
                 fa12Address: fa12Address
               } ,store.fa12PendingWithdrawals)}],
               Some : (existing : fa12Op) =>  [list([]), {...store,fa12PendingWithdrawals : Map.add([Tezos.get_source(),typeBytes],{...existing,

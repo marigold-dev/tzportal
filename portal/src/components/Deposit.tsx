@@ -7,7 +7,7 @@ import { AccountBalanceWallet, AccountCircle, AddShoppingCartOutlined, ArrowDrop
 import { useSnackbar } from "notistack";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 import {  ContractFA12Parameters, ContractFA12Storage, ContractParameters, ContractStorage, ContractXTZParameters } from "./TicketerContractUtils";
-import {  AddressType, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
+import {  LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
 import {  styled } from "@mui/system";
@@ -34,7 +34,7 @@ const Deposit = ({
     const [tokenType, setTokenType]  = useState<TOKEN_TYPE>(TOKEN_TYPE.XTZ);
     
     const [rollupType , setRollupType] = useState<ROLLUP_TYPE>(ROLLUP_TYPE.DEKU);
-    const [rollup , setRollup] = useState<RollupTORU | RollupDEKU>();
+    const [rollup , setRollup] = useState<RollupTORU | RollupDEKU | RollupCHUSAI>();
     
     const [contractStorage, setContractStorage] = useState<ContractStorage>();
     const [contract, setContract] =  useState<WalletContract>();
@@ -72,9 +72,9 @@ const Deposit = ({
     const refreshRollup = async() => {
         switch(rollupType){
             case ROLLUP_TYPE.TORU : setRollup(await TezosUtils.fetchRollupTORU(Tezos.rpc.getRpcUrl(),rollupType.address));break;
-            case ROLLUP_TYPE.DEKU : {
-                setRollup(await TezosUtils.fetchRollupDEKU(Tezos,rollupType.address));break;
-            }
+            case ROLLUP_TYPE.DEKU : setRollup(await TezosUtils.fetchRollupDEKU(Tezos,rollupType.address));break;
+            case ROLLUP_TYPE.CHUSAI : setRollup(await TezosUtils.fetchRollupCHUSAI(Tezos,rollupType.address));break;
+            
         }
     }
     
@@ -113,7 +113,7 @@ const isDepositButtonDisabled = () : boolean | undefined => {
 
 const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from : string,contractFA12Storage : ContractFA12Storage) => {
     event.preventDefault();
-
+    
     const operations : WalletParamsWithKind[]= [];
     
     try{
@@ -142,23 +142,31 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
         setTezosLoading(true);
         
         //2. Treasury call pending deposit to create tickets and send it
-        
-        let addressType = contractFA12Storage.l2Address.l1_ADDRESS && contractFA12Storage.l2Address.l1_ADDRESS !== "" ?  AddressType.l1_ADDRESS: AddressType.l2_ADDRESS;
-        const param = addressType == AddressType.l1_ADDRESS?
+        let l2Type : LAYER2Type = contractFA12Storage.l2Type.l2_TORU && contractFA12Storage.l2Type.l2_TORU !== "" ?  
+        LAYER2Type.L2_TORU: contractFA12Storage.l2Type.l2_DEKU && contractFA12Storage.l2Type.l2_DEKU !== "" ? LAYER2Type.L2_DEKU :LAYER2Type.L2_CHUSAI ;
+        const param = l2Type == LAYER2Type.L2_TORU?
         {
             "address": from,
             "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
             "rollupAddress": contractFA12Storage.rollupAddress,
-            "l2Address": addressType,
-            "l1_ADDRESS": contractFA12Storage.l2Address.l1_ADDRESS,
+            "l2Type": l2Type,
+            "l2_TORU": contractFA12Storage.l2Type.l2_TORU,
+            "fa12Address": contractFA12Storage.fa12Address
+        }: l2Type == LAYER2Type.L2_DEKU?
+        {
+            "address": from,
+            "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
+            "rollupAddress": contractFA12Storage.rollupAddress,
+            "l2Type": l2Type,
+            "l2_DEKU": contractFA12Storage.l2Type.l2_DEKU,
             "fa12Address": contractFA12Storage.fa12Address
         }:
         {
             "address": from,
             "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
             "rollupAddress": contractFA12Storage.rollupAddress,
-            "l2Address": addressType,
-            "l2_ADDRESS": contractFA12Storage.l2Address.l2_ADDRESS,
+            "l2Type": l2Type,
+            "l2_CHUSAI": contractFA12Storage.l2Type.l2_CHUSAI,
             "fa12Address": contractFA12Storage.fa12Address
         }
         
@@ -166,11 +174,11 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
             kind: OpKind.TRANSACTION,
             ...contract!.methods.pendingDeposit(...Object.values(param)).toTransferParams()
         })
-
+        
         const batch : WalletOperationBatch = await Tezos.wallet.batch(operations);
         const batchOp = await batch.send();
         const br = await batchOp.confirmation(1);
-
+        
         refreshContract();
         refreshRollup();
         enqueueSnackbar("Pending deposit from "+from+" has been successfully processed", {variant: "success", autoHideDuration:10000});
@@ -196,8 +204,13 @@ const handleDeposit = async (event : MouseEvent) => {
     
     let c : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_CONTRACT"]!);
     const operations : WalletParamsWithKind[]= [];
-
+    
     try {
+
+        if(tokenType === TOKEN_TYPE.FA12 && rollupType == ROLLUP_TYPE.CHUSAI){
+            alert("CHUSAI is not yet ready for FA1.2");
+            return;
+        }
         
         //in case of FA1.2 an allowance should be granted with minimum tokens
         if(tokenType === TOKEN_TYPE.FA12){
@@ -211,12 +224,12 @@ const handleDeposit = async (event : MouseEvent) => {
                 enqueueSnackbar("Allowance ("+allowance+") is not enough for requested collateral of "+(quantity*1000000)+", please allow an allowance first", {variant: "warning", autoHideDuration:10000});        
                 
                 if(allowance === undefined || allowance.toNumber() == 0){
-
+                    
                     operations.push({
                         kind: OpKind.TRANSACTION,
                         ...fa12Contract.methods.approve(contractStorage?.treasuryAddress,quantity*1000000).toTransferParams(),
                     })
-
+                    
                     enqueueSnackbar("Your allowance of "+quantity*1000000+" has been batched for Treasury "+contractStorage?.treasuryAddress, {variant: "success", autoHideDuration:10000});        
                 }else{//need to reset allowance to zero, then reset allowance back to avoid HACK
                     enqueueSnackbar("As allowance is not null, we need to reset allowance to zero, then reset allowance back to quantity to avoid HACK", {variant: "warning", autoHideDuration:10000});        
@@ -225,12 +238,12 @@ const handleDeposit = async (event : MouseEvent) => {
                         kind: OpKind.TRANSACTION,
                         ...fa12Contract.methods.approve(contractStorage?.treasuryAddress,0).toTransferParams(),
                     })
-
+                    
                     operations.push({
                         kind: OpKind.TRANSACTION,
                         ...fa12Contract.methods.approve(contractStorage?.treasuryAddress,quantity*1000000).toTransferParams(),
                     })
-                                       
+                    
                     enqueueSnackbar("Your allowance of "+quantity*1000000+" has been batched for Treasury "+contractStorage?.treasuryAddress, {variant: "success", autoHideDuration:10000});        
                 }
                 
@@ -240,8 +253,8 @@ const handleDeposit = async (event : MouseEvent) => {
         }
         
         let param : ContractParameters = 
-        tokenType === TOKEN_TYPE.XTZ ? new ContractXTZParameters( new BigNumber(quantity*1000000),rollupType === ROLLUP_TYPE.DEKU ? AddressType.l1_ADDRESS : AddressType.l2_ADDRESS ,l2Address,rollupType.address) 
-        : new ContractFA12Parameters(new BigNumber(quantity*1000000),process.env["REACT_APP_CTEZ_CONTRACT"]!,rollupType === ROLLUP_TYPE.DEKU ? AddressType.l1_ADDRESS : AddressType.l2_ADDRESS,l2Address,rollupType.address)
+        tokenType === TOKEN_TYPE.XTZ ? new ContractXTZParameters( new BigNumber(quantity*1000000),rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI ,l2Address,rollupType.address) 
+        : new ContractFA12Parameters(new BigNumber(quantity*1000000),process.env["REACT_APP_CTEZ_CONTRACT"]!,rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI,l2Address,rollupType.address)
         
         /* console.log("param",param);
         let inspect = c.methods.deposit(...Object.values(param)).toTransferParams();
@@ -254,7 +267,7 @@ const handleDeposit = async (event : MouseEvent) => {
             ...c.methods.deposit(...Object.values(param)).toTransferParams(),
             amount: tokenType === TOKEN_TYPE.XTZ?quantity:0,
         })
-
+        
         const batch : WalletOperationBatch = await Tezos.wallet.batch(operations);
         const batchOp = await batch.send();
         const br = await batchOp.confirmation(1);
@@ -287,7 +300,7 @@ const handleDeposit = async (event : MouseEvent) => {
                     }
                 }
             }
-                        
+            
             enqueueSnackbar("Store your ticket hash somewhere, you will need it later : "+ticketHash, {variant: "success", autoHideDuration:10000});
         }
         
@@ -327,6 +340,8 @@ return (
     <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.DEKU);closeSelectRollupPopup();}}>{ROLLUP_TYPE.DEKU.name} : {ROLLUP_TYPE.DEKU.address}</HoverBox>
     <hr />
     <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.TORU);closeSelectRollupPopup();}}>{ROLLUP_TYPE.TORU.name} : {ROLLUP_TYPE.TORU.address}</HoverBox>
+    <hr />
+    <HoverBox onClick={()=>{setL2Address(userAddress);setRollupType(ROLLUP_TYPE.CHUSAI);closeSelectRollupPopup();}}>{ROLLUP_TYPE.CHUSAI.name} : {ROLLUP_TYPE.CHUSAI.address}</HoverBox>
     </Paper>
     </Popover>
     
@@ -376,6 +391,7 @@ return (
     fullWidth
     required
     value={l2Address}
+    disabled={rollupType == ROLLUP_TYPE.CHUSAI}
     onChange={(e)=>setL2Address(e.target.value?e.target.value.trim():"")}
     label="L2 address"
     inputProps={{style: { textAlign: 'right' }}} 
@@ -477,13 +493,13 @@ return (
                             <hr />
                             <h3>Pending deposit operations</h3>
                             
-                            
                             {Array.from(contractStorage.fa12PendingDeposits.entries()).map(( [key,val]: [[string,string],ContractFA12Storage]) => 
-                                {let l2Address : string = val.l2Address.l1_ADDRESS?val.l2Address.l1_ADDRESS : val.l2Address.l2_ADDRESS;
+                                {let l2Address : string = val.l2Type.l2_DEKU?val.l2Type.l2_DEKU : val.l2Type.l2_TORU;
+
                                     return <div key={key[0]+key[1]+val.type}>   
                                     <Chip 
                                     avatar={<Avatar src={key[1] == tokenBytes.get(TOKEN_TYPE.XTZ) ?"XTZ-ticket.png" :key[1] == tokenBytes.get(TOKEN_TYPE.FA12) ?  "CTEZ-ticket.png" : ""}  />}
-                                    label={<span>{val.amountToTransfer.toNumber()} for {<span className="address"><span className="address1">{l2Address.substring(0,l2Address.length/2)}</span><span className="address2">{l2Address.substring(l2Address.length/2)}</span></span>} </span>}
+                                    label={<span>{val.amountToTransfer.toNumber()} for {<span className="address"><span className="address1">{l2Address?.substring(0,l2Address.length/2)}</span><span className="address2">{l2Address?.substring(l2Address.length/2)}</span></span>} </span>}
                                     variant="outlined" 
                                     />
                                     <Tooltip title="Collaterize user's tokens and swap to real tickets for rollup">
@@ -500,15 +516,38 @@ return (
                             
                             </Fragment>
                             
-                            : "No rollup info ..." }
-                            </Stack>
-                            </CardContent>
-                            </Card>
-                            </Grid>
-                            </Grid>
+                            : rollup instanceof RollupCHUSAI ? 
+                            <Fragment>
+                            <TableContainer component={Paper}><Table><TableBody>
+                            <TableRow><TableCell>rollup_level </TableCell><TableCell>{rollup.rollup_level.toNumber()}</TableCell></TableRow >
+                            <TableRow><TableCell>messages </TableCell><TableCell>{rollup.messages.toJSON()}</TableCell></TableRow >
+                            <TableRow><TableCell>fixed_ticket_key.mint_address </TableCell><TableCell>{rollup.fixed_ticket_key.mint_address}</TableCell></TableRow>
+                            <TableRow><TableCell>fixed_ticket_key.payload</TableCell><TableCell>{rollup.fixed_ticket_key.payload}</TableCell></TableRow >
+                            </TableBody></Table></TableContainer> 
                             
-                            </Box>
-                            );
-                        };
-                        
-                        export default Deposit;
+                            <hr />
+                            <h3>Vault</h3>
+                            
+                            {rollup.ticket? 
+                                <Chip
+                                avatar={<Avatar src="XTZ-ticket.png"/>}
+                                label={<span>{rollup.ticket?.amount.toNumber()}</span>}
+                                variant="outlined" 
+                                />
+                                :""}
+                                
+                               </Fragment>
+                                    
+                                    
+                                    : "No rollup info ..." }
+                                    </Stack>
+                                    </CardContent>
+                                    </Card>
+                                    </Grid>
+                                    </Grid>
+                                    
+                                    </Box>
+                                    );
+                                };
+                                
+                                export default Deposit;

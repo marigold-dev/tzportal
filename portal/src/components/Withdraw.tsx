@@ -7,7 +7,7 @@ import { AccountBalanceWallet, AccountCircle, Add, AddShoppingCartOutlined, Arro
 import { useSnackbar } from "notistack";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 import {  ContractFA12Parameters, ContractFA12Storage, ContractParameters, ContractStorage, ContractXTZParameters } from "./TicketerContractUtils";
-import {  AddressType, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
+import {  LAYER2Type, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
 import { maxWidth, styled, width } from "@mui/system";
@@ -121,23 +121,33 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
         setTezosLoading(true);
 
         //1. Treasury call pending withdraw to destroy tickets
+                
+        let l2Type : LAYER2Type = contractFA12Storage.l2Type.l2_TORU && contractFA12Storage.l2Type.l2_TORU !== "" ?  
+        LAYER2Type.L2_TORU: contractFA12Storage.l2Type.l2_DEKU && contractFA12Storage.l2Type.l2_DEKU !== "" ? LAYER2Type.L2_DEKU :LAYER2Type.L2_CHUSAI ;
         
-        let addressType = contractFA12Storage.l2Address.l1_ADDRESS && contractFA12Storage.l2Address.l1_ADDRESS !== "" ?  AddressType.l1_ADDRESS: AddressType.l2_ADDRESS;
-        const param = addressType == AddressType.l1_ADDRESS?
+        const param = l2Type == LAYER2Type.L2_TORU?
         {
             "address": to,
             "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
             "rollupAddress": contractFA12Storage.rollupAddress,
-            "l2Address": addressType,
-            "l1_ADDRESS": contractFA12Storage.l2Address.l1_ADDRESS,
+            "l2Type": l2Type,
+            "l2_TORU": contractFA12Storage.l2Type.l2_TORU,
+            "fa12Address": contractFA12Storage.fa12Address
+        }: l2Type == LAYER2Type.L2_DEKU?
+        {
+            "address": to,
+            "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
+            "rollupAddress": contractFA12Storage.rollupAddress,
+            "l2Type": l2Type,
+            "l2_DEKU": contractFA12Storage.l2Type.l2_DEKU,
             "fa12Address": contractFA12Storage.fa12Address
         }:
         {
             "address": to,
             "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
             "rollupAddress": contractFA12Storage.rollupAddress,
-            "l2Address": addressType,
-            "l2_ADDRESS": contractFA12Storage.l2Address.l2_ADDRESS,
+            "l2Type": l2Type,
+            "l2_CHUSAI": contractFA12Storage.l2Type.l2_CHUSAI,
             "fa12Address": contractFA12Storage.fa12Address
         }
 
@@ -323,7 +333,7 @@ const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
                         <h3>Pending withdrawals operations</h3>
 
                         {Array.from(contractStorage.fa12PendingWithdrawals.entries()).map(( [key,val]: [[string,string],ContractFA12Storage]) => 
-                                {let l2Address : string = val.l2Address.l1_ADDRESS?val.l2Address.l1_ADDRESS : val.l2Address.l2_ADDRESS;
+                                {let l2Address : string = val.l2Type.l2_DEKU?val.l2Type.l2_DEKU : val.l2Type.l2_TORU;
                                     return <div key={key[0]+key[1]+val.type}>   
                                     <Chip 
                                     avatar={<Avatar src={key[1] == tokenBytes.get(TOKEN_TYPE.XTZ) ?"XTZ-ticket.png" :key[1] == tokenBytes.get(TOKEN_TYPE.FA12) ?  "CTEZ-ticket.png" : ""}  />}

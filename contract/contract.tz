@@ -3,17 +3,23 @@
            (pair %fA12_OP
               (nat %amountToTransfer)
               (address %rollupAddress)
-              (or %l2Address (address %l1_ADDRESS) (tx_rollup_l2_address %l2_ADDRESS))
+              (or %l2Type
+                 (or (unit %l2_CHUSAI) (address %l2_DEKU))
+                 (tx_rollup_l2_address %l2_TORU))
               (address %fa12Address))
            (pair %xTZ_OP
               (nat %amountToTransfer)
               (address %rollupAddress)
-              (or %l2Address (address %l1_ADDRESS) (tx_rollup_l2_address %l2_ADDRESS))))
+              (or %l2Type
+                 (or (unit %l2_CHUSAI) (address %l2_DEKU))
+                 (tx_rollup_l2_address %l2_TORU))))
         (or (pair %pendingDeposit
                address
                (pair (nat %amountToTransfer)
                      (address %rollupAddress)
-                     (or %l2Address (address %l1_ADDRESS) (tx_rollup_l2_address %l2_ADDRESS))
+                     (or %l2Type
+                        (or (unit %l2_CHUSAI) (address %l2_DEKU))
+                        (tx_rollup_l2_address %l2_TORU))
                      (address %fa12Address)))
             (or (ticket %withdrawTORU bytes)
                 (or (ticket %withdrawDEKU bytes)
@@ -21,20 +27,26 @@
                        address
                        (pair (nat %amountToTransfer)
                              (address %rollupAddress)
-                             (or %l2Address (address %l1_ADDRESS) (tx_rollup_l2_address %l2_ADDRESS))
+                             (or %l2Type
+                                (or (unit %l2_CHUSAI) (address %l2_DEKU))
+                                (tx_rollup_l2_address %l2_TORU))
                              (address %fa12Address))))))) ;
   storage
     (pair (pair (map %fa12PendingDeposits
                    (pair address bytes)
                    (pair (nat %amountToTransfer)
                          (address %rollupAddress)
-                         (or %l2Address (address %l1_ADDRESS) (tx_rollup_l2_address %l2_ADDRESS))
+                         (or %l2Type
+                            (or (unit %l2_CHUSAI) (address %l2_DEKU))
+                            (tx_rollup_l2_address %l2_TORU))
                          (address %fa12Address)))
                 (map %fa12PendingWithdrawals
                    (pair address bytes)
                    (pair (nat %amountToTransfer)
                          (address %rollupAddress)
-                         (or %l2Address (address %l1_ADDRESS) (tx_rollup_l2_address %l2_ADDRESS))
+                         (or %l2Type
+                            (or (unit %l2_CHUSAI) (address %l2_DEKU))
+                            (tx_rollup_l2_address %l2_TORU))
                          (address %fa12Address))))
           (address %treasuryAddress)) ;
   code { LAMBDA
@@ -117,16 +129,27 @@
                            IF_LEFT
                              { DIG 4 ;
                                DROP ;
-                               DIG 2 ;
-                               GET 3 ;
-                               DIG 4 ;
-                               SWAP ;
-                               EXEC ;
-                               PUSH mutez 0 ;
-                               DIG 3 ;
-                               DIG 3 ;
-                               PAIR ;
-                               TRANSFER_TOKENS }
+                               IF_LEFT
+                                 { DIG 4 ;
+                                   DROP 2 ;
+                                   PUSH string "14" ;
+                                   DIG 2 ;
+                                   GET 3 ;
+                                   CONTRACT (ticket bytes) ;
+                                   IF_NONE { FAILWITH } { SWAP ; DROP } ;
+                                   PUSH mutez 0 ;
+                                   DIG 2 ;
+                                   TRANSFER_TOKENS }
+                                 { DIG 2 ;
+                                   GET 3 ;
+                                   DIG 4 ;
+                                   SWAP ;
+                                   EXEC ;
+                                   PUSH mutez 0 ;
+                                   DIG 3 ;
+                                   DIG 3 ;
+                                   PAIR ;
+                                   TRANSFER_TOKENS } }
                              { DIG 5 ;
                                DROP ;
                                DIG 2 ;
@@ -161,7 +184,7 @@
                       DUP 3 ;
                       CAR ;
                       CAR ;
-                      NONE (pair nat address (or address tx_rollup_l2_address) address) ;
+                      NONE (pair nat address (or (or unit address) tx_rollup_l2_address) address) ;
                       DUP 3 ;
                       DIG 4 ;
                       CAR ;
@@ -174,28 +197,32 @@
                           IF_LEFT
                             { DIG 5 ;
                               DROP ;
-                              DUP 5 ;
-                              CDR ;
-                              DIG 5 ;
-                              CAR ;
-                              CDR ;
-                              DIG 4 ;
-                              PAIR ;
-                              PAIR ;
-                              NIL operation ;
-                              DUP 4 ;
-                              GET 3 ;
-                              DIG 6 ;
-                              SWAP ;
-                              EXEC ;
-                              PUSH mutez 0 ;
-                              DIG 5 ;
-                              CAR ;
-                              DIG 6 ;
-                              TICKET ;
-                              DIG 5 ;
-                              PAIR ;
-                              TRANSFER_TOKENS }
+                              IF_LEFT
+                                { DROP 6 ; PUSH string "14" ; FAILWITH }
+                                { DUP 5 ;
+                                  CDR ;
+                                  DIG 5 ;
+                                  CAR ;
+                                  CDR ;
+                                  DIG 4 ;
+                                  PAIR ;
+                                  PAIR ;
+                                  NIL operation ;
+                                  DUP 4 ;
+                                  GET 3 ;
+                                  DIG 6 ;
+                                  SWAP ;
+                                  EXEC ;
+                                  PUSH mutez 0 ;
+                                  DIG 5 ;
+                                  CAR ;
+                                  DIG 6 ;
+                                  TICKET ;
+                                  DIG 5 ;
+                                  PAIR ;
+                                  TRANSFER_TOKENS ;
+                                  CONS ;
+                                  PAIR } }
                             { DIG 6 ;
                               DROP ;
                               DUP 5 ;
@@ -219,9 +246,9 @@
                               DIG 6 ;
                               TICKET ;
                               PAIR ;
-                              TRANSFER_TOKENS } ;
-                          CONS ;
-                          PAIR } } }
+                              TRANSFER_TOKENS ;
+                              CONS ;
+                              PAIR } } } }
                { DIG 2 ;
                  DIG 3 ;
                  DROP 2 ;
@@ -273,6 +300,7 @@
                                           CDR ;
                                           DIG 2 ;
                                           SENDER ;
+                                          RIGHT unit ;
                                           LEFT tx_rollup_l2_address ;
                                           SENDER ;
                                           DIG 6 ;
@@ -330,7 +358,7 @@
                               DUP 3 ;
                               CAR ;
                               CDR ;
-                              NONE (pair nat address (or address tx_rollup_l2_address) address) ;
+                              NONE (pair nat address (or (or unit address) tx_rollup_l2_address) address) ;
                               DIG 2 ;
                               DIG 3 ;
                               CAR ;
