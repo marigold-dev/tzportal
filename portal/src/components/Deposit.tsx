@@ -1,17 +1,19 @@
-import React, { useState, useEffect, MouseEvent, Fragment } from "react";
+import React, { useState, useEffect, MouseEvent, Fragment, useRef } from "react";
 import { BigMapAbstraction, OpKind, TezosToolkit, WalletContract, WalletOperationBatch, WalletParamsWithKind } from "@taquito/taquito";
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import Button from "@mui/material/Button";
-import { Avatar, Backdrop, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, IconButton, InputAdornment, ListItem, Paper, Popover, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip } from "@mui/material";
+import { Avatar, Backdrop, Badge, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, IconButton, InputAdornment, InputLabel, ListItem, MenuItem, Paper, Popover, Select, SelectChangeEvent, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip } from "@mui/material";
 import { AccountBalanceWallet, AccountCircle, AddShoppingCartOutlined, ArrowDropDown, CameraRoll } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 import {  ContractFA12Parameters, ContractFA12Storage, ContractParameters, ContractStorage, ContractXTZParameters } from "./TicketerContractUtils";
-import {  LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
+import {  getBytes, LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
 import {  styled } from "@mui/system";
 import { OperationContentsAndResultTransaction , OperationResultTransaction} from "@taquito/rpc";
+import UserWallet from "./UserWallet";
+import RollupBox, { RollupBoxComponentType } from "./RollupBox";
 
 
 type DepositProps = {
@@ -26,12 +28,11 @@ const Deposit = ({
     userAddress
 }: DepositProps): JSX.Element => {
     
-    const [userBalance, setUserBalance] = useState<number>(0);
-    const [userCtezBalance, setUserCtezBalance] = useState<number>(0);
+    const [userBalance, setUserBalance] = useState<Map<TOKEN_TYPE,number>>(new Map());
     
     const [quantity, setQuantity]  = useState<number>(0); //in float TEZ
     const [l2Address, setL2Address]  = useState<string>("");
-    const [tokenType, setTokenType]  = useState<TOKEN_TYPE>(TOKEN_TYPE.XTZ);
+    const [tokenType, setTokenType]  = useState<string>(TOKEN_TYPE.XTZ);
     
     const [rollupType , setRollupType] = useState<ROLLUP_TYPE>(ROLLUP_TYPE.DEKU);
     const [rollup , setRollup] = useState<RollupTORU | RollupDEKU | RollupCHUSAI>();
@@ -47,6 +48,10 @@ const Deposit = ({
     // MESSAGES
     const { enqueueSnackbar } = useSnackbar();
     
+
+    const myRef = useRef<RollupBoxComponentType>();
+
+
     //POPUP
     const [selectRollupPopupAnchorEl, setSelectRollupPopupAnchorEl] = React.useState<null | HTMLElement>(null);
     const showSelectRollupPopup = (event : React.MouseEvent<HTMLButtonElement>) => {
@@ -57,17 +62,35 @@ const Deposit = ({
     };
     const selectRollupPopupOpen = Boolean(selectRollupPopupAnchorEl);
     
-    const refreshCtezBalance = async() => {
+    const refreshBalance = async() => {
+        //XTZ
+        const XTZbalance = await Tezos.tz.getBalance(userAddress);
+        
+        //FA1.2 LOOP
+        
+        //kUSD
+        let kUSDContract : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!);
+        const kUSDtokenMap : BigMapAbstraction = (await kUSDContract.storage() as FA12Contract).tokens;
+        let kUSDBalance : BigNumber|undefined = await kUSDtokenMap.get<BigNumber>(userAddress);
+        
+        
+        //CTEZ
         let ctezContract : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!);
-        const tokenMap : BigMapAbstraction = (await ctezContract.storage() as FA12Contract).tokens;
-        let ctezBalance : BigNumber|undefined = await tokenMap.get<BigNumber>(userAddress);
-        setUserCtezBalance(ctezBalance !== undefined ? ctezBalance.toNumber() / 1000000 : 0); //convert to muctez
+        const cteztokenMap : BigMapAbstraction = (await ctezContract.storage() as FA12Contract).tokens;
+        let ctezBalance : BigNumber|undefined = await cteztokenMap.get<BigNumber>(userAddress);
+        
+        
+        let balance = new Map();
+        balance.set(TOKEN_TYPE.XTZ,XTZbalance.toNumber() / 1000000); //convert mutez to tez
+        if(kUSDBalance !== undefined) balance.set(TOKEN_TYPE.KUSD,kUSDBalance.toNumber() / 1000000);//convert to mukUSD
+        else balance.set(TOKEN_TYPE.KUSD,0); 
+        if(ctezBalance !== undefined) balance.set(TOKEN_TYPE.CTEZ,ctezBalance.toNumber() / 1000000)//convert to muctez
+        else balance.set(TOKEN_TYPE.CTEZ,0); 
+        
+        setUserBalance(balance);
+        
     }
     
-    const refreshBalance = async() => {
-        const balance = await Tezos.tz.getBalance(userAddress);
-        setUserBalance(balance.toNumber() / 1000000); //convert mutez to tez
-    }
     
     const refreshRollup = async() => {
         switch(rollupType){
@@ -88,11 +111,10 @@ const Deposit = ({
     useEffect(() => { (async () => {
         refreshContract();
         refreshBalance();
-        refreshCtezBalance();
         refreshRollup();
         setTokenBytes(new Map([
-            [TOKEN_TYPE.XTZ, await TOKEN_TYPE.XTZ.getBytes()],
-            [TOKEN_TYPE.FA12, await TOKEN_TYPE.FA12.getBytes(process.env["REACT_APP_CTEZ_CONTRACT"]!)]
+            [TOKEN_TYPE.XTZ, await getBytes(TOKEN_TYPE.XTZ)],
+            [TOKEN_TYPE.CTEZ, await getBytes(TOKEN_TYPE.CTEZ,process.env["REACT_APP_CTEZ_CONTRACT"]!)]
         ]));
     })();
 }, []);
@@ -105,8 +127,9 @@ useEffect(() => {
 const isDepositButtonDisabled = () : boolean | undefined => {
     let isDisabled = true;
     switch(tokenType){
-        case TOKEN_TYPE.XTZ : isDisabled= (quantity === 0 || quantity > userBalance);break;
-        case TOKEN_TYPE.FA12 : isDisabled= (quantity === 0 || quantity > userCtezBalance);break;
+        case TOKEN_TYPE.XTZ : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.XTZ) !== undefined && (quantity > userBalance.get(TOKEN_TYPE.XTZ)!)));break;
+        case TOKEN_TYPE.CTEZ : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.CTEZ) !== undefined && (quantity > userBalance.get(TOKEN_TYPE.CTEZ)!)));break;
+        case TOKEN_TYPE.KUSD : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.KUSD) !== undefined && (quantity > userBalance.get(TOKEN_TYPE.KUSD)!)));break;
     }
     return isDisabled;
 }
@@ -128,7 +151,7 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
         })
         
         enqueueSnackbar("Treasury has batched collaterization "+contractFA12Storage.amountToTransfer.toNumber()+" tokens from "+from, {variant: "success", autoHideDuration:10000});        
-        refreshCtezBalance();
+        refreshBalance();
         setTezosLoading(false);
     }catch (error : any) {
         console.table(`Error: ${JSON.stringify(error, null, 2)}`);
@@ -206,14 +229,14 @@ const handleDeposit = async (event : MouseEvent) => {
     const operations : WalletParamsWithKind[]= [];
     
     try {
-
-        if(tokenType === TOKEN_TYPE.FA12 && rollupType == ROLLUP_TYPE.CHUSAI){
+        
+        if(tokenType === TOKEN_TYPE.CTEZ && rollupType == ROLLUP_TYPE.CHUSAI){
             alert("CHUSAI is not yet ready for FA1.2");
             return;
         }
         
         //in case of FA1.2 an allowance should be granted with minimum tokens
-        if(tokenType === TOKEN_TYPE.FA12){
+        if(tokenType === TOKEN_TYPE.CTEZ){
             let fa12Contract : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!);
             let fa12ContractStorage : FA12Contract = await fa12Contract.storage() as FA12Contract;
             let allowance : BigNumber|undefined = await fa12ContractStorage.allowances.get<BigNumber>({
@@ -306,7 +329,6 @@ const handleDeposit = async (event : MouseEvent) => {
         
         await refreshRollup();
         await refreshBalance();
-        await refreshCtezBalance();
         await refreshContract();
     } catch (error : any) {
         console.table(`Error: ${JSON.stringify(error, null, 2)}`);
@@ -336,7 +358,7 @@ return (
         horizontal: 'left',
     }}
     >
-    <Paper title="Choose default rollup" sx={{padding : 1}} elevation={3}>
+    <Paper title="Choose rollup or sidechain" sx={{padding : 1}} elevation={3}>
     <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.DEKU);closeSelectRollupPopup();}}>{ROLLUP_TYPE.DEKU.name} : {ROLLUP_TYPE.DEKU.address}</HoverBox>
     <hr />
     <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.TORU);closeSelectRollupPopup();}}>{ROLLUP_TYPE.TORU.name} : {ROLLUP_TYPE.TORU.address}</HoverBox>
@@ -353,36 +375,9 @@ return (
     </Backdrop>
     <Grid container spacing={2} >
     
-    <Grid item xs={12} md={3}>
-    <Card>
-    <CardHeader
-    sx={{color:"secondary.main",backgroundColor:"primary.main"}}
-    avatar={<Avatar aria-label="recipe"><AccountBalanceWallet /> </Avatar>}
-    title="Tezos Wallet"
-    subheader={<div className="address"><span className="address1">{userAddress.substring(0,userAddress.length/2)}</span><span className="address2">{userAddress.substring(userAddress.length/2)}</span></div> }
-    />
-    <CardContent>
-    <Stack spacing={1} direction="column"  divider={<Divider orientation="horizontal" flexItem />}>
-    <Chip 
-    onClick={()=>{setTokenType(TOKEN_TYPE.XTZ);setQuantity(userBalance)}}
-    sx={{justifyContent: "right"}}
-    deleteIcon={<Avatar sx={{height:24,width:24}} src="XTZ.png" />}
-    onDelete={()=>{}}
-    label={userBalance}
-    variant="outlined" 
-    />
-    <Chip 
-    onClick={()=>{setTokenType(TOKEN_TYPE.FA12);setQuantity(userCtezBalance)}}
-    sx={{justifyContent: "right"}}
-    onDelete={()=>{}}
-    deleteIcon={<Avatar sx={{height:24,width:24}} src="CTEZ.png" />}
-    label={userCtezBalance}
-    variant="outlined"
-    />
-    </Stack>
-    </CardContent>
-    </Card>
-    </Grid>
+    <UserWallet 
+    userAddress={userAddress}
+    userBalance={userBalance} />
     
     <Grid item xs={12} md={4} >
     
@@ -407,147 +402,75 @@ return (
         />
         </Grid>
         
-        <Grid item xs={12} md={12} padding={1}>
-        <TextField
-        required
-        fullWidth
+        
+        
+        <Grid item xs={12} md={12} padding={1} >
+        
+        
+        <Box sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            padding : "0.4em"
+        }}>
+        
+        <TextField fullWidth 
+        required 
         type="number"
         onChange={(e)=>setQuantity(e.target.value?parseFloat(e.target.value):0)}
         value={quantity}
         label="Quantity"
         inputProps={{style: { textAlign: 'right' }}} 
-        InputProps={{
-            startAdornment: (
-                <InputAdornment position="start">
-                <Avatar sx={{height:"24px", width:"24px"}} src={ tokenType === TOKEN_TYPE.XTZ ? "XTZ.png":"CTEZ.png"} />
-                </InputAdornment>
-                ),
-            }}
-            variant="standard"
-            />
-            </Grid>
-            <Grid item xs={12} md={12} padding={1}>
-            <Button variant="contained" disabled={isDepositButtonDisabled()} onClick={(e)=>handleDeposit(e)}>DEPOSIT</Button>
-            </Grid>
-            </Grid>
-            
-            <Grid item xs={12} md={5} >
-            <Card>
-            <CardHeader 
-            sx={{color:"secondary.main",backgroundColor:"primary.main"}}
-            avatar={<Avatar aria-label="recipe"><CameraRoll /></Avatar>}
-            action={
-                <IconButton aria-label="settings" onClick={(e)=>showSelectRollupPopup(e)}>
-                <ArrowDropDown />
-                </IconButton>
-            }
-            title={rollupType.name+" default rollup"}
-            subheader={<div className="address"><span className="address1">{rollupType.address.substring(0,rollupType.address.length/2)}</span><span className="address2">{rollupType.address.substring(rollupType.address.length/2)}</span></div> }
-            />
-            <CardContent>
-            <Stack spacing={1} direction="column"  divider={<Divider orientation="horizontal" flexItem />}>
-            { 
-                rollup instanceof RollupTORU?
-                <TableContainer component={Paper}><Table><TableBody>
-                <TableRow><TableCell>commitment_newest_hash </TableCell><TableCell>{rollup.commitment_newest_hash}</TableCell></TableRow >
-                <TableRow><TableCell>finalized_commitments </TableCell><TableCell>{rollup.finalized_commitments.next}</TableCell></TableRow >
-                <TableRow><TableCell>last_removed_commitment_hashes </TableCell><TableCell>{rollup.last_removed_commitment_hashes}</TableCell></TableRow>
-                <TableRow><TableCell>inbox_ema</TableCell><TableCell>{rollup.inbox_ema}</TableCell></TableRow >
-                <TableRow><TableCell>tezos_head_level </TableCell><TableCell>{rollup.tezos_head_level}</TableCell></TableRow >
-                <TableRow><TableCell>allocated_storage </TableCell><TableCell>{rollup.allocated_storage}</TableCell></TableRow >
-                <TableRow><TableCell>uncommitted_inboxes </TableCell><TableCell>{rollup.uncommitted_inboxes.next}</TableCell></TableRow >
-                <TableRow><TableCell>unfinalized_commitments </TableCell><TableCell>{rollup.unfinalized_commitments.next}</TableCell></TableRow >
-                </TableBody></Table></TableContainer> 
-                : 
-                rollup instanceof RollupDEKU ? 
-                <Fragment>
-                <TableContainer component={Paper}><Table><TableBody>
-                <TableRow><TableCell>current_block_hash </TableCell><TableCell>{rollup.root_hash.current_block_hash}</TableCell></TableRow >
-                <TableRow><TableCell>current_block_height </TableCell><TableCell>{rollup.root_hash.current_block_height.toNumber()}</TableCell></TableRow >
-                <TableRow><TableCell>current_handles_hash </TableCell><TableCell>{rollup.root_hash.current_handles_hash}</TableCell></TableRow >
-                <TableRow><TableCell>current_state_hash </TableCell><TableCell>{rollup.root_hash.current_state_hash}</TableCell></TableRow >
-                <TableRow><TableCell>current_validators </TableCell><TableCell>{rollup.root_hash.current_validators.join(", ")}</TableCell></TableRow >
-                </TableBody></Table></TableContainer>
-                
-                <hr />
-                <h3>Vault</h3>
-                
-                {rollup.vault.XTZTicket? 
-                    <Chip
-                    avatar={<Avatar src="XTZ-ticket.png"/>}
-                    label={<span>{rollup.vault.XTZTicket?.amount.toNumber()}</span>}
-                    variant="outlined" 
-                    />
-                    :""}
-                    
-                    {rollup.vault.CTEZTicket? 
-                        <Chip 
-                        avatar={<Avatar src="CTEZ-ticket.png"/>}
-                        label={<span>{rollup.vault.CTEZTicket?.amount.toNumber()}</span>}
-                        variant="outlined" 
-                        />
-                        :""}
-                        
-                        {contractStorage?.treasuryAddress == userAddress?
-                            <Fragment>
-                            <hr />
-                            <h3>Pending deposit operations</h3>
-                            
-                            {Array.from(contractStorage.fa12PendingDeposits.entries()).map(( [key,val]: [[string,string],ContractFA12Storage]) => 
-                                {let l2Address : string = val.l2Type.l2_DEKU?val.l2Type.l2_DEKU : val.l2Type.l2_TORU;
+        variant="standard"
+        />
+        
+        &nbsp;
+        
+        <Select 
+        labelId="demo-simple-select-label"
+        id="demo-simple-select"
+        defaultValue={TOKEN_TYPE.XTZ}
+        value={tokenType}
+        label="token type"
+        onChange={(e : SelectChangeEvent)=>{setTokenType(e.target.value);}}
+        >
+        { Object.keys(TOKEN_TYPE).map((key)  => 
+            <MenuItem key={key} value={key}>
+            <Badge >
+            <Avatar component="span" src={key+".png"}></Avatar>
+            </Badge>
+            </MenuItem>
+        ) }
+        
+        
+        </Select>
+        
+        </Box>
+        
+        </Grid>
+        
+        
+        <Grid item xs={12} md={12} padding={1}>
+        <Button variant="contained" disabled={isDepositButtonDisabled()} onClick={(e)=>handleDeposit(e)}>DEPOSIT</Button>
+        </Grid>
+        </Grid>
+        
+      
+      
 
-                                    return <div key={key[0]+key[1]+val.type}>   
-                                    <Chip 
-                                    avatar={<Avatar src={key[1] == tokenBytes.get(TOKEN_TYPE.XTZ) ?"XTZ-ticket.png" :key[1] == tokenBytes.get(TOKEN_TYPE.FA12) ?  "CTEZ-ticket.png" : ""}  />}
-                                    label={<span>{val.amountToTransfer.toNumber()} for {<span className="address"><span className="address1">{l2Address?.substring(0,l2Address.length/2)}</span><span className="address2">{l2Address?.substring(l2Address.length/2)}</span></span>} </span>}
-                                    variant="outlined" 
-                                    />
-                                    <Tooltip title="Collaterize user's tokens and swap to real tickets for rollup">
-                                    <Button onClick={(e)=>handlePendingDeposit(e,key[0],val)} startIcon={<AddShoppingCartOutlined/>}></Button>
-                                    </Tooltip>
-                                    </div>
-                                }
-                                )}
-                                
-                                
-                                </Fragment>
-                                :""
-                            }
+        <RollupBox 
+    ref={myRef}
+    Tezos={Tezos}
+    userAddress={userAddress}
+    tokenBytes={tokenBytes}
+    handlePendingWithdraw={undefined}
+    handlePendingDeposit={handlePendingDeposit}
+    contractStorage={contractStorage}
+    />
+
+                            </Grid>
                             
-                            </Fragment>
-                            
-                            : rollup instanceof RollupCHUSAI ? 
-                            <Fragment>
-                            <TableContainer component={Paper}><Table><TableBody>
-                            <TableRow><TableCell>rollup_level </TableCell><TableCell>{rollup.rollup_level.toNumber()}</TableCell></TableRow >
-                            <TableRow><TableCell>messages </TableCell><TableCell>{rollup.messages.toJSON()}</TableCell></TableRow >
-                            <TableRow><TableCell>fixed_ticket_key.mint_address </TableCell><TableCell>{rollup.fixed_ticket_key.mint_address}</TableCell></TableRow>
-                            <TableRow><TableCell>fixed_ticket_key.payload</TableCell><TableCell>{rollup.fixed_ticket_key.payload}</TableCell></TableRow >
-                            </TableBody></Table></TableContainer> 
-                            
-                            <hr />
-                            <h3>Vault</h3>
-                            
-                            {rollup.ticket? 
-                                <Chip
-                                avatar={<Avatar src="XTZ-ticket.png"/>}
-                                label={<span>{rollup.ticket?.amount.toNumber()}</span>}
-                                variant="outlined" 
-                                />
-                                :""}
-                                
-                               </Fragment>
-                                    
-                                    
-                                    : "No rollup info ..." }
-                                    </Stack>
-                                    </CardContent>
-                                    </Card>
-                                    </Grid>
-                                    </Grid>
-                                    
-                                    </Box>
-                                    );
-                                };
-                                
-                                export default Deposit;
+                            </Box>
+                            );
+                        };
+                        
+                        export default Deposit;

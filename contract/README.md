@@ -37,9 +37,9 @@ tezos-client transfer 42 from myFirstKey to KT1Ci5heqWbRmxM98769W7jqVxCZ9zZUQ31o
 
 # FA1.2 Contract
 
-ligo compile contract ./test/fa12.mligo --entry-point main --output-file ./test/fa12.tz
+ligo compile contract ./test/fa12.mligo --entry-point main --output-file ./test/fa12.tz --protocol jakarta
 
-ligo compile storage ./test/fa12.mligo "$(cat ./test/fa12_storage.mligo)" --entry-point main  --output-file ./test/fa12_storage.tz
+ligo compile storage ./test/fa12.mligo "$(cat ./test/fa12_storage.mligo)" --entry-point main  --output-file ./test/fa12_storage.tz --protocol jakarta
 
 ligo compile parameter ./test/fa12.mligo 'Approve({spender = ("KT1LZANqpM24Adb5Rp7GLXdd4g9sV4v8yDnw" : address) ; value = 10000n})' --output-file fa12Parameter.tz --entry-point main
 

@@ -94,19 +94,16 @@ export class RollupTORU {
         known_handles_hash : any;
         used_handles : any;
         vault : BigMapAbstraction;
-        XTZTicket : TezosTicket | undefined;
-        CTEZTicket : TezosTicket | undefined;
+        ticketMap : Map<string,TezosTicket>;
         
         constructor(known_handles_hash : any,
           used_handles : any,
           vault: BigMapAbstraction,
-          XTZTicket : TezosTicket | undefined,
-          CTEZTicket : TezosTicket | undefined){
+          ticketMap : Map<string,TezosTicket>){
             this.known_handles_hash = known_handles_hash;
             this.used_handles = used_handles;
             this.vault = vault;
-            this.XTZTicket=XTZTicket;
-            this.CTEZTicket=CTEZTicket;
+            this.ticketMap = ticketMap;
           }
         };
         
@@ -116,7 +113,7 @@ export class RollupTORU {
           messages : BigMapAbstraction;
           rollup_level : BigNumber;
           ticket : TezosTicket;
-
+          
           constructor(fixed_ticket_key : CHUSAITicketKey,
             messages : BigMapAbstraction,
             rollup_level : BigNumber,
@@ -125,28 +122,25 @@ export class RollupTORU {
               this.rollup_level = rollup_level;
               this.messages = messages;
               this.ticket = ticket;
-          }
-        };
-
-        export class CHUSAITicketKey{
-        mint_address! : string;
-        payload! : string //bytes
-      };
-        
-        export class TOKEN_TYPE {
-          public static readonly XTZ = new TOKEN_TYPE("XTZ");
-          public static readonly FA12 = new TOKEN_TYPE("FA12");
+            }
+          };
           
-          constructor(public readonly name: string) {
-          }
+          export class CHUSAITicketKey{
+            mint_address! : string;
+            payload! : string //bytes
+          };
           
-          public async getBytes(contractAddress? : string) : Promise<string> {
-            if(this === TOKEN_TYPE.XTZ) return this.getXTZBytes();
-            else if (this === TOKEN_TYPE.FA12) return this.getFA12Bytes(contractAddress!);
-            else throw new Error("Cannot get bytes");
-          }  
+          export enum TOKEN_TYPE {XTZ = "XTZ",CTEZ = "CTEZ",KUSD = "KUSD"};
           
-          public async getXTZBytes() : Promise<string> {
+          
+          
+          
+          export async function getBytes(tokenType : TOKEN_TYPE, contractAddress? : string) : Promise<string> {
+            if(tokenType === TOKEN_TYPE.XTZ) return getXTZBytes();
+            else return getFA12Bytes(contractAddress!);
+          };  
+          
+          export async function getXTZBytes() : Promise<string> {
             const p = new MichelCodecPacker();
             let XTZbytes: PackDataParams = {
               data:  {prim : "Left", args: [ {prim : "Unit"}]},
@@ -160,7 +154,7 @@ export class RollupTORU {
           }
           
           
-          public async getFA12Bytes(contractAddress : string) : Promise<string> {
+          export async function getFA12Bytes(contractAddress : string) : Promise<string> {
             const p = new MichelCodecPacker();
             let addrBytes : PackDataResponse = await p.packData({
               data: {string : contractAddress},// process.env["REACT_APP_CTEZ_CONTRACT"]!},
@@ -181,63 +175,68 @@ export class RollupTORU {
             return (await p.packData(FA12bytes)).packed ;
           }
           
-        };
-        
-        export class ROLLUP_TYPE {
-          public static readonly TORU = new ROLLUP_TYPE("TORU",process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
-          public static readonly DEKU = new ROLLUP_TYPE("DEKU",process.env["REACT_APP_ROLLUP_CONTRACT_DEKU"]!);
-          public static readonly CHUSAI = new ROLLUP_TYPE("CHUSAI",process.env["REACT_APP_ROLLUP_CONTRACT_CHUSAI"]!);
-          private constructor(public readonly name: string, public readonly address: string) {}
-        };
-        
-        
-        export class TezosTicket {
-          ticketer: TOKEN_TYPE;
-          value: string;
-          amount: BigNumber ;
           
-          constructor(ticketer: TOKEN_TYPE,
-            value: string,
-            amount: BigNumber){
-              this.ticketer =ticketer ;
-              this.value =value ;
-              this.amount =amount ;
-            }
+          
+          export class ROLLUP_TYPE {
+            public static readonly TORU = new ROLLUP_TYPE("TORU",process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
+            public static readonly DEKU = new ROLLUP_TYPE("DEKU",process.env["REACT_APP_ROLLUP_CONTRACT_DEKU"]!);
+            public static readonly CHUSAI = new ROLLUP_TYPE("CHUSAI",process.env["REACT_APP_ROLLUP_CONTRACT_CHUSAI"]!);
+            private constructor(public readonly name: string, public readonly address: string) {}
           };
           
-          export abstract class TezosUtils{
+          
+          export class TezosTicket {
+            ticketer: TOKEN_TYPE;
+            value: string;
+            amount: BigNumber ;
             
-            static async fetchRollupTORU(rpc : string,rollupAddress : string ) : Promise<RollupTORU|undefined> {
-              let response = await fetch(rpc+"chains/main/blocks/head/context/tx_rollup/"+rollupAddress+"/state");              
-              let rollup : RollupTORU = await response.json();
-              
-              return new Promise( (resolve,reject) => { 
-                if(response.ok) resolve(new RollupTORU(rollup.last_removed_commitment_hashes,rollup.finalized_commitments,rollup.unfinalized_commitments,rollup.uncommitted_inboxes,rollup.commitment_newest_hash,rollup.tezos_head_level,rollup.burn_per_byte,rollup.allocated_storage,rollup.occupied_storage,rollup.inbox_ema,rollup.commitments_watermark));
-                else reject("Cannot find the rollup information of "+rollupAddress);
-              });
-            }
+            constructor(ticketer: TOKEN_TYPE,
+              value: string,
+              amount: BigNumber){
+                this.ticketer =ticketer ;
+                this.value =value ;
+                this.amount =amount ;
+              }
+            };
             
-            static async fetchRollupDEKU(Tezos : TezosToolkit, rollupAddress : string) : Promise<RollupDEKU|undefined> {
-              let dekucontract : Contract = await Tezos.contract.at(rollupAddress);
-              let rollup : RollupDEKU = await dekucontract.storage();
+            export abstract class TezosUtils{
               
+              static async fetchRollupTORU(rpc : string,rollupAddress : string ) : Promise<RollupTORU|undefined> {
+                let response = await fetch(rpc+"chains/main/blocks/head/context/tx_rollup/"+rollupAddress+"/state");              
+                let rollup : RollupTORU = await response.json();
+                
+                return new Promise( (resolve,reject) => { 
+                  if(response.ok) resolve(new RollupTORU(rollup.last_removed_commitment_hashes,rollup.finalized_commitments,rollup.unfinalized_commitments,rollup.uncommitted_inboxes,rollup.commitment_newest_hash,rollup.tezos_head_level,rollup.burn_per_byte,rollup.allocated_storage,rollup.occupied_storage,rollup.inbox_ema,rollup.commitments_watermark));
+                  else reject("Cannot find the rollup information of "+rollupAddress);
+                });
+              }
               
-              let XTZTicket = await rollup.vault.vault.get<TezosTicket>([process.env["REACT_APP_CONTRACT"],await TOKEN_TYPE.XTZ.getBytes()]) ; //XTZ() => "050505030b" 
-              let CTEZTicket = await rollup.vault.vault.get<TezosTicket>([process.env["REACT_APP_CONTRACT"],await TOKEN_TYPE.FA12.getBytes(process.env["REACT_APP_CTEZ_CONTRACT"]!) ]) ; //FA12 CTEZ with address KT1WnDswMHZefo2fym6Q9c8hnL3sEuzFb2Dt => "0505080a0000001601f37d4eddfff4e08fb1f19895ac9c83bc12d2b36800"
-              
-              return new Promise( (resolve,reject) => {
-                resolve(new RollupDEKU(
-                  new DEKUHeader(rollup.root_hash.current_block_hash,rollup.root_hash.current_block_height,rollup.root_hash.current_handles_hash,rollup.root_hash.current_state_hash,rollup.root_hash.current_validators),
-                  new DEKUVault(rollup.vault.known_handles_hash,rollup.vault.used_handles,rollup.vault.vault,XTZTicket,CTEZTicket))); });
-                }
+              static async fetchRollupDEKU(Tezos : TezosToolkit, rollupAddress : string) : Promise<RollupDEKU|undefined> {
+                let dekucontract : Contract = await Tezos.contract.at(rollupAddress);
+                let rollup : RollupDEKU = await dekucontract.storage();
                 
                 
-                static async fetchRollupCHUSAI(Tezos : TezosToolkit, rollupAddress : string) : Promise<RollupCHUSAI|undefined> {
-                  let contract : Contract = await Tezos.contract.at(rollupAddress);
-                  let rollup : RollupCHUSAI = await contract.storage();
-                                    console.log("rollup",rollup);
-                  return new Promise( (resolve,reject) => {
-                    resolve(new RollupCHUSAI(rollup.fixed_ticket_key,rollup.messages,rollup.rollup_level,rollup.ticket)); });
+                let XTZTicket = await rollup.vault.vault.get<TezosTicket>([process.env["REACT_APP_CONTRACT"],await getBytes(TOKEN_TYPE.XTZ)]) ; //XTZ() => "050505030b" 
+                let CTEZTicket = await rollup.vault.vault.get<TezosTicket>([process.env["REACT_APP_CONTRACT"],await getBytes(TOKEN_TYPE.CTEZ,process.env["REACT_APP_CTEZ_CONTRACT"]!) ]) ; //FA12 CTEZ with address KT1WnDswMHZefo2fym6Q9c8hnL3sEuzFb2Dt => "0505080a0000001601f37d4eddfff4e08fb1f19895ac9c83bc12d2b36800"
+                let kUSDTicket = await rollup.vault.vault.get<TezosTicket>([process.env["REACT_APP_CONTRACT"],await getBytes(TOKEN_TYPE.KUSD,process.env["REACT_APP_KUSD_CONTRACT"]!) ]) ; //FA12 KUSD with address ??? => "???"
+                const ticketMap = new Map<TOKEN_TYPE,TezosTicket>();
+                if(XTZTicket)ticketMap.set(TOKEN_TYPE.XTZ,XTZTicket);
+                if(CTEZTicket)ticketMap.set(TOKEN_TYPE.CTEZ,CTEZTicket);
+                if(kUSDTicket)ticketMap.set(TOKEN_TYPE.KUSD,kUSDTicket);
+                
+                return new Promise( (resolve,reject) => {
+                  resolve(new RollupDEKU(
+                    new DEKUHeader(rollup.root_hash.current_block_hash,rollup.root_hash.current_block_height,rollup.root_hash.current_handles_hash,rollup.root_hash.current_state_hash,rollup.root_hash.current_validators),
+                    new DEKUVault(rollup.vault.known_handles_hash,rollup.vault.used_handles,rollup.vault.vault,ticketMap))); });
+                  }
+                  
+                  
+                  static async fetchRollupCHUSAI(Tezos : TezosToolkit, rollupAddress : string) : Promise<RollupCHUSAI|undefined> {
+                    let contract : Contract = await Tezos.contract.at(rollupAddress);
+                    let rollup : RollupCHUSAI = await contract.storage();
+                    console.log("rollup",rollup);
+                    return new Promise( (resolve,reject) => {
+                      resolve(new RollupCHUSAI(rollup.fixed_ticket_key,rollup.messages,rollup.rollup_level,rollup.ticket)); });
                     }
                     
                     
