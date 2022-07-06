@@ -91,16 +91,6 @@ const Deposit = ({
         
     }
     
-    
-    const refreshRollup = async() => {
-        switch(rollupType){
-            case ROLLUP_TYPE.TORU : setRollup(await TezosUtils.fetchRollupTORU(Tezos.rpc.getRpcUrl(),rollupType.address));break;
-            case ROLLUP_TYPE.DEKU : setRollup(await TezosUtils.fetchRollupDEKU(Tezos,rollupType.address));break;
-            case ROLLUP_TYPE.CHUSAI : setRollup(await TezosUtils.fetchRollupCHUSAI(Tezos,rollupType.address));break;
-            
-        }
-    }
-    
     const refreshContract = async() => {
         const c = await Tezos.wallet.at(process.env["REACT_APP_CONTRACT"]!);
         const store : ContractStorage = {...(await c?.storage())}; //copy fields
@@ -111,17 +101,13 @@ const Deposit = ({
     useEffect(() => { (async () => {
         refreshContract();
         refreshBalance();
-        refreshRollup();
+        await myRef!.current!.refreshRollup();
         setTokenBytes(new Map([
             [TOKEN_TYPE.XTZ, await getBytes(TOKEN_TYPE.XTZ)],
             [TOKEN_TYPE.CTEZ, await getBytes(TOKEN_TYPE.CTEZ,process.env["REACT_APP_CTEZ_CONTRACT"]!)]
         ]));
     })();
 }, []);
-
-useEffect(() => {
-    refreshRollup();
-}, [rollupType]);
 
 
 const isDepositButtonDisabled = () : boolean | undefined => {
@@ -141,6 +127,8 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
     
     try{
         setTezosLoading(true);
+
+        console.log("from",from);
         
         //1. Treasury takes tokens
         let fa12Contract : WalletContract = await Tezos.wallet.at(contractFA12Storage.fa12Address);
@@ -202,8 +190,8 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
         const batchOp = await batch.send();
         const br = await batchOp.confirmation(1);
         
-        refreshContract();
-        refreshRollup();
+        await refreshContract();
+        await myRef!.current!.refreshRollup();
         enqueueSnackbar("Pending deposit from "+from+" has been successfully processed", {variant: "success", autoHideDuration:10000});
         
     }catch (error : any) {
@@ -236,8 +224,8 @@ const handleDeposit = async (event : MouseEvent) => {
         }
         
         //in case of FA1.2 an allowance should be granted with minimum tokens
-        if(tokenType === TOKEN_TYPE.CTEZ){
-            let fa12Contract : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!);
+        if(tokenType === TOKEN_TYPE.CTEZ || tokenType === TOKEN_TYPE.KUSD){
+            let fa12Contract : WalletContract = await Tezos.wallet.at( tokenType === TOKEN_TYPE.CTEZ?process.env["REACT_APP_CTEZ_CONTRACT"]! : process.env["REACT_APP_KUSD_CONTRACT"]!);
             let fa12ContractStorage : FA12Contract = await fa12Contract.storage() as FA12Contract;
             let allowance : BigNumber|undefined = await fa12ContractStorage.allowances.get<BigNumber>({
                 owner: userAddress,
@@ -277,13 +265,15 @@ const handleDeposit = async (event : MouseEvent) => {
         
         let param : ContractParameters = 
         tokenType === TOKEN_TYPE.XTZ ? new ContractXTZParameters( new BigNumber(quantity*1000000),rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI ,l2Address,rollupType.address) 
-        : new ContractFA12Parameters(new BigNumber(quantity*1000000),process.env["REACT_APP_CTEZ_CONTRACT"]!,rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI,l2Address,rollupType.address)
+        : new ContractFA12Parameters(new BigNumber(quantity*1000000),  tokenType === TOKEN_TYPE.CTEZ ?    process.env["REACT_APP_CTEZ_CONTRACT"]! : process.env["REACT_APP_KUSD_CONTRACT"]!,rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI,l2Address,rollupType.address);
         
         /* console.log("param",param);
         let inspect = c.methods.deposit(...Object.values(param)).toTransferParams();
         console.log("inspect",inspect);    
         console.log("parameter signature",c.parameterSchema.ExtractSignatures());
         */
+
+        console.log("l2addrdeposit",l2Address);
         
         operations.push({
             kind: OpKind.TRANSACTION,
@@ -327,7 +317,7 @@ const handleDeposit = async (event : MouseEvent) => {
             enqueueSnackbar("Store your ticket hash somewhere, you will need it later : "+ticketHash, {variant: "success", autoHideDuration:10000});
         }
         
-        await refreshRollup();
+        await myRef!.current!.refreshRollup();
         await refreshBalance();
         await refreshContract();
     } catch (error : any) {
@@ -387,7 +377,7 @@ return (
     required
     value={l2Address}
     disabled={rollupType == ROLLUP_TYPE.CHUSAI}
-    onChange={(e)=>setL2Address(e.target.value?e.target.value.trim():"")}
+    onChange={(e)=>{setL2Address(e.target.value?e.target.value.trim():"")}}
     label="L2 address"
     inputProps={{style: { textAlign: 'right' }}} 
     InputProps={{
@@ -431,7 +421,7 @@ return (
         defaultValue={TOKEN_TYPE.XTZ}
         value={tokenType}
         label="token type"
-        onChange={(e : SelectChangeEvent)=>{setTokenType(e.target.value);}}
+        onChange={(e : SelectChangeEvent)=>{setTokenType(e.target.value);console.log("toekn",e.target.value)}}
         >
         { Object.keys(TOKEN_TYPE).map((key)  => 
             <MenuItem key={key} value={key}>

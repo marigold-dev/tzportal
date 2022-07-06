@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 
 
 export class ContractFA12Storage {
-    type:string;
+    type:string; //
     amountToTransfer: BigNumber; //represent a nat, so mutez
     rollupAddress: string;
     l2Type: LAYER2TypeClass; // layer 1 or 2 address

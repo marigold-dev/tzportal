@@ -159,8 +159,8 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
             ...contract!.methods.withdrawPendingDEKU(...Object.values(param)).toTransferParams()
         })
         
-        refreshContract();
-        myRef!.current!.refreshRollup();
+        await refreshContract();
+        await myRef!.current!.refreshRollup();
         enqueueSnackbar("Pending withdraw for "+to+" has been successfully batched", {variant: "success", autoHideDuration:10000});
         
     }catch (error : any) {
