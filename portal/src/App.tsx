@@ -22,6 +22,7 @@ import { Button } from '@mui/material';
 import Deposit from './components/Deposit';
 import { NetworkType} from "@airgap/beacon-types";
 import Withdraw from './components/Withdraw';
+import { Tzip12Module } from "@taquito/tzip12";
 
 
 export enum PAGES {
@@ -34,6 +35,7 @@ function App() {
 
   const [Tezos, setTezos] = useState<TezosToolkit>(new TezosToolkit(process.env["REACT_APP_TEZOS_NODE"]!));
   Tezos.setPackerProvider(new MichelCodecPacker());
+  Tezos.addExtension(new Tzip12Module());
   const [wallet, setWallet] = useState<any>(null);
   const [userAddress, setUserAddress] = useState<string>("");
   const [userBalance, setUserBalance] = useState<number>(0);

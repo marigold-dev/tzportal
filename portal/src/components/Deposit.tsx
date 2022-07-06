@@ -1,5 +1,5 @@
 import React, { useState, useEffect, MouseEvent, Fragment, useRef } from "react";
-import { BigMapAbstraction, OpKind, TezosToolkit, WalletContract, WalletOperationBatch, WalletParamsWithKind } from "@taquito/taquito";
+import { BigMapAbstraction, compose, OpKind, TezosToolkit, WalletContract, WalletOperationBatch, WalletParamsWithKind } from "@taquito/taquito";
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import Button from "@mui/material/Button";
 import { Avatar, Backdrop, Badge, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, IconButton, InputAdornment, InputLabel, ListItem, MenuItem, Paper, Popover, Select, SelectChangeEvent, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip } from "@mui/material";
@@ -14,6 +14,8 @@ import {  styled } from "@mui/system";
 import { OperationContentsAndResultTransaction , OperationResultTransaction} from "@taquito/rpc";
 import UserWallet from "./UserWallet";
 import RollupBox, { RollupBoxComponentType } from "./RollupBox";
+import { tzip12, Tzip12ContractAbstraction } from "@taquito/tzip12";
+import { tzip16 } from "@taquito/tzip16";
 
 
 type DepositProps = {
@@ -48,10 +50,10 @@ const Deposit = ({
     // MESSAGES
     const { enqueueSnackbar } = useSnackbar();
     
-
+    
     const myRef = useRef<RollupBoxComponentType>();
-
-
+    
+    
     //POPUP
     const [selectRollupPopupAnchorEl, setSelectRollupPopupAnchorEl] = React.useState<null | HTMLElement>(null);
     const showSelectRollupPopup = (event : React.MouseEvent<HTMLButtonElement>) => {
@@ -69,22 +71,23 @@ const Deposit = ({
         //FA1.2 LOOP
         
         //kUSD
-        let kUSDContract : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!);
+        let kUSDContract = await Tezos.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!,compose(tzip12, tzip16));
         const kUSDtokenMap : BigMapAbstraction = (await kUSDContract.storage() as FA12Contract).tokens;
         let kUSDBalance : BigNumber|undefined = await kUSDtokenMap.get<BigNumber>(userAddress);
         
         
         //CTEZ
-        let ctezContract : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!);
-        const cteztokenMap : BigMapAbstraction = (await ctezContract.storage() as FA12Contract).tokens;
+        let ctezContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!,compose(tzip12, tzip16));
+        const ctezContractStorage : FA12Contract = (await ctezContract.storage() as FA12Contract)
+        const cteztokenMap : BigMapAbstraction = ctezContractStorage.tokens;
         let ctezBalance : BigNumber|undefined = await cteztokenMap.get<BigNumber>(userAddress);
         
         
         let balance = new Map();
-        balance.set(TOKEN_TYPE.XTZ,XTZbalance.toNumber() / 1000000); //convert mutez to tez
-        if(kUSDBalance !== undefined) balance.set(TOKEN_TYPE.KUSD,kUSDBalance.toNumber() / 1000000);//convert to mukUSD
+        balance.set(TOKEN_TYPE.XTZ,XTZbalance.toNumber() / Math.pow(10,6)); //convert mutez to tez
+        if(kUSDBalance !== undefined) balance.set(TOKEN_TYPE.KUSD,kUSDBalance.toNumber() / Math.pow(10,(await kUSDContract.tzip12().getTokenMetadata(0)).decimals));//convert from lowest kUSD decimal
         else balance.set(TOKEN_TYPE.KUSD,0); 
-        if(ctezBalance !== undefined) balance.set(TOKEN_TYPE.CTEZ,ctezBalance.toNumber() / 1000000)//convert to muctez
+        if(ctezBalance !== undefined) balance.set(TOKEN_TYPE.CTEZ,ctezBalance.toNumber() / Math.pow(10,(await ctezContract.tzip12().getTokenMetadata(0)).decimals))//convert from muctez
         else balance.set(TOKEN_TYPE.CTEZ,0); 
         
         setUserBalance(balance);
@@ -127,7 +130,7 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
     
     try{
         setTezosLoading(true);
-
+        
         console.log("from",from);
         
         //1. Treasury takes tokens
@@ -222,26 +225,28 @@ const handleDeposit = async (event : MouseEvent) => {
             alert("CHUSAI is not yet ready for FA1.2");
             return;
         }
-        
+        let decimals = Math.pow(10,6);
         //in case of FA1.2 an allowance should be granted with minimum tokens
         if(tokenType === TOKEN_TYPE.CTEZ || tokenType === TOKEN_TYPE.KUSD){
-            let fa12Contract : WalletContract = await Tezos.wallet.at( tokenType === TOKEN_TYPE.CTEZ?process.env["REACT_APP_CTEZ_CONTRACT"]! : process.env["REACT_APP_KUSD_CONTRACT"]!);
+            let fa12Contract = await Tezos.wallet.at( tokenType === TOKEN_TYPE.CTEZ?process.env["REACT_APP_CTEZ_CONTRACT"]! : process.env["REACT_APP_KUSD_CONTRACT"]!  , compose(tzip12,tzip16));
             let fa12ContractStorage : FA12Contract = await fa12Contract.storage() as FA12Contract;
             let allowance : BigNumber|undefined = await fa12ContractStorage.allowances.get<BigNumber>({
                 owner: userAddress,
                 spender: contractStorage?.treasuryAddress
             });
-            if(allowance === undefined || allowance.toNumber() < quantity*1000000) {
-                enqueueSnackbar("Allowance ("+allowance+") is not enough for requested collateral of "+(quantity*1000000)+", please allow an allowance first", {variant: "warning", autoHideDuration:10000});        
+            decimals = Math.pow(10,(await fa12Contract.tzip12().getTokenMetadata(0)).decimals);
+            
+            if(allowance === undefined || allowance.toNumber() < quantity*decimals) {
+                enqueueSnackbar("Allowance ("+allowance+") is not enough for requested collateral of "+(quantity*decimals)+", please allow an allowance first", {variant: "warning", autoHideDuration:10000});        
                 
                 if(allowance === undefined || allowance.toNumber() == 0){
                     
                     operations.push({
                         kind: OpKind.TRANSACTION,
-                        ...fa12Contract.methods.approve(contractStorage?.treasuryAddress,quantity*1000000).toTransferParams(),
+                        ...fa12Contract.methods.approve(contractStorage?.treasuryAddress,quantity*decimals).toTransferParams(),
                     })
                     
-                    enqueueSnackbar("Your allowance of "+quantity*1000000+" has been batched for Treasury "+contractStorage?.treasuryAddress, {variant: "success", autoHideDuration:10000});        
+                    enqueueSnackbar("Your allowance of "+quantity*decimals+" has been batched for Treasury "+contractStorage?.treasuryAddress, {variant: "success", autoHideDuration:10000});        
                 }else{//need to reset allowance to zero, then reset allowance back to avoid HACK
                     enqueueSnackbar("As allowance is not null, we need to reset allowance to zero, then reset allowance back to quantity to avoid HACK", {variant: "warning", autoHideDuration:10000});        
                     
@@ -252,28 +257,27 @@ const handleDeposit = async (event : MouseEvent) => {
                     
                     operations.push({
                         kind: OpKind.TRANSACTION,
-                        ...fa12Contract.methods.approve(contractStorage?.treasuryAddress,quantity*1000000).toTransferParams(),
+                        ...fa12Contract.methods.approve(contractStorage?.treasuryAddress,quantity*decimals).toTransferParams(),
                     })
                     
-                    enqueueSnackbar("Your allowance of "+quantity*1000000+" has been batched for Treasury "+contractStorage?.treasuryAddress, {variant: "success", autoHideDuration:10000});        
+                    enqueueSnackbar("Your allowance of "+quantity*decimals+" has been batched for Treasury "+contractStorage?.treasuryAddress, {variant: "success", autoHideDuration:10000});        
                 }
                 
             }else{
-                console.log("FA1.2 allowance is fine (actual : "+allowance+", requested : "+quantity*1000000+")")
+                console.log("FA1.2 allowance is fine (actual : "+allowance+", requested : "+quantity*decimals+")")
             }
         }
         
         let param : ContractParameters = 
-        tokenType === TOKEN_TYPE.XTZ ? new ContractXTZParameters( new BigNumber(quantity*1000000),rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI ,l2Address,rollupType.address) 
-        : new ContractFA12Parameters(new BigNumber(quantity*1000000),  tokenType === TOKEN_TYPE.CTEZ ?    process.env["REACT_APP_CTEZ_CONTRACT"]! : process.env["REACT_APP_KUSD_CONTRACT"]!,rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI,l2Address,rollupType.address);
+        tokenType === TOKEN_TYPE.XTZ ? new ContractXTZParameters( new BigNumber(quantity*decimals),rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI ,l2Address,rollupType.address) 
+        : new ContractFA12Parameters(new BigNumber(quantity*decimals),  tokenType === TOKEN_TYPE.CTEZ ?    process.env["REACT_APP_CTEZ_CONTRACT"]! : process.env["REACT_APP_KUSD_CONTRACT"]!,rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI,l2Address,rollupType.address);
         
         /* console.log("param",param);
         let inspect = c.methods.deposit(...Object.values(param)).toTransferParams();
         console.log("inspect",inspect);    
         console.log("parameter signature",c.parameterSchema.ExtractSignatures());
         */
-
-        console.log("l2addrdeposit",l2Address);
+        
         
         operations.push({
             kind: OpKind.TRANSACTION,
@@ -421,7 +425,7 @@ return (
         defaultValue={TOKEN_TYPE.XTZ}
         value={tokenType}
         label="token type"
-        onChange={(e : SelectChangeEvent)=>{setTokenType(e.target.value);console.log("toekn",e.target.value)}}
+        onChange={(e : SelectChangeEvent)=>{setTokenType(e.target.value)}}
         >
         { Object.keys(TOKEN_TYPE).map((key)  => 
             <MenuItem key={key} value={key}>
@@ -429,38 +433,42 @@ return (
             <Avatar component="span" src={key+".png"}></Avatar>
             </Badge>
             </MenuItem>
-        ) }
+            ) }
+            
+            
+            </Select>
+            
+            </Box>
+            
+            </Grid>
+            
+            
+            <Grid item xs={12} md={12} padding={1}>
+            <Button variant="contained" disabled={isDepositButtonDisabled()} onClick={(e)=>handleDeposit(e)}>DEPOSIT</Button>
+            </Grid>
+            </Grid>
+            
+            
+            
+            
+            <RollupBox 
+            ref={myRef}
+            Tezos={Tezos}
+            userAddress={userAddress}
+            tokenBytes={tokenBytes}
+            handlePendingWithdraw={undefined}
+            handlePendingDeposit={handlePendingDeposit}
+            contractStorage={contractStorage}
+            setRollupType={setRollupType}
+            rollupType={rollupType}
+            rollup={rollup}
+            setRollup={setRollup}
+            />
+            
+            </Grid>
+            
+            </Box>
+            );
+        };
         
-        
-        </Select>
-        
-        </Box>
-        
-        </Grid>
-        
-        
-        <Grid item xs={12} md={12} padding={1}>
-        <Button variant="contained" disabled={isDepositButtonDisabled()} onClick={(e)=>handleDeposit(e)}>DEPOSIT</Button>
-        </Grid>
-        </Grid>
-        
-      
-      
-
-        <RollupBox 
-    ref={myRef}
-    Tezos={Tezos}
-    userAddress={userAddress}
-    tokenBytes={tokenBytes}
-    handlePendingWithdraw={undefined}
-    handlePendingDeposit={handlePendingDeposit}
-    contractStorage={contractStorage}
-    />
-
-                            </Grid>
-                            
-                            </Box>
-                            );
-                        };
-                        
-                        export default Deposit;
+        export default Deposit;

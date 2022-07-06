@@ -1,8 +1,7 @@
 import { Accordion, AccordionDetails, AccordionSummary, Avatar, Badge, Box, Button, Card, CardContent, CardHeader, Chip, Divider, FormControl, Grid, IconButton, InputLabel, MenuItem, Paper, Popover, Select, SelectChangeEvent, Stack, styled, Table, TableBody, TableCell, TableContainer, TableRow, Tooltip, Typography } from "@mui/material";
-import AccountBalanceWallet from "@mui/icons-material/AccountBalanceWallet";
 import { RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
 import { AddShoppingCartOutlined, ArrowDropDown, CameraRoll, UnfoldMoreOutlined } from "@mui/icons-material";
-import React, { forwardRef, Fragment, Ref, useEffect, useImperativeHandle, useState } from "react";
+import React, { Dispatch, forwardRef, Fragment, Ref, SetStateAction, useEffect, useImperativeHandle, useState } from "react";
 import { ContractFA12Storage, ContractStorage } from "./TicketerContractUtils";
 import { TezosToolkit } from "@taquito/taquito";
 
@@ -17,6 +16,11 @@ type RollupProps = {
     handlePendingWithdraw : ((event: React.MouseEvent<HTMLButtonElement, MouseEvent>, to: string, contractFA12Storage: ContractFA12Storage) => Promise<void>) | undefined;
     handlePendingDeposit : ((event : React.MouseEvent<HTMLButtonElement>,from : string,contractFA12Storage : ContractFA12Storage) => Promise<void>) | undefined;
     contractStorage : ContractStorage | undefined;
+    setRollupType : Dispatch<SetStateAction<ROLLUP_TYPE>>;
+    rollupType : ROLLUP_TYPE;
+    rollup : RollupTORU | RollupDEKU | RollupCHUSAI | undefined;
+    setRollup : Dispatch<SetStateAction<RollupTORU | RollupDEKU | RollupCHUSAI | undefined>>;
+
 };
 
 const RollupBox = ({
@@ -25,12 +29,14 @@ const RollupBox = ({
     tokenBytes,
     handlePendingWithdraw,
     handlePendingDeposit,
-    contractStorage
+    contractStorage,
+    setRollupType,
+    rollupType,
+    rollup,
+    setRollup
 }: RollupProps, ref : any): JSX.Element => {
     
     
-    const [rollupType , setRollupType] = useState<ROLLUP_TYPE>(ROLLUP_TYPE.DEKU);
-    const [rollup , setRollup] = useState<RollupTORU | RollupDEKU | RollupCHUSAI>();
     const [tokenType, setTokenType]  = useState<string>(TOKEN_TYPE.XTZ);
     
     async function refreshRollup() {
@@ -173,7 +179,7 @@ const RollupBox = ({
                 
                 { Object.keys(TOKEN_TYPE).map((key)  => 
                     <MenuItem key={key} value={key}>
-                    <Badge 
+                    <Badge max={999999999999999999}
                     badgeContent={rollup.vault.ticketMap.get(key)?.amount.toNumber()}          
                     
                     color="primary">
@@ -213,7 +219,7 @@ const RollupBox = ({
                         {handlePendingWithdraw?  Array.from(contractStorage.fa12PendingWithdrawals.entries()).map(( [key,val]: [[string,string],ContractFA12Storage]) => 
                             {let l2Address : string = val.l2Type.l2_DEKU?val.l2Type.l2_DEKU : val.l2Type.l2_TORU;
                                 return <div key={key[0]+key[1]+val.type}>  
-                                <Badge 
+                                <Badge  max={999999999999999999}
                                 badgeContent={val.amountToTransfer.toNumber()}         
                                 color="primary">
                                 <Avatar component="span" src={tokenBytes.get(TOKEN_TYPE.XTZ) == key[1]? TOKEN_TYPE.XTZ+".png" : tokenBytes.get(TOKEN_TYPE.CTEZ) == key[1] ?  TOKEN_TYPE.CTEZ+".png" :   TOKEN_TYPE.KUSD+".png" } />
@@ -233,7 +239,7 @@ const RollupBox = ({
                                     
                                     return <div key={key[0]+key[1]+val.type}>   
                                     
-                                    <Badge 
+                                    <Badge  max={999999999999999999}
                                     badgeContent={val.amountToTransfer.toNumber()}         
                                     color="primary">
                                     <Avatar component="span" src={tokenBytes.get(TOKEN_TYPE.XTZ) == key[1]? TOKEN_TYPE.XTZ+".png" : tokenBytes.get(TOKEN_TYPE.CTEZ) == key[1] ?  TOKEN_TYPE.CTEZ+".png" :   TOKEN_TYPE.KUSD+".png" } />
@@ -313,7 +319,7 @@ const RollupBox = ({
                 >
                 
                     <MenuItem key={TOKEN_TYPE.XTZ} value={TOKEN_TYPE.XTZ}>
-                    <Badge 
+                    <Badge max={999999999999999999}
                     badgeContent={rollup.ticket?.amount.toNumber()}          
                     
                     color="primary">
