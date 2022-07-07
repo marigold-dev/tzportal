@@ -165,8 +165,6 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
             ...contract!.methods.withdrawPendingDEKU(...Object.values(param)).toTransferParams()
         })
         
-        await refreshContract();
-        await myRef!.current!.refreshRollup();
         enqueueSnackbar("Pending withdraw for "+to+" has been successfully batched", {variant: "success", autoHideDuration:10000});
         
     }catch (error : any) {
@@ -196,6 +194,8 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
         
         enqueueSnackbar("Treasury gave back  "+contractFA12Storage.amountToTransfer.toNumber()+" tokens to "+to, {variant: "success", autoHideDuration:10000});        
         refreshBalance();
+        await refreshContract();
+        await myRef!.current!.refreshRollup();
         setTezosLoading(false);
     }catch (error : any) {
         console.table(`Error: ${JSON.stringify(error, null, 2)}`);

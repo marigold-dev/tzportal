@@ -186,7 +186,8 @@ function App() {
       <p>Designed for :</p>
       <ul style={{listStylePosition: "inside"}}>
         <li>TORU rollups : <a href="https://tezos.gitlab.io/alpha/transaction_rollups.html">TORU documentation</a></li>
-        <li>DEKU rollups : <a href="https://www.marigold.dev/project/deku-sidechain">DEKU documentation</a></li>
+        <li>DEKU sidechain : <a href="https://www.marigold.dev/project/deku-sidechain">DEKU documentation</a></li>
+        <li>CHUSAI rollups : <a href="https://github.com/marigold-dev/chusai">CHUSAI documentation</a></li>
       </ul>
       </Box>
       : "PAGE NOT FOUND" 
