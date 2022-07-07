@@ -91,6 +91,7 @@ body {
 .address {
   white-space: nowrap;
   overflow: hidden;
+  color: white;
 }
 
 .address1, .address2 {
