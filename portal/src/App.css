@@ -80,18 +80,15 @@ body {
 
 
 
-.css-83ijpv-MuiTypography-root.MuiCardHeader-subheader{
+.MuiTypography-body2.MuiCardHeader-subheader{
   color : white;
   font-size : 1em;
 }
 
-.css-6od3lo-MuiChip-label.MuiChip-label{
-}
 
 .address {
   white-space: nowrap;
   overflow: hidden;
-  color: white;
 }
 
 .address1, .address2 {

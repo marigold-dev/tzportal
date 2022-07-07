@@ -245,7 +245,7 @@ const RollupBox = ({
                                     <Avatar component="span" src={tokenBytes.get(TOKEN_TYPE.XTZ) == key[1]? TOKEN_TYPE.XTZ+".png" : tokenBytes.get(TOKEN_TYPE.CTEZ) == key[1] ?  TOKEN_TYPE.CTEZ+".png" :   TOKEN_TYPE.KUSD+".png" } />
                                     <Avatar variant="square" src="ticket.png" />
                                     </Badge>
-                                    <span> for {<span className="address"><span className="address1">{l2Address.substring(0,key[0].length/2)}</span><span className="address2">{l2Address.substring(l2Address.length/2)}</span></span>} </span>
+                                    <span> for {<span className="address"><span className="address1">{l2Address.substring(0,l2Address.length/2)}</span><span className="address2">{l2Address.substring(l2Address.length/2)}</span></span>} </span>
                                     
                                     
                                     <Tooltip title="Collaterize user's tokens and swap to real tickets for rollup">
