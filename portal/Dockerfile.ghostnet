@@ -8,7 +8,7 @@ RUN yarn install --frozen-lockfile
 RUN yarn global add react-scripts@5.0.0
 COPY . ./
 RUN yarn global add env-cmd
-RUN yarn build:ithacanet
+RUN yarn build:ghostnet
 
 # production environment
 FROM nginx:stable-alpine
