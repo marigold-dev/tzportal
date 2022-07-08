@@ -2,11 +2,12 @@ FROM node
 
 WORKDIR /app
 
-COPY ./portal ./portal
-COPY ./cronjob ./cronjob
+COPY ./portal /app/portal
 
 WORKDIR /app/portal
 RUN yarn install
+
+COPY ./cronjob /app/cronjob
 
 WORKDIR /app/cronjob
 RUN yarn install
