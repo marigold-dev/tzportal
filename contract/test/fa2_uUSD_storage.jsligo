@@ -1,0 +1,16 @@
+{
+  tokens = ( Big_map.literal [("tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" : address), 100000000n] :
+               (address, nat) big_map) ;
+  allowances = (Big_map.empty : allowances) ;
+  admin = ("tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" : address) ;
+  total_supply = 100000000n ;
+  token_metadata = ( Big_map.literal [
+    (0n, 
+      {token_id=0n; token_info=Map.literal [
+        ("decimals", (0x3132:bytes)) ; 
+        ("name", (0x796f757665732075555344:bytes)) ; 
+        ("symbol", (0x75555344:bytes)) ; 
+        ("thumbnailUri", (0x697066733a2f2f516d627668616e4e437879645a45624775315264716b47334c63704e4776375859734348677a5742586e6d785264:bytes)) ;
+      ]
+      })] : token_metadata_storage);
+}
