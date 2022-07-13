@@ -166,7 +166,7 @@ const handlePendingDeposit = async (from : string,tokenTypeBytes : string,  cont
         })
         
         
-        console.log("Treasury gave back  "+contractFA12Storage.amountToTransfer.toNumber()+" tokens to "+to+ " on ticket type "+tokenTypeBytes, {variant: "success", autoHideDuration:10000});        
+        console.log("Treasury gave back  "+contractFA12Storage.amountToTransfer.toNumber()+" tokens to "+to+ " on ticket type "+tokenTypeBytes);        
         
         resolve(operations);
 
