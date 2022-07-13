@@ -2,20 +2,24 @@
 // copyright Wulfman Corporation 2021
 
 // Errors
-type t = string
+namespace Errors {
+export type t = string;
 
-let undefined_token = "FA2_TOKEN_UNDEFINED"
-let ins_balance     = "FA2_INSUFFICIENT_BALANCE"
-let no_transfer     = "FA2_TX_DENIED"
-let not_owner       = "FA2_NOT_OWNER"
-let not_operator    = "FA2_NOT_OPERATOR"
-let not_supported   = "FA2_OPERATORS_UNSUPPORTED"
-let rec_hook_fail   = "FA2_RECEIVER_HOOK_FAILED"
-let send_hook_fail  = "FA2_SENDER_HOOK_FAILED"
-let rec_hook_undef  = "FA2_RECEIVER_HOOK_UNDEFINED"
-let send_hook_under = "FA2_SENDER_HOOK_UNDEFINED"
+export const undefined_token = "FA2_TOKEN_UNDEFINED";
+export const ins_balance     = "FA2_INSUFFICIENT_BALANCE";
+export const no_transfer     = "FA2_TX_DENIED";
+export const not_owner       = "FA2_NOT_OWNER";
+export const not_operator    = "FA2_NOT_OPERATOR";
+export const not_supported   = "FA2_OPERATORS_UNSUPPORTED";
+export const rec_hook_fail   = "FA2_RECEIVER_HOOK_FAILED";
+export const send_hook_fail  = "FA2_SENDER_HOOK_FAILED";
+export const rec_hook_undef  = "FA2_RECEIVER_HOOK_UNDEFINED";
+export const send_hook_under = "FA2_SENDER_HOOK_UNDEFINED";
 
-let only_sender_manage_operators = "The sender can only manage operators for his own token"
+export const only_sender_manage_operators = "The sender can only manage operators for his own token";
+
+};
+
 namespace Operators {
    type owner    = address;
    type operator = address;
@@ -86,21 +90,34 @@ namespace Operators {
 namespace Ledger {
    type token_id = nat;
    type owner = address;
-   export type t = big_map<token_id,owner>;
+   export type t = big_map<[owner,token_id],nat>;
    
    export const is_owner_of = ([ledger,token_id,owner]: [t, token_id, address]): bool => {
-      // We already sanitized token_id, a failwith here indicated a patological storage
-      const current_owner = Option.unopt (Big_map.find_opt (token_id, ledger));
-      (current_owner == owner)
+      return match(Big_map.find_opt ([owner,token_id], ledger), {
+         None : () => {return false},
+         Some : (quantity : nat) => {if(quantity == ( 0 as nat )){ return false;}else { return true;}}
+      }
+      );
    };
 
    const assert_owner_of = ([ledger,token_id,owner]: [t, token_id, address]): unit =>
       assert_with_error (is_owner_of (ledger, token_id, owner), Errors.ins_balance);
 
-   export const transfer_token_from_user_to_user = ([ledger,token_id,from_,to_]: [t, token_id, owner, owner]): t => {
+   export const transfer_token_from_user_to_user = ([ledger,token_id,from_,to_,quantity]: [t, token_id, owner, owner,nat]): t => {
       assert_owner_of (ledger, token_id, from_);
-      const ledger = Big_map.update (token_id, Some (to_), ledger);
-      ledger 
+      const current_quantity_from : nat = Option.unopt(Big_map.find_opt([from_,token_id],ledger));
+      if(current_quantity_from < quantity) return failwith("Not enough balance");
+      const ledgerFrom = Big_map.update ([from_,token_id], Some(abs(current_quantity_from - quantity)), ledger);
+
+      return match(Big_map.find_opt([to_,token_id],ledgerFrom), {
+         None : () => { 
+            return Big_map.update ([to_,token_id], Some (quantity), ledgerFrom)
+         },
+         Some : (current_quantity_to : nat) => {
+            return Big_map.update ([to_,token_id], Some (quantity + current_quantity_to), ledgerFrom)
+         }
+      });
+
    };
 };
 
@@ -154,6 +171,7 @@ export type atomic_trans =
 {
    to_      : address,
    token_id : nat,
+   quantity : nat
 };
 
 type transfer_from = {
@@ -168,10 +186,10 @@ const transfer = ([t, s]: [transfer, storage]): [list<operation>, storage] => {
    const process_atomic_transfer = (from_ : address) 
    : (ledger: Ledger.t, t: atomic_trans) => Ledger.t => {
      return (ledger: Ledger.t, t: atomic_trans) : Ledger.t => {
-        const {to_,token_id} = t;
+        const {to_,token_id,quantity} = t; 
         Storage.assert_token_exist (s, token_id);
         Operators.assert_authorisation (s.operators, from_, token_id);
-        const ledger = Ledger.transfer_token_from_user_to_user (ledger, token_id, from_, to_);
+        const ledger = Ledger.transfer_token_from_user_to_user (ledger, token_id, from_, to_, quantity);
         ledger
      };
    }; 
