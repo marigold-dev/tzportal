@@ -1,0 +1,11 @@
+(Pair (Pair { Elt (Pair "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" 0) 1000000000000000000 }
+            {})
+      { 0 }
+      { Elt 0
+            (Pair 0
+                  { Elt "decimals" 0x3132 ;
+                    Elt "name" 0x796f757665732075555344 ;
+                    Elt "symbol" 0x75555344 ;
+                    Elt "thumbnailUri"
+                        0x697066733a2f2f516d627668616e4e437879645a45624775315264716b47334c63704e4776375859734348677a5742586e6d785264 }) })
+
