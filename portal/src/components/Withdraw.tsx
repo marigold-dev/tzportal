@@ -6,7 +6,7 @@ import {  Avatar, Backdrop, Badge, Box, CircularProgress, Divider, FormControl, 
 import { AccountCircle, Add, Delete, InfoOutlined, Key, } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
-import {   ContractFA12Storage,  ContractStorage } from "./TicketerContractUtils";
+import {   ContractFAStorage,  ContractStorage } from "./TicketerContractUtils";
 import {  getBytes, LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TOKEN_TYPE } from "./TezosUtils";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
@@ -16,6 +16,7 @@ import UserWallet from "./UserWallet";
 import RollupBox, { RollupBoxComponentType } from "./RollupBox";
 import { tzip12 } from "@taquito/tzip12";
 import { tzip16 } from "@taquito/tzip16";
+import { FA2Contract } from "./fa2Contract";
 
 
 type WithdrawProps = {
@@ -69,23 +70,39 @@ const Withdraw = ({
         //FA1.2 LOOP
         
         //kUSD
-        let kUSDContract  = await Tezos.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!,compose(tzip12, tzip16));
+        let kUSDContract = await Tezos.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!,compose(tzip12, tzip16));
         const kUSDtokenMap : BigMapAbstraction = (await kUSDContract.storage() as FA12Contract).tokens;
         let kUSDBalance : BigNumber|undefined = await kUSDtokenMap.get<BigNumber>(userAddress);
         
         
         //CTEZ
-        let ctezContract  = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!,compose(tzip12, tzip16));
-        const cteztokenMap : BigMapAbstraction = (await ctezContract.storage() as FA12Contract).tokens;
+        let ctezContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!,compose(tzip12, tzip16));
+        const ctezContractStorage : FA12Contract = (await ctezContract.storage() as FA12Contract)
+        const cteztokenMap : BigMapAbstraction = ctezContractStorage.tokens;
         let ctezBalance : BigNumber|undefined = await cteztokenMap.get<BigNumber>(userAddress);
         
+        //UUSD
+        let uusdContract = await Tezos.wallet.at(process.env["REACT_APP_UUSD_CONTRACT"]!,tzip12);
+        const uusdContractStorage : FA2Contract = (await uusdContract.storage() as FA2Contract)
+        const uusdtokenMap : BigMapAbstraction = uusdContractStorage.ledger;
+        let uusdBalance : BigNumber|undefined = await uusdtokenMap.get<BigNumber>([userAddress,0]);
+
+        //EURL
+        let eurlContract = await Tezos.wallet.at(process.env["REACT_APP_EURL_CONTRACT"]!,tzip12);
+        const eurlContractStorage : FA2Contract = (await eurlContract.storage() as FA2Contract)
+        const eurltokenMap : BigMapAbstraction = eurlContractStorage.ledger;
+        let eurlBalance : BigNumber|undefined = await eurltokenMap.get<BigNumber>([userAddress,0]);
         
         let balance = new Map();
         balance.set(TOKEN_TYPE.XTZ,XTZbalance.toNumber() / Math.pow(10,6)); //convert mutez to tez
-        if(kUSDBalance !== undefined) balance.set(TOKEN_TYPE.KUSD,kUSDBalance.toNumber() / Math.pow(10,(await kUSDContract.tzip12().getTokenMetadata(0)).decimals));//convert to mukUSD
+        if(kUSDBalance !== undefined) balance.set(TOKEN_TYPE.KUSD,kUSDBalance.dividedBy(Math.pow(10,(await kUSDContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest kUSD decimal
         else balance.set(TOKEN_TYPE.KUSD,0); 
-        if(ctezBalance !== undefined) balance.set(TOKEN_TYPE.CTEZ,ctezBalance.toNumber() / Math.pow(10,(await ctezContract.tzip12().getTokenMetadata(0)).decimals))//convert to muctez
+        if(ctezBalance !== undefined) balance.set(TOKEN_TYPE.CTEZ,ctezBalance.dividedBy(Math.pow(10,(await ctezContract.tzip12().getTokenMetadata(0)).decimals)));//convert from muctez
         else balance.set(TOKEN_TYPE.CTEZ,0); 
+        if(uusdBalance !== undefined) balance.set(TOKEN_TYPE.UUSD,uusdBalance.dividedBy(Math.pow(10,(await uusdContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest UUSD decimal
+        else balance.set(TOKEN_TYPE.UUSD,0); 
+        if(eurlBalance !== undefined) balance.set(TOKEN_TYPE.EURL,eurlBalance.dividedBy(Math.pow(10,(await eurlContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest EURL decimal
+        else balance.set(TOKEN_TYPE.EURL,0); 
         
         setUserBalance(balance);
         
@@ -119,7 +136,7 @@ const Withdraw = ({
 
 
 
-const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : string,contractFA12Storage : ContractFA12Storage) => {
+const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : string,contractFAStorage : ContractFAStorage) => {
     event.preventDefault();
     
     const operations : WalletParamsWithKind[]= [];
@@ -129,33 +146,33 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
         
         //1. Treasury call pending withdraw to destroy tickets
         
-        let l2Type : LAYER2Type = contractFA12Storage.l2Type.l2_TORU && contractFA12Storage.l2Type.l2_TORU !== "" ?  
-        LAYER2Type.L2_TORU: contractFA12Storage.l2Type.l2_DEKU && contractFA12Storage.l2Type.l2_DEKU !== "" ? LAYER2Type.L2_DEKU :LAYER2Type.L2_CHUSAI ;
+        let l2Type : LAYER2Type = contractFAStorage.l2Type.l2_TORU && contractFAStorage.l2Type.l2_TORU !== "" ?  
+        LAYER2Type.L2_TORU: contractFAStorage.l2Type.l2_DEKU && contractFAStorage.l2Type.l2_DEKU !== "" ? LAYER2Type.L2_DEKU :LAYER2Type.L2_CHUSAI ;
         
         const param = l2Type == LAYER2Type.L2_TORU?
         {
             "address": to,
-            "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
-            "rollupAddress": contractFA12Storage.rollupAddress,
+            "amountToTransfer": contractFAStorage.amountToTransfer.toNumber(),
+            "rollupAddress": contractFAStorage.rollupAddress,
             "l2Type": l2Type,
-            "l2_TORU": contractFA12Storage.l2Type.l2_TORU,
-            "fa12Address": contractFA12Storage.fa12Address
+            "l2_TORU": contractFAStorage.l2Type.l2_TORU,
+            "faAddress": contractFAStorage.faAddress
         }: l2Type == LAYER2Type.L2_DEKU?
         {
             "address": to,
-            "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
-            "rollupAddress": contractFA12Storage.rollupAddress,
+            "amountToTransfer": contractFAStorage.amountToTransfer.toNumber(),
+            "rollupAddress": contractFAStorage.rollupAddress,
             "l2Type": l2Type,
-            "l2_DEKU": contractFA12Storage.l2Type.l2_DEKU,
-            "fa12Address": contractFA12Storage.fa12Address
+            "l2_DEKU": contractFAStorage.l2Type.l2_DEKU,
+            "faAddress": contractFAStorage.faAddress
         }:
         {
             "address": to,
-            "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
-            "rollupAddress": contractFA12Storage.rollupAddress,
+            "amountToTransfer": contractFAStorage.amountToTransfer.toNumber(),
+            "rollupAddress": contractFAStorage.rollupAddress,
             "l2Type": l2Type,
-            "l2_CHUSAI": contractFA12Storage.l2Type.l2_CHUSAI,
-            "fa12Address": contractFA12Storage.fa12Address
+            "l2_CHUSAI": contractFAStorage.l2Type.l2_CHUSAI,
+            "faAddress": contractFAStorage.faAddress
         }
         
         //console.log("param",param);
@@ -179,20 +196,20 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
         setTezosLoading(true);
         
         //2. Treasury give back tokens
-        let fa12Contract : WalletContract = await Tezos.wallet.at(contractFA12Storage.fa12Address);
+        let fa12Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
         
-        console.log("contractFA12Storage.fa12Address",contractFA12Storage.fa12Address);
+        console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
         
         operations.push({
             kind: OpKind.TRANSACTION,
-            ...fa12Contract.methods.transfer(contractStorage?.treasuryAddress,to,contractFA12Storage.amountToTransfer.toNumber()).toTransferParams()
+            ...fa12Contract.methods.transfer(contractStorage?.treasuryAddress,to,contractFAStorage.amountToTransfer.toNumber()).toTransferParams()
         })
         
         const batch : WalletOperationBatch = await Tezos.wallet.batch(operations);
         const batchOp = await batch.send();
         const br = await batchOp.confirmation(1);
         
-        enqueueSnackbar("Treasury gave back  "+contractFA12Storage.amountToTransfer.toNumber()+" tokens to "+to, {variant: "success", autoHideDuration:10000});        
+        enqueueSnackbar("Treasury gave back  "+contractFAStorage.amountToTransfer.toNumber()+" tokens to "+to, {variant: "success", autoHideDuration:10000});        
         refreshBalance();
         await refreshContract();
         await myRef!.current!.refreshRollup();

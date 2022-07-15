@@ -6,7 +6,7 @@ import { Avatar, Backdrop, Badge, Box, Card, CardContent, CardHeader, Chip, Circ
 import { AccountBalanceWallet, AccountCircle, AddShoppingCartOutlined, ArrowDropDown, CameraRoll } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
-import {  ContractFA12Parameters, ContractFA12Storage, ContractParameters, ContractStorage, ContractXTZParameters } from "./TicketerContractUtils";
+import {  ContractFAParameters, ContractFAStorage, ContractParameters, ContractStorage, ContractXTZParameters } from "./TicketerContractUtils";
 import {  getBytes, LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
@@ -88,7 +88,7 @@ const Deposit = ({
         const uusdContractStorage : FA2Contract = (await uusdContract.storage() as FA2Contract)
         const uusdtokenMap : BigMapAbstraction = uusdContractStorage.ledger;
         let uusdBalance : BigNumber|undefined = await uusdtokenMap.get<BigNumber>([userAddress,0]);
-
+        
         //EURL
         let eurlContract = await Tezos.wallet.at(process.env["REACT_APP_EURL_CONTRACT"]!,tzip12);
         const eurlContractStorage : FA2Contract = (await eurlContract.storage() as FA2Contract)
@@ -135,13 +135,13 @@ const isDepositButtonDisabled = () : boolean | undefined => {
         case TOKEN_TYPE.XTZ : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.XTZ) !== undefined && (  userBalance.get(TOKEN_TYPE.XTZ)!.isLessThan(quantity) ) ));break;
         case TOKEN_TYPE.CTEZ : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.CTEZ) !== undefined && ( userBalance.get(TOKEN_TYPE.CTEZ)!.isLessThan(quantity) )));break;
         case TOKEN_TYPE.KUSD : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.KUSD) !== undefined && ( userBalance.get(TOKEN_TYPE.KUSD)!.isLessThan(quantity) )));break;
-        case TOKEN_TYPE.KUSD : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.UUSD) !== undefined && ( userBalance.get(TOKEN_TYPE.UUSD)!.isLessThan(quantity) )));break;
-        case TOKEN_TYPE.KUSD : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.EURL) !== undefined && ( userBalance.get(TOKEN_TYPE.EURL)!.isLessThan(quantity) )));break;
+        case TOKEN_TYPE.UUSD : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.UUSD) !== undefined && ( userBalance.get(TOKEN_TYPE.UUSD)!.isLessThan(quantity) )));break;
+        case TOKEN_TYPE.EURL : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.EURL) !== undefined && ( userBalance.get(TOKEN_TYPE.EURL)!.isLessThan(quantity) )));break;
     }
     return isDisabled;
 }
 
-const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from : string,contractFA12Storage : ContractFA12Storage) => {
+const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from : string,contractFAStorage : ContractFAStorage) => {
     event.preventDefault();
     
     const operations : WalletParamsWithKind[]= [];
@@ -152,14 +152,14 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
         console.log("from",from);
         
         //1. Treasury takes tokens
-        let fa12Contract : WalletContract = await Tezos.wallet.at(contractFA12Storage.fa12Address);
+        let fa12Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
         
         operations.push({
             kind: OpKind.TRANSACTION,
-            ...fa12Contract.methods.transfer(from,contractStorage?.treasuryAddress,contractFA12Storage.amountToTransfer.toNumber()).toTransferParams()
+            ...fa12Contract.methods.transfer(from,contractStorage?.treasuryAddress,contractFAStorage.amountToTransfer.toNumber()).toTransferParams()
         })
         
-        enqueueSnackbar("Treasury has batched collaterization "+contractFA12Storage.amountToTransfer.toNumber()+" tokens from "+from, {variant: "success", autoHideDuration:10000});        
+        enqueueSnackbar("Treasury has batched collaterization "+contractFAStorage.amountToTransfer.toNumber()+" tokens from "+from, {variant: "success", autoHideDuration:10000});        
         refreshBalance();
         setTezosLoading(false);
     }catch (error : any) {
@@ -174,32 +174,32 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
         setTezosLoading(true);
         
         //2. Treasury call pending deposit to create tickets and send it
-        let l2Type : LAYER2Type = contractFA12Storage.l2Type.l2_TORU && contractFA12Storage.l2Type.l2_TORU !== "" ?  
-        LAYER2Type.L2_TORU: contractFA12Storage.l2Type.l2_DEKU && contractFA12Storage.l2Type.l2_DEKU !== "" ? LAYER2Type.L2_DEKU :LAYER2Type.L2_CHUSAI ;
+        let l2Type : LAYER2Type = contractFAStorage.l2Type.l2_TORU && contractFAStorage.l2Type.l2_TORU !== "" ?  
+        LAYER2Type.L2_TORU: contractFAStorage.l2Type.l2_DEKU && contractFAStorage.l2Type.l2_DEKU !== "" ? LAYER2Type.L2_DEKU :LAYER2Type.L2_CHUSAI ;
         const param = l2Type == LAYER2Type.L2_TORU?
         {
             "address": from,
-            "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
-            "rollupAddress": contractFA12Storage.rollupAddress,
+            "amountToTransfer": contractFAStorage.amountToTransfer.toNumber(),
+            "rollupAddress": contractFAStorage.rollupAddress,
             "l2Type": l2Type,
-            "l2_TORU": contractFA12Storage.l2Type.l2_TORU,
-            "fa12Address": contractFA12Storage.fa12Address
+            "l2_TORU": contractFAStorage.l2Type.l2_TORU,
+            "faAddress": contractFAStorage.faAddress
         }: l2Type == LAYER2Type.L2_DEKU?
         {
             "address": from,
-            "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
-            "rollupAddress": contractFA12Storage.rollupAddress,
+            "amountToTransfer": contractFAStorage.amountToTransfer.toNumber(),
+            "rollupAddress": contractFAStorage.rollupAddress,
             "l2Type": l2Type,
-            "l2_DEKU": contractFA12Storage.l2Type.l2_DEKU,
-            "fa12Address": contractFA12Storage.fa12Address
+            "l2_DEKU": contractFAStorage.l2Type.l2_DEKU,
+            "faAddress": contractFAStorage.faAddress
         }:
         {
             "address": from,
-            "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
-            "rollupAddress": contractFA12Storage.rollupAddress,
+            "amountToTransfer": contractFAStorage.amountToTransfer.toNumber(),
+            "rollupAddress": contractFAStorage.rollupAddress,
             "l2Type": l2Type,
-            "l2_CHUSAI": contractFA12Storage.l2Type.l2_CHUSAI,
-            "fa12Address": contractFA12Storage.fa12Address
+            "l2_CHUSAI": contractFAStorage.l2Type.l2_CHUSAI,
+            "faAddress": contractFAStorage.faAddress
         }
         
         operations.push({
@@ -239,20 +239,20 @@ const handleDeposit = async (event : MouseEvent) => {
     
     try {
         
-        if(tokenType === TOKEN_TYPE.CTEZ && rollupType == ROLLUP_TYPE.CHUSAI){
-            alert("CHUSAI is not yet ready for FA1.2");
+        if( (tokenType !== TOKEN_TYPE.XTZ) && (rollupType === ROLLUP_TYPE.CHUSAI)){
+            alert("CHUSAI is not yet ready for other token than native XTZ");
             return;
         }
         let decimals = Math.pow(10,6);
-        //in case of FA1.2 an allowance should be granted with minimum tokens
+        //in case of FA1.2, an allowance should be granted with minimum tokens
         if(tokenType === TOKEN_TYPE.CTEZ || tokenType === TOKEN_TYPE.KUSD){
-            let fa12Contract = await Tezos.wallet.at( tokenType === TOKEN_TYPE.CTEZ?process.env["REACT_APP_CTEZ_CONTRACT"]! : process.env["REACT_APP_KUSD_CONTRACT"]!  , compose(tzip12,tzip16));
-            let fa12ContractStorage : FA12Contract = await fa12Contract.storage() as FA12Contract;
-            let allowance : BigNumber|undefined = await fa12ContractStorage.allowances.get<BigNumber>({
+            let faContract = await Tezos.wallet.at( tokenType === TOKEN_TYPE.CTEZ?process.env["REACT_APP_CTEZ_CONTRACT"]! : process.env["REACT_APP_KUSD_CONTRACT"]!  , compose(tzip12,tzip16));
+            let faContractStorage : FA12Contract = await faContract.storage() as FA12Contract;
+            let allowance : BigNumber|undefined = await faContractStorage.allowances.get<BigNumber>({
                 owner: userAddress,
                 spender: contractStorage?.treasuryAddress
             });
-            decimals = Math.pow(10,(await fa12Contract.tzip12().getTokenMetadata(0)).decimals);
+            decimals = Math.pow(10,(await faContract.tzip12().getTokenMetadata(0)).decimals);
             
             if(allowance === undefined || allowance.toNumber() < quantity*decimals) {
                 enqueueSnackbar("Allowance ("+allowance+") is not enough for requested collateral of "+(quantity*decimals)+", please allow an allowance first", {variant: "warning", autoHideDuration:10000});        
@@ -261,7 +261,7 @@ const handleDeposit = async (event : MouseEvent) => {
                     
                     operations.push({
                         kind: OpKind.TRANSACTION,
-                        ...fa12Contract.methods.approve(contractStorage?.treasuryAddress,quantity*decimals).toTransferParams(),
+                        ...faContract.methods.approve(contractStorage?.treasuryAddress,quantity*decimals).toTransferParams(),
                     })
                     
                     enqueueSnackbar("Your allowance of "+quantity*decimals+" has been batched for Treasury "+contractStorage?.treasuryAddress, {variant: "success", autoHideDuration:10000});        
@@ -270,12 +270,12 @@ const handleDeposit = async (event : MouseEvent) => {
                     
                     operations.push({
                         kind: OpKind.TRANSACTION,
-                        ...fa12Contract.methods.approve(contractStorage?.treasuryAddress,0).toTransferParams(),
+                        ...faContract.methods.approve(contractStorage?.treasuryAddress,0).toTransferParams(),
                     })
                     
                     operations.push({
                         kind: OpKind.TRANSACTION,
-                        ...fa12Contract.methods.approve(contractStorage?.treasuryAddress,quantity*decimals).toTransferParams(),
+                        ...faContract.methods.approve(contractStorage?.treasuryAddress,quantity*decimals).toTransferParams(),
                     })
                     
                     enqueueSnackbar("Your allowance of "+quantity*decimals+" has been batched for Treasury "+contractStorage?.treasuryAddress, {variant: "success", autoHideDuration:10000});        
@@ -286,207 +286,234 @@ const handleDeposit = async (event : MouseEvent) => {
             }
         }
         
-        let param : ContractParameters = 
-        tokenType === TOKEN_TYPE.XTZ ? new ContractXTZParameters( new BigNumber(quantity*decimals),rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI ,l2Address,rollupType.address) 
-        : new ContractFA12Parameters(new BigNumber(quantity*decimals),  tokenType === TOKEN_TYPE.CTEZ ?    process.env["REACT_APP_CTEZ_CONTRACT"]! : process.env["REACT_APP_KUSD_CONTRACT"]!,rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI,l2Address,rollupType.address);
-        
-        /* console.log("param",param);
-        let inspect = c.methods.deposit(...Object.values(param)).toTransferParams();
-        console.log("inspect",inspect);    
-        console.log("parameter signature",c.parameterSchema.ExtractSignatures());
-        */
-        
-        
-        operations.push({
-            kind: OpKind.TRANSACTION,
-            ...c.methods.deposit(...Object.values(param)).toTransferParams(),
-            amount: tokenType === TOKEN_TYPE.XTZ?quantity:0,
-        })
-        
-        const batch : WalletOperationBatch = await Tezos.wallet.batch(operations);
-        const batchOp = await batch.send();
-        const br = await batchOp.confirmation(1);
-        enqueueSnackbar(tokenType === TOKEN_TYPE.XTZ?"Your deposit has been accepted":"Your deposit is in pending, waiting for Treasury to get your tokens in collateral and continue process", {variant: "success", autoHideDuration:10000});
-        
-        if(rollupType === ROLLUP_TYPE.TORU){//need to fecth the ticket hash to give it to the user 
+        //in case of FA2, adding Treasury as operator is mandatory
+        if(tokenType === TOKEN_TYPE.EURL || tokenType === TOKEN_TYPE.UUSD){
+            let fa2Contract = await Tezos.wallet.at( tokenType === TOKEN_TYPE.UUSD?process.env["REACT_APP_UUSD_CONTRACT"]! : process.env["REACT_APP_EURL_CONTRACT"]!  );
             
-            //seacrh for the ticket hash
-            let ticketHash = "";
-            for(const opLine of br.block.operations){
-                for (const op of opLine){
-                    for (const content of op.contents){
-                        switch (content.kind) {
-                            // @ts-ignore
-                            case OpKind.TRANSACTION: {
-                                if("metadata" in content){
-                                    const iorArray = (content as OperationContentsAndResultTransaction).metadata.internal_operation_results;
-                                    if(iorArray && iorArray.length > 0 ){
-                                        for( const ior of iorArray){
-                                            ticketHash = (ior.result as OperationResultTransaction).ticket_hash!;
-                                            break;
-                                        }
-                                    } 
-                                    else continue;
-                                    
-                                } else continue;
+            
+            console.log("parameter signature",fa2Contract.parameterSchema.ExtractSignatures());
+            
+            operations.push({
+                kind: OpKind.TRANSACTION,
+                ...fa2Contract.methods.update_operators([
+                    {add_operator:
+                    {
+                        owner : userAddress,
+                        operator : contractStorage?.treasuryAddress,
+                        token_id : 0
+                    }}]).toTransferParams(),
+                })
+                
+                enqueueSnackbar("Treasury "+contractStorage?.treasuryAddress+" has been added to operator list", {variant: "success", autoHideDuration:10000});        
+                
+            }
+            
+            let param : ContractParameters = 
+            tokenType === TOKEN_TYPE.XTZ ? new ContractXTZParameters( new BigNumber(quantity*decimals),rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI ,l2Address,rollupType.address) 
+            : new ContractFAParameters(
+                new BigNumber(quantity*decimals),  
+                process.env["REACT_APP_"+tokenType+"_CONTRACT"]!,
+                rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI,
+                l2Address,
+                rollupType.address);
+            
+            /* console.log("param",param);
+            let inspect = c.methods.deposit(...Object.values(param)).toTransferParams();
+            console.log("inspect",inspect);    
+            console.log("parameter signature",c.parameterSchema.ExtractSignatures());
+            */
+            
+            
+            operations.push({
+                kind: OpKind.TRANSACTION,
+                ...c.methods.deposit(...Object.values(param)).toTransferParams(),
+                amount: tokenType === TOKEN_TYPE.XTZ?quantity:0,
+            })
+            
+            const batch : WalletOperationBatch = await Tezos.wallet.batch(operations);
+            const batchOp = await batch.send();
+            const br = await batchOp.confirmation(1);
+            enqueueSnackbar(tokenType === TOKEN_TYPE.XTZ?"Your deposit has been accepted":"Your deposit is in pending, waiting for Treasury to get your tokens in collateral and continue process", {variant: "success", autoHideDuration:10000});
+            
+            if(rollupType === ROLLUP_TYPE.TORU){//need to fecth the ticket hash to give it to the user 
+                
+                //seacrh for the ticket hash
+                let ticketHash = "";
+                for(const opLine of br.block.operations){
+                    for (const op of opLine){
+                        for (const content of op.contents){
+                            switch (content.kind) {
+                                // @ts-ignore
+                                case OpKind.TRANSACTION: {
+                                    if("metadata" in content){
+                                        const iorArray = (content as OperationContentsAndResultTransaction).metadata.internal_operation_results;
+                                        if(iorArray && iorArray.length > 0 ){
+                                            for( const ior of iorArray){
+                                                ticketHash = (ior.result as OperationResultTransaction).ticket_hash!;
+                                                break;
+                                            }
+                                        } 
+                                        else continue;
+                                        
+                                    } else continue;
+                                }
+                                default : continue;
                             }
-                            default : continue;
                         }
                     }
                 }
+                
+                enqueueSnackbar("Store your ticket hash somewhere, you will need it later : "+ticketHash, {variant: "success", autoHideDuration:10000});
             }
             
-            enqueueSnackbar("Store your ticket hash somewhere, you will need it later : "+ticketHash, {variant: "success", autoHideDuration:10000});
+            await myRef!.current!.refreshRollup();
+            await refreshBalance();
+            await refreshContract();
+        } catch (error : any) {
+            console.table(`Error: ${JSON.stringify(error, null, 2)}`);
+            let tibe : TransactionInvalidBeaconError = new TransactionInvalidBeaconError(error);
+            enqueueSnackbar(tibe.data_message, { variant:"error" , autoHideDuration:10000});
+            
+        } finally {
+            setTezosLoading(false);
         }
         
-        await myRef!.current!.refreshRollup();
-        await refreshBalance();
-        await refreshContract();
-    } catch (error : any) {
-        console.table(`Error: ${JSON.stringify(error, null, 2)}`);
-        let tibe : TransactionInvalidBeaconError = new TransactionInvalidBeaconError(error);
-        enqueueSnackbar(tibe.data_message, { variant:"error" , autoHideDuration:10000});
-        
-    } finally {
         setTezosLoading(false);
-    }
+    };
     
-    setTezosLoading(false);
-};
-
-//just needed for the selectRollupPopup selection
-const HoverBox = styled(Box)`&:hover {background-color: #a9a9a9;}`;
-
-return (
-    <Box color="primary.main" alignContent={"space-between"} textAlign={"center"} sx={{ margin: "1em", padding : "1em",  backgroundColor : "#FFFFFFAA"}} >
+    //just needed for the selectRollupPopup selection
+    const HoverBox = styled(Box)`&:hover {background-color: #a9a9a9;}`;
     
-    <Popover
-    id="selectRollupPopup"
-    open={selectRollupPopupOpen}
-    anchorEl={selectRollupPopupAnchorEl}
-    onClose={closeSelectRollupPopup}
-    anchorOrigin={{
-        vertical: 'top',
-        horizontal: 'left',
-    }}
-    >
-    <Paper title="Choose rollup or sidechain" sx={{padding : 1}} elevation={3}>
-    <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.DEKU);closeSelectRollupPopup();}}>{ROLLUP_TYPE.DEKU.name} : {ROLLUP_TYPE.DEKU.address}</HoverBox>
-    <hr />
-    <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.TORU);closeSelectRollupPopup();}}>{ROLLUP_TYPE.TORU.name} : {ROLLUP_TYPE.TORU.address}</HoverBox>
-    <hr />
-    <HoverBox onClick={()=>{setL2Address(userAddress);setRollupType(ROLLUP_TYPE.CHUSAI);closeSelectRollupPopup();}}>{ROLLUP_TYPE.CHUSAI.name} : {ROLLUP_TYPE.CHUSAI.address}</HoverBox>
-    </Paper>
-    </Popover>
-    
-    <Backdrop
-    sx={{ color: '#fff', zIndex: (theme : any) => theme.zIndex.drawer + 1 }}
-    open={tezosLoading}
-    >
-    <CircularProgress color="inherit" />
-    </Backdrop>
-    <Grid container spacing={2} >
-    
-    <UserWallet 
-    userAddress={userAddress}
-    userBalance={userBalance} />
-    
-    <Grid item xs={12} md={4} >
-    
-    <Grid item xs={12} md={12} padding={1}>
-    <TextField
-    fullWidth
-    required
-    value={l2Address}
-    disabled={rollupType == ROLLUP_TYPE.CHUSAI}
-    onChange={(e)=>{setL2Address(e.target.value?e.target.value.trim():"")}}
-    label="L2 address"
-    inputProps={{style: { textAlign: 'right' }}} 
-    InputProps={{
-        startAdornment: (
-            <InputAdornment position="start">
-            <AccountCircle />
-            </InputAdornment>
-            ),
-            style : {fontSize : "0.8em"}
+    return (
+        <Box color="primary.main" alignContent={"space-between"} textAlign={"center"} sx={{ margin: "1em", padding : "1em",  backgroundColor : "#FFFFFFAA"}} >
+        
+        <Popover
+        id="selectRollupPopup"
+        open={selectRollupPopupOpen}
+        anchorEl={selectRollupPopupAnchorEl}
+        onClose={closeSelectRollupPopup}
+        anchorOrigin={{
+            vertical: 'top',
+            horizontal: 'left',
         }}
-        variant="standard"  
-        />
-        </Grid>
-        
-        
-        
-        <Grid item xs={12} md={12} padding={1} >
-        
-        
-        <Box sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            padding : "0.4em"
-        }}>
-        
-        <TextField fullWidth 
-        required 
-        type="number"
-        onChange={(e)=>setQuantity(e.target.value?parseFloat(e.target.value):0)}
-        value={quantity}
-        label="Quantity"
-        inputProps={{style: { textAlign: 'right' }}} 
-        variant="standard"
-        />
-        
-        &nbsp;
-        
-        <Select 
-        labelId="demo-simple-select-label"
-        id="demo-simple-select"
-        defaultValue={TOKEN_TYPE.XTZ}
-        value={tokenType}
-        label="token type"
-        onChange={(e : SelectChangeEvent)=>{setTokenType(e.target.value)}}
         >
-        { Object.keys(TOKEN_TYPE).map((key)  => 
-            <MenuItem key={key} value={key}>
-            <Badge >
-            <Avatar component="span" src={key+".png"}></Avatar>
-            </Badge>
-            </MenuItem>
-            ) }
-            
-            
-            </Select>
-            
-            </Box>
-            
+        <Paper title="Choose rollup or sidechain" sx={{padding : 1}} elevation={3}>
+        <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.DEKU);closeSelectRollupPopup();}}>{ROLLUP_TYPE.DEKU.name} : {ROLLUP_TYPE.DEKU.address}</HoverBox>
+        <hr />
+        <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.TORU);closeSelectRollupPopup();}}>{ROLLUP_TYPE.TORU.name} : {ROLLUP_TYPE.TORU.address}</HoverBox>
+        <hr />
+        <HoverBox onClick={()=>{setL2Address(userAddress);setRollupType(ROLLUP_TYPE.CHUSAI);closeSelectRollupPopup();}}>{ROLLUP_TYPE.CHUSAI.name} : {ROLLUP_TYPE.CHUSAI.address}</HoverBox>
+        </Paper>
+        </Popover>
+        
+        <Backdrop
+        sx={{ color: '#fff', zIndex: (theme : any) => theme.zIndex.drawer + 1 }}
+        open={tezosLoading}
+        >
+        <CircularProgress color="inherit" />
+        </Backdrop>
+        <Grid container spacing={2} >
+        
+        <UserWallet 
+        userAddress={userAddress}
+        userBalance={userBalance} />
+        
+        <Grid item xs={12} md={4} >
+        
+        <Grid item xs={12} md={12} padding={1}>
+        <TextField
+        fullWidth
+        required
+        value={l2Address}
+        disabled={rollupType == ROLLUP_TYPE.CHUSAI}
+        onChange={(e)=>{setL2Address(e.target.value?e.target.value.trim():"")}}
+        label="L2 address"
+        inputProps={{style: { textAlign: 'right' }}} 
+        InputProps={{
+            startAdornment: (
+                <InputAdornment position="start">
+                <AccountCircle />
+                </InputAdornment>
+                ),
+                style : {fontSize : "0.8em"}
+            }}
+            variant="standard"  
+            />
             </Grid>
             
             
-            <Grid item xs={12} md={12} padding={1}>
-            <Button variant="contained" disabled={isDepositButtonDisabled()} onClick={(e)=>handleDeposit(e)}>DEPOSIT</Button>
-            </Grid>
-            </Grid>
+            
+            <Grid item xs={12} md={12} padding={1} >
             
             
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                padding : "0.4em"
+            }}>
             
-            
-            <RollupBox 
-            ref={myRef}
-            Tezos={Tezos}
-            userAddress={userAddress}
-            tokenBytes={tokenBytes}
-            handlePendingWithdraw={undefined}
-            handlePendingDeposit={handlePendingDeposit}
-            contractStorage={contractStorage}
-            setRollupType={setRollupType}
-            rollupType={rollupType}
-            rollup={rollup}
-            setRollup={setRollup}
+            <TextField fullWidth 
+            required 
+            type="number"
+            onChange={(e)=>setQuantity(e.target.value?parseFloat(e.target.value):0)}
+            value={quantity}
+            label="Quantity"
+            inputProps={{style: { textAlign: 'right' }}} 
+            variant="standard"
             />
             
-            </Grid>
+            &nbsp;
             
-            </Box>
-            );
-        };
-        
-        export default Deposit;
+            <Select 
+            labelId="demo-simple-select-label"
+            id="demo-simple-select"
+            defaultValue={TOKEN_TYPE.XTZ}
+            value={tokenType}
+            label="token type"
+            onChange={(e : SelectChangeEvent)=>{setTokenType(e.target.value)}}
+            >
+            { Object.keys(TOKEN_TYPE).map((key)  => 
+                <MenuItem key={key} value={key}>
+                <Badge >
+                <Avatar component="span" src={key+".png"}></Avatar>
+                </Badge>
+                </MenuItem>
+                ) }
+                
+                
+                </Select>
+                
+                </Box>
+                
+                </Grid>
+                
+                
+                <Grid item xs={12} md={12} padding={1}>
+                <Button variant="contained" disabled={isDepositButtonDisabled()} onClick={(e)=>handleDeposit(e)}>DEPOSIT</Button>
+                </Grid>
+                </Grid>
+                
+                
+                
+                
+                <RollupBox 
+                ref={myRef}
+                Tezos={Tezos}
+                userAddress={userAddress}
+                tokenBytes={tokenBytes}
+                handlePendingWithdraw={undefined}
+                handlePendingDeposit={handlePendingDeposit}
+                contractStorage={contractStorage}
+                setRollupType={setRollupType}
+                rollupType={rollupType}
+                rollup={rollup}
+                setRollup={setRollup}
+                />
+                
+                </Grid>
+                
+                </Box>
+                );
+            };
+            
+            export default Deposit;

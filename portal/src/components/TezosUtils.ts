@@ -137,7 +137,7 @@ export class RollupTORU {
           
           export async function getBytes(tokenType : TOKEN_TYPE, contractAddress? : string) : Promise<string> {
             if(tokenType === TOKEN_TYPE.XTZ) return getXTZBytes();
-            else return getFA12Bytes(contractAddress!);
+            else return getFABytes(contractAddress!);
           };  
           
           export async function getXTZBytes() : Promise<string> {
@@ -147,14 +147,14 @@ export class RollupTORU {
               type: {prim: "Or",
               args: [
                 {prim : "Unit", annots : ['%XTZ']},
-                {prim : "Address", annots : ['%FA12']}
+                {prim : "Address", annots : ['%FA']}
               ]}
             };
             return (await p.packData(XTZbytes)).packed ;
           }
           
           
-          export async function getFA12Bytes(contractAddress : string) : Promise<string> {
+          export async function getFABytes(contractAddress : string) : Promise<string> {
             const p = new MichelCodecPacker();
             let addrBytes : PackDataResponse = await p.packData({
               data: {string : contractAddress},// process.env["REACT_APP_CTEZ_CONTRACT"]!},
@@ -164,15 +164,15 @@ export class RollupTORU {
             //why to remove first 12 chars ? no idea but it is like this ...
             //console.log("addrBytes",addrBytes.packed.substring(12));
             
-            let FA12bytes : PackDataParams = {
+            let FAbytes : PackDataParams = {
               data:  {prim : "Right", args: [ {bytes : addrBytes.packed.substring(12)}]}, //'01f37d4eddfff4e08fb1f19895ac9c83bc12d2b36800'}]},  
               type: {prim: "Or",
               args: [
                 {prim : "Unit", annots : ['%XTZ']},
-                {prim : "address", annots : ['%FA12']}
+                {prim : "address", annots : ['%FA']}
               ]}
             };
-            return (await p.packData(FA12bytes)).packed ;
+            return (await p.packData(FAbytes)).packed ;
           }
           
           
@@ -219,10 +219,15 @@ export class RollupTORU {
                 let XTZTicket = await rollup.vault.vault.get<TezosTicket>([process.env["REACT_APP_CONTRACT"],await getBytes(TOKEN_TYPE.XTZ)]) ; //XTZ() => "050505030b" 
                 let CTEZTicket = await rollup.vault.vault.get<TezosTicket>([process.env["REACT_APP_CONTRACT"],await getBytes(TOKEN_TYPE.CTEZ,process.env["REACT_APP_CTEZ_CONTRACT"]!) ]) ; //FA12 CTEZ with address KT1WnDswMHZefo2fym6Q9c8hnL3sEuzFb2Dt => "0505080a0000001601f37d4eddfff4e08fb1f19895ac9c83bc12d2b36800"
                 let kUSDTicket = await rollup.vault.vault.get<TezosTicket>([process.env["REACT_APP_CONTRACT"],await getBytes(TOKEN_TYPE.KUSD,process.env["REACT_APP_KUSD_CONTRACT"]!) ]) ; //FA12 KUSD with address ??? => "???"
+                let UUSDTicket = await rollup.vault.vault.get<TezosTicket>([process.env["REACT_APP_CONTRACT"],await getBytes(TOKEN_TYPE.UUSD,process.env["REACT_APP_UUSD_CONTRACT"]!) ]) ; //FA2 UUSD with address ??? => "???"
+                let EURLTicket = await rollup.vault.vault.get<TezosTicket>([process.env["REACT_APP_CONTRACT"],await getBytes(TOKEN_TYPE.EURL,process.env["REACT_APP_EURL_CONTRACT"]!) ]) ; //FA2 EURL with address ??? => "???"
+                
                 const ticketMap = new Map<TOKEN_TYPE,TezosTicket>();
                 if(XTZTicket)ticketMap.set(TOKEN_TYPE.XTZ,XTZTicket);
                 if(CTEZTicket)ticketMap.set(TOKEN_TYPE.CTEZ,CTEZTicket);
                 if(kUSDTicket)ticketMap.set(TOKEN_TYPE.KUSD,kUSDTicket);
+                if(UUSDTicket)ticketMap.set(TOKEN_TYPE.UUSD,UUSDTicket);
+                if(EURLTicket)ticketMap.set(TOKEN_TYPE.EURL,EURLTicket);
                 
                 return new Promise( (resolve,reject) => {
                   resolve(new RollupDEKU(

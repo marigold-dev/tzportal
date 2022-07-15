@@ -3,12 +3,12 @@ import { LAYER2Type, LAYER2TypeClass } from "./TezosUtils";
 import BigNumber from 'bignumber.js';
 
 
-export class ContractFA12Storage {
+export class ContractFAStorage {
     type:string; //
     amountToTransfer: BigNumber; //represent a nat, so mutez
     rollupAddress: string;
     l2Type: LAYER2TypeClass; // layer 1 or 2 address
-    fa12Address: string;
+    faAddress: string;
     
     /**
      * 
@@ -22,18 +22,18 @@ export class ContractFA12Storage {
         amountToTransfer: BigNumber,
         l2Type: LAYER2TypeClass,
         rollupAddress: string,
-        fa12Address: string){
+        faAddress: string){
             this.type=type;
             this.amountToTransfer=amountToTransfer;
             this.l2Type=l2Type;
             this.rollupAddress=rollupAddress;
-            this.fa12Address=fa12Address;
+            this.faAddress=faAddress;
         }
 }
 
 export class ContractStorage{
-    fa12PendingDeposits!: MichelsonMap<[string,string],ContractFA12Storage>;
-    fa12PendingWithdrawals!: MichelsonMap<[string,string],ContractFA12Storage>;
+    faPendingDeposits!: MichelsonMap<[string,string],ContractFAStorage>;
+    faPendingWithdrawals!: MichelsonMap<[string,string],ContractFAStorage>;
     treasuryAddress! : string;
 }
 
@@ -81,24 +81,24 @@ export abstract class ContractParameters{
             }
         }
         
-        export class ContractFA12Parameters extends ContractParameters {
-            fa12Address: string;
+        export class ContractFAParameters extends ContractParameters {
+            faAddress: string;
 
             /**
              * 
              * @param amountToTransfer in mutez
-             * @param fa12Address 
+             * @param faAddress 
              * @param l2Address 
              * @param rollupAddress 
              */
             constructor(
                 amountToTransfer: BigNumber,
-                fa12Address: string,
+                faAddress: string,
                 l2Type: LAYER2Type,
                 l2Address: string,
                 rollupAddress: string,
                 ){
-                    super("fA12_OP",amountToTransfer,l2Type,l2Address,rollupAddress);
-                    this.fa12Address=fa12Address;
+                    super("fA_OP",amountToTransfer,l2Type,l2Address,rollupAddress);
+                    this.faAddress=faAddress;
                 }
             }
