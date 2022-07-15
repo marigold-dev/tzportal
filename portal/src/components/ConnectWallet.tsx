@@ -26,7 +26,6 @@ const ConnectButton = ({
     setWallet,
     setUserAddress,
     setUserBalance,
-    setUserCtezBalance,
     setActivePage,
     wallet
 }: ButtonProps): JSX.Element => {
@@ -35,12 +34,7 @@ const ConnectButton = ({
         setUserAddress(userAddress);
         // updates balance
         const balance = await Tezos.tz.getBalance(userAddress);
-        setUserBalance(balance.toNumber());
-        //ctez
-        let ctezContract : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!);
-        const tokenMap : BigMapAbstraction = (await ctezContract.storage() as FA12Contract).tokens;
-        let ctezBalance : BigNumber|undefined = await tokenMap.get<BigNumber>(userAddress);
-        setUserCtezBalance(ctezBalance !== undefined ? ctezBalance.toNumber() : 0);    
+        setUserBalance(balance.toNumber());   
     };
 
     const connectWallet = async (): Promise<void> => {
