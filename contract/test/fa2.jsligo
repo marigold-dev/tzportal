@@ -174,7 +174,7 @@ export type atomic_trans =
    quantity : nat
 };
 
-type transfer_from = {
+export type transfer_from = {
    from_ : address,
    tx    : list<atomic_trans>,
 };
@@ -269,10 +269,10 @@ const update_ops = ([updates, s]: [update_operators, storage]): [list<operation>
 
 export type parameter =
 // @layout:comb
-| ["Transfer", transfer] | ["Balance_of", balance_of] | ["Update_operators", update_operators]
+| ["TransferFA2", transfer] | ["Balance_of", balance_of] | ["Update_operators", update_operators]
 
 const main = ([p, s]: [parameter, storage]) : [list<operation>, storage] => match (p,
-{  Transfer         : (p : transfer        ) => transfer   (p, s)
+{  TransferFA2         : (p : transfer        ) => transfer   (p, s)
 ,  Balance_of       : (p : balance_of      ) => balance_of (p, s)
 ,  Update_operators : (p : update_operator ) => update_ops (p, s)
 });

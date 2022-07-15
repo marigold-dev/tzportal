@@ -1,9 +1,7 @@
 // DEFINITIONS  
 
-type fa12TransferContractParameters = [address,[address,nat]];  //from,to,qty
-type fa12ApproveContractParameters = [address,nat];  //to,qty
-type fa12TransferContract = contract<fa12TransferContractParameters>;
-type fa12ApproveContract = contract<fa12ApproveContractParameters>;
+type faTransferContractParameters = [address,[address,nat]];  //from,to,qty
+type faTransferContract = contract<faTransferContractParameters>;
 
 type rollupContractParametersTORU = [ticket<bytes>,tx_rollup_l2_address];//[ticket<bytes>,address]; 
 type rollupContractParametersDEKU = [address , ticket<bytes>];//[ticket<bytes>,tx_rollup_l2_address]; 
@@ -12,7 +10,7 @@ type rollupContractParametersCHUSAI = ticket<bytes>;
 export type ticketType =
 // @layout:comb
 | ["XTZ"]
-| ["FA12", address];
+| ["FA", address]
 
 export type l2Type = 
 | [ "L2_DEKU" , address]  
@@ -20,13 +18,13 @@ export type l2Type =
 | [ "L2_CHUSAI"]
 ;    
 
-export type fa12Op = 
+export type faOp = 
 // @layout:comb
 {
   amountToTransfer: nat, //in mutez
   rollupAddress: address,
   l2Type: l2Type,
-  fa12Address: address
+  faAddress: address
 };
 
 export type xtzOp = 
@@ -37,29 +35,29 @@ export type xtzOp =
   l2Type: l2Type
 };
 
-export type fa12PendingParameter = [address,fa12Op];
+export type faPendingParameter = [address,faOp];
 
 export type depositOp =
 // @layout:comb 
-| ["FA12_OP", fa12Op]
-| ["XTZ_OP" , xtzOp];
+| ["FA_OP", faOp]
+| ["XTZ_OP" , xtzOp]
 
 export type parameter =
 // @layout:comb
   | ["Deposit" , depositOp]
-  | ["PendingDeposit",fa12PendingParameter]
+  | ["PendingDeposit",faPendingParameter]
   | ["WithdrawTORU" , ticket<bytes>]  //FIXME
   | ["WithdrawDEKU" , ticket<bytes>] 
-  | ["WithdrawPendingDEKU", fa12PendingParameter]
+  | ["WithdrawPendingDEKU", faPendingParameter]
 ;
 
-export type fa12PendingMapType = map<[address,bytes],fa12Op>;
+export type faPendingMapType = map<[address,bytes],faOp>;
 
 export type storage = {
   treasuryAddress : address,   //treasury address who will hold the collateral. We do this because an originated contract cannot be the initiator of transactions with fa1.2 contracts, an implicit account has to do transactions directly.
-  fa12PendingDeposits : fa12PendingMapType, //map of future tickets to deposit on behalf of implicit account destination
-  fa12PendingWithdrawals : fa12PendingMapType //map of tickets to redeem back to implicit account destination
-};  
+  faPendingDeposits : faPendingMapType, //map of future tickets to deposit on behalf of implicit account destination
+  faPendingWithdrawals : faPendingMapType, //map of tickets to redeem back to implicit account destination
+};
 
 
 export type return_ =  [list<operation>, storage]; 
@@ -87,10 +85,10 @@ type read_ticket_return = [[address, [bytes , nat]] , ticket<bytes>];
 
 // FUNCTIONS  
 
-const getFA12TransferContract = (fa12ContractAddr: address) : fa12TransferContract => {
-  let transferOption: option<fa12TransferContract> = Tezos.get_entrypoint_opt("%transfer", fa12ContractAddr);
+const getFATransferContract = (faContractAddr: address) : faTransferContract => {
+  let transferOption: option<faTransferContract> = Tezos.get_entrypoint_opt("%transfer", faContractAddr);
   let transfer = match (transferOption ,{
-    Some : (contract : fa12TransferContract) => contract,
+    Some : (contract : faTransferContract) => contract,
     None : () => failwith("7")
     });
   return transfer;
@@ -117,11 +115,11 @@ const getRollupTORUContract = (a : address) : contract<rollupContractParametersT
 const deposit = ([op,store]: [depositOp,storage]): return_ => {
 
  return match( op , {
-   FA12_OP : (fa12Op : fa12Op) => {  
-      if(fa12Op.amountToTransfer < (1 as nat)) return failwith("0");
+   FA_OP : (faOp : faOp) => {  
+      if(faOp.amountToTransfer < (1 as nat)) return failwith("0");
       
-      const b = Bytes.pack(FA12(fa12Op.fa12Address));       
-      return [list([]), {...store,fa12PendingDeposits : Map.add([Tezos.get_source(),b], fa12Op ,store.fa12PendingDeposits)}]; //we just keep this on storage and wait for the treasury user to continue the flow
+      const b = Bytes.pack(FA(faOp.faAddress));       
+      return [list([]), {...store,faPendingDeposits : Map.add([Tezos.get_source(),b], faOp ,store.faPendingDeposits)}]; //we just keep this on storage and wait for the treasury user to continue the flow
    },
 
    XTZ_OP : (xtzOp : xtzOp) => {
@@ -143,23 +141,23 @@ const deposit = ([op,store]: [depositOp,storage]): return_ => {
   });
 };
 
-const fa12PendingDeposit = ([fa12PendingDepositParameter,store]:[fa12PendingParameter,storage]) : return_ => {
+const faPendingDeposit = ([faPendingDepositParameter,store]:[faPendingParameter,storage]) : return_ => {
 
          //only the treasury can call directly this endpoint
          if(Tezos.get_sender() !=  store.treasuryAddress) return failwith("9");
     
-         let b = Bytes.pack(FA12(fa12PendingDepositParameter[1].fa12Address)) ;       
+         let b = Bytes.pack(FA(faPendingDepositParameter[1].faAddress)) ;       
      
-         let [fa12OpOpt, newFa12PendingDeposits] : [option<fa12Op>, fa12PendingMapType] =
-         Map.get_and_update([fa12PendingDepositParameter[0],  b], (None() as option<fa12Op>), store.fa12PendingDeposits);
+         let [faOpOpt, newFaPendingDeposits] : [option<faOp>, faPendingMapType] =
+         Map.get_and_update([faPendingDepositParameter[0],  b], (None() as option<faOp>), store.faPendingDeposits);
      
-         return match(fa12OpOpt,{
+         return match(faOpOpt,{
            None : () => failwith("12"),
-           Some : (fa12Op : fa12Op) =>       
+           Some : (faOp : faOp) =>       
                    //send ticket to rollup
-                   match(fa12Op.l2Type , {
-                     L2_DEKU : (a : address) => [list([Tezos.transaction([a, Tezos.create_ticket(b,fa12Op.amountToTransfer)],0 as mutez,getRollupDEKUContract(fa12Op.rollupAddress))]),  {...store,fa12PendingDeposits : newFa12PendingDeposits}    ], //remove it from storage now
-                     L2_TORU : (a : tx_rollup_l2_address) => [list([Tezos.transaction([Tezos.create_ticket(b,fa12Op.amountToTransfer), a],0 as mutez,getRollupTORUContract(fa12Op.rollupAddress))]),  {...store,fa12PendingDeposits : newFa12PendingDeposits}    ], //remove it from storage now
+                   match(faOp.l2Type , {
+                     L2_DEKU : (a : address) => [list([Tezos.transaction([a, Tezos.create_ticket(b,faOp.amountToTransfer)],0 as mutez,getRollupDEKUContract(faOp.rollupAddress))]),  {...store,faPendingDeposits : newFaPendingDeposits}    ], //remove it from storage now
+                     L2_TORU : (a : tx_rollup_l2_address) => [list([Tezos.transaction([Tezos.create_ticket(b,faOp.amountToTransfer), a],0 as mutez,getRollupTORUContract(faOp.rollupAddress))]),  {...store,faPendingDeposits : newFaPendingDeposits}    ], //remove it from storage now
                      L2_CHUSAI : () => failwith("14")
                    })
          });
@@ -175,59 +173,59 @@ const withdrawDEKU = ([ticket,store]:[ticket<bytes>,storage]) : return_ => {
 
  let typeOpt: option<ticketType> = Bytes.unpack(typeBytes);
  return match (typeOpt ,{
-     Some : (ticketType : ticketType) => { 
+     Some : (ticketType : ticketType) => {
        // try with XTZ first
        match(ticketType , {
-         XTZ : () => {             
+         XTZ : () => {
            let destinationContract : contract<unit> = Tezos.get_contract_with_error(Tezos.get_source(),"5");
            //give back the XTZ to the destination
-           return [list([Tezos.transaction(unit,qty * (1 as mutez),destinationContract)]),store];                                               
+           return [list([Tezos.transaction(unit,qty * (1 as mutez),destinationContract)]),store];
          },
-         FA12 : (fa12Address : address) => 
+         FA : (faAddress : address) => 
            //look if already have something to aggregate
-           match( Map.find_opt([Tezos.get_source(),typeBytes],store.fa12PendingWithdrawals), {
-              None : () => [list([]), {...store,fa12PendingWithdrawals : Map.add([Tezos.get_source(),typeBytes],{
+           match( Map.find_opt([Tezos.get_source(),typeBytes],store.faPendingWithdrawals), {
+              None : () => [list([]), {...store,faPendingWithdrawals : Map.add([Tezos.get_source(),typeBytes],{
                 amountToTransfer: qty, //in mutez
                 rollupAddress: Tezos.get_sender(),
                 l2Type: L2_DEKU(Tezos.get_sender()),
-                fa12Address: fa12Address
-              } ,store.fa12PendingWithdrawals)}],
-              Some : (existing : fa12Op) =>  [list([]), {...store,fa12PendingWithdrawals : Map.add([Tezos.get_source(),typeBytes],{...existing,
+                faAddress: faAddress
+              } ,store.faPendingWithdrawals)}],
+              Some : (existing : fa12Op) =>  [list([]), {...store,faPendingWithdrawals : Map.add([Tezos.get_source(),typeBytes],{...existing,
                 amountToTransfer: qty + existing.amountToTransfer
-              },store.fa12PendingWithdrawals)}]
-           })
+              },store.faPendingWithdrawals)}]
+           }),
          });
      },
      None : () => failwith("6")
- });   
-            
+ });
+
   };
 
-const withdrawPendingDEKU = ([fa12PendingDepositParameter,store]:[fa12PendingParameter,storage]) : return_ => {
+const withdrawPendingDEKU = ([faPendingDepositParameter,store]:[faPendingParameter,storage]) : return_ => {
 
   //only the treasury can call directly this endpoint
   if(Tezos.get_sender() !=  store.treasuryAddress) return failwith("9");
 
-  let b = Bytes.pack(FA12(fa12PendingDepositParameter[1].fa12Address)) ;       
+  let b = Bytes.pack(FA(faPendingDepositParameter[1].faAddress)) ;       
 
   //check pending withdraw found or not
-  let [_fa12OpOpt, newFa12PendingWithdrawals] : [option<fa12Op>, fa12PendingMapType] =
-         Map.get_and_update([fa12PendingDepositParameter[0],  b], (None() as option<fa12Op>), store.fa12PendingWithdrawals);
+  let [_faOpOpt, newFaPendingWithdrawals] : [option<faOp>, faPendingMapType] =
+         Map.get_and_update([faPendingDepositParameter[0],  b], (None() as option<faOp>), store.faPendingWithdrawals);
 
-  return  [list([]),{...store,fa12PendingWithdrawals : newFa12PendingWithdrawals} ];       
+  return  [list([]),{...store,faPendingWithdrawals : newFaPendingWithdrawals} ];       
    //send back FA1.2 token ownership to the destination, leave found item out of list and let treasury to do final token fa1.2 transaction
           
 };
 
-// MAIN  
+// MAIN
 
 export const main = (params:[parameter , storage]): return_ => {
   let [action , store] = params;
   return match (action, {
       Deposit : (op : depositOp) => deposit([op,store]),
-      PendingDeposit : (fa12PendingDepositParameter:fa12PendingParameter) => fa12PendingDeposit([fa12PendingDepositParameter,store]) ,
+      PendingDeposit : (faPendingDepositParameter:faPendingParameter) => faPendingDeposit([faPendingDepositParameter,store]) ,
       WithdrawDEKU : (ticket : ticket<bytes>) => withdrawDEKU(ticket,store),
-      WithdrawPendingDEKU : (fa12PendingDepositParameter:fa12PendingParameter) => withdrawPendingDEKU([fa12PendingDepositParameter,store]),
+      WithdrawPendingDEKU : (faPendingDepositParameter:faPendingParameter) => withdrawPendingDEKU([faPendingDepositParameter,store]),
       WithdrawTORU : (_ticket : ticket<bytes>) => [list([]),store]   //FIXME to finish one day
     })
 };
