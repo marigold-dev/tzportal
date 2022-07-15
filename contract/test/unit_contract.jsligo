@@ -497,6 +497,45 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
 
   // FA2
 
+  //fa2 origination
+  let fa2balance :nat = 4200 as nat;
+  let [tf2aaddr, _, _] = Test.originate(FA2.main, //prepare allowance of 42 for later
+    {
+      ledger : ( Big_map.literal( list([
+        [ ["tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address, 0 as nat] , (1000000000000000000 as nat)]])
+      ) as big_map<[address,nat],nat> ),
+      token_metadata : ( Big_map.literal ( list([
+        [ (0 as nat) , 
+          {token_id : (0 as nat),
+          token_info : Map.literal ( list([
+          ["decimals", (0x3132 as bytes)] , 
+          ["name", (0x796f757665732075555344 as bytes) ],
+          ["symbol", (0x75555344 as bytes) ],
+          ["thumbnailUri", (0x697066733a2f2f516d627668616e4e437879645a45624775315264716b47334c63704e4776375859734348677a5742586e6d785264 as bytes)] 
+          ]))  
+          }] ]) ) as big_map<nat, {token_id:nat,token_info:map<string,bytes>}>),
+      operators :  Big_map.empty  as big_map<[address, address], set<nat>> ,
+      token_ids : list([0 as nat]) as list<nat>
+    }, 0 as mutez);
+  let fa2Contr = Test.to_contract(tf2aaddr);
+  let fa2Address = Tezos.address(fa2Contr);
+  let _ = Test.log("fa contract deployed with values : ");
+  let _ = Test.log(fa2Contr);
+  let _ = Test.log(Test.get_storage_of_address(fa2Address));
+
+  // add sender3 as an operator to being able to transfer
+  let operator : FA2.unit_update = 
+      Add_operator(
+        {
+          owner    : sender3,
+          operator : treasury,
+          token_id : 0 as nat
+        }
+      )
+  let update_operators_args : FA2.update_operators = list([operator]);
+  const _ = Test.log(Test.transfer_to_contract(fa2Contr,Update_operators(update_operators_args),0 as mutez));
+
+  // test fa2
   let ticketClaim4 : ROLLUP.ticketClaim =  {
     amount : 42 as nat,
     data : fAType,
@@ -508,13 +547,13 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
 
   let faPendingWithdraw2 : CONTRACT.faPendingParameter = [sender3,faOp];
 
-  const _ = Test.log("*********************** testSender3WithdrawAll42CTEZ ***********************");
+  const _ = Test.log("*********************** testSender3WithdrawAll42CTEZ fa2 ***********************");
   let testSender3WithdrawAll42CTEZ2 = _testWithdrawDEKU(sender3,withdrawParam4,0 as mutez,0 as nat);
 
-  const _ = Test.log("*********************** testSender3PendingWithdrawNotTreasury ***********************");
+  const _ = Test.log("*********************** testSender3PendingWithdrawNotTreasury fa2 ***********************");
   const testSender3PendingWithdrawNotTreasury2 = _testPendingWithdrawFailDEKU(sender3,faPendingWithdraw2,"9");
 
-  const _ = Test.log("*********************** testTreasuryPendingWithdraw42FAToSender3 ***********************");
+  const _ = Test.log("*********************** testTreasuryPendingWithdraw42FAToSender3 fa2 ***********************");
   const testTreasuryPendingWithdraw42FAToSender32 = _testPendingWithdrawDEKU(treasury,faPendingWithdraw2);
 
   let txs  : list<FA2.atomic_trans> = list ([
@@ -531,9 +570,9 @@ let assert_failure = ([result,message] : [test_exec_result,string]) : bool => {
     }
   ]);
   //treasury is doing the transfer of token himself
-  const _ = Test.log(Test.transfer_to_contract(faContr, TransferFA2(transferArg), 0 as mutez));
-  let senderBalance3 = match(Big_map.find_opt(sender3,(Test.get_storage (tfaaddr)).tokens) as option<nat>, {
+  const _ = Test.log(Test.transfer_to_contract(fa2Contr, TransferFA2(transferArg), 0 as mutez));
+  let senderBalance3 = match(Big_map.find_opt([sender3,0 as nat],(Test.get_storage(tf2aaddr)).ledger) as option<nat>, {
     Some : (qty: nat)=>qty,
     None : () => 0 as nat
     }); 
-  const _ = assert_with_error(senderBalance3 == fabalance,"User balance for FA2 is not correct, it should go back to origination value");
+  const _ = assert_with_error(senderBalance3 == fa2balance,"User balance for FA2 is not correct, it should go back to origination value");
