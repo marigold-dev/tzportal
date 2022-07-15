@@ -30,7 +30,7 @@ const Withdraw = ({
     userAddress
 }: WithdrawProps): JSX.Element => {
     
-    const [userBalance, setUserBalance] = useState<Map<TOKEN_TYPE,number>>(new Map());
+    const [userBalance, setUserBalance] = useState<Map<TOKEN_TYPE,BigNumber>>(new Map());
     
     const [quantity, setQuantity]  = useState<number>(0); //in float TEZ
     const [handleId , setHandleId] = useState<number>(0);

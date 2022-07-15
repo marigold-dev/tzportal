@@ -130,7 +130,7 @@ export class RollupTORU {
             payload! : string //bytes
           };
           
-          export enum TOKEN_TYPE {XTZ = "XTZ",CTEZ = "CTEZ",KUSD = "KUSD"};
+          export enum TOKEN_TYPE {XTZ = "XTZ",CTEZ = "CTEZ",KUSD = "KUSD", UUSD = "UUSD", EURL = "EURL"};
           
           
           

@@ -14,8 +14,9 @@ import {  styled } from "@mui/system";
 import { OperationContentsAndResultTransaction , OperationResultTransaction} from "@taquito/rpc";
 import UserWallet from "./UserWallet";
 import RollupBox, { RollupBoxComponentType } from "./RollupBox";
-import { tzip12, Tzip12ContractAbstraction } from "@taquito/tzip12";
+import { TokenMetadata, tzip12, Tzip12ContractAbstraction } from "@taquito/tzip12";
 import { tzip16 } from "@taquito/tzip16";
+import { FA2Contract } from "./fa2Contract";
 
 
 type DepositProps = {
@@ -30,7 +31,7 @@ const Deposit = ({
     userAddress
 }: DepositProps): JSX.Element => {
     
-    const [userBalance, setUserBalance] = useState<Map<TOKEN_TYPE,number>>(new Map());
+    const [userBalance, setUserBalance] = useState<Map<TOKEN_TYPE,BigNumber>>(new Map());
     
     const [quantity, setQuantity]  = useState<number>(0); //in float TEZ
     const [l2Address, setL2Address]  = useState<string>("");
@@ -82,13 +83,28 @@ const Deposit = ({
         const cteztokenMap : BigMapAbstraction = ctezContractStorage.tokens;
         let ctezBalance : BigNumber|undefined = await cteztokenMap.get<BigNumber>(userAddress);
         
+        //UUSD
+        let uusdContract = await Tezos.wallet.at(process.env["REACT_APP_UUSD_CONTRACT"]!,tzip12);
+        const uusdContractStorage : FA2Contract = (await uusdContract.storage() as FA2Contract)
+        const uusdtokenMap : BigMapAbstraction = uusdContractStorage.ledger;
+        let uusdBalance : BigNumber|undefined = await uusdtokenMap.get<BigNumber>([userAddress,0]);
+
+        //EURL
+        let eurlContract = await Tezos.wallet.at(process.env["REACT_APP_EURL_CONTRACT"]!,tzip12);
+        const eurlContractStorage : FA2Contract = (await eurlContract.storage() as FA2Contract)
+        const eurltokenMap : BigMapAbstraction = eurlContractStorage.ledger;
+        let eurlBalance : BigNumber|undefined = await eurltokenMap.get<BigNumber>([userAddress,0]);
         
         let balance = new Map();
         balance.set(TOKEN_TYPE.XTZ,XTZbalance.toNumber() / Math.pow(10,6)); //convert mutez to tez
-        if(kUSDBalance !== undefined) balance.set(TOKEN_TYPE.KUSD,kUSDBalance.toNumber() / Math.pow(10,(await kUSDContract.tzip12().getTokenMetadata(0)).decimals));//convert from lowest kUSD decimal
+        if(kUSDBalance !== undefined) balance.set(TOKEN_TYPE.KUSD,kUSDBalance.dividedBy(Math.pow(10,(await kUSDContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest kUSD decimal
         else balance.set(TOKEN_TYPE.KUSD,0); 
-        if(ctezBalance !== undefined) balance.set(TOKEN_TYPE.CTEZ,ctezBalance.toNumber() / Math.pow(10,(await ctezContract.tzip12().getTokenMetadata(0)).decimals))//convert from muctez
+        if(ctezBalance !== undefined) balance.set(TOKEN_TYPE.CTEZ,ctezBalance.dividedBy(Math.pow(10,(await ctezContract.tzip12().getTokenMetadata(0)).decimals)));//convert from muctez
         else balance.set(TOKEN_TYPE.CTEZ,0); 
+        if(uusdBalance !== undefined) balance.set(TOKEN_TYPE.UUSD,uusdBalance.dividedBy(Math.pow(10,(await uusdContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest UUSD decimal
+        else balance.set(TOKEN_TYPE.UUSD,0); 
+        if(eurlBalance !== undefined) balance.set(TOKEN_TYPE.EURL,eurlBalance.dividedBy(Math.pow(10,(await eurlContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest EURL decimal
+        else balance.set(TOKEN_TYPE.EURL,0); 
         
         setUserBalance(balance);
         
@@ -116,9 +132,11 @@ const Deposit = ({
 const isDepositButtonDisabled = () : boolean | undefined => {
     let isDisabled = true;
     switch(tokenType){
-        case TOKEN_TYPE.XTZ : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.XTZ) !== undefined && (quantity > userBalance.get(TOKEN_TYPE.XTZ)!)));break;
-        case TOKEN_TYPE.CTEZ : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.CTEZ) !== undefined && (quantity > userBalance.get(TOKEN_TYPE.CTEZ)!)));break;
-        case TOKEN_TYPE.KUSD : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.KUSD) !== undefined && (quantity > userBalance.get(TOKEN_TYPE.KUSD)!)));break;
+        case TOKEN_TYPE.XTZ : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.XTZ) !== undefined && (  userBalance.get(TOKEN_TYPE.XTZ)!.isLessThan(quantity) ) ));break;
+        case TOKEN_TYPE.CTEZ : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.CTEZ) !== undefined && ( userBalance.get(TOKEN_TYPE.CTEZ)!.isLessThan(quantity) )));break;
+        case TOKEN_TYPE.KUSD : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.KUSD) !== undefined && ( userBalance.get(TOKEN_TYPE.KUSD)!.isLessThan(quantity) )));break;
+        case TOKEN_TYPE.KUSD : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.UUSD) !== undefined && ( userBalance.get(TOKEN_TYPE.UUSD)!.isLessThan(quantity) )));break;
+        case TOKEN_TYPE.KUSD : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.EURL) !== undefined && ( userBalance.get(TOKEN_TYPE.EURL)!.isLessThan(quantity) )));break;
     }
     return isDisabled;
 }

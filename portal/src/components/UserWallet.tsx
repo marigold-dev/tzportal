@@ -1,11 +1,11 @@
 import { Avatar, Card, CardContent, CardHeader, Chip, Divider, Grid, Stack } from "@mui/material";
 import AccountBalanceWallet from "@mui/icons-material/AccountBalanceWallet";
 import { TOKEN_TYPE } from "./TezosUtils";
-
+import BigNumber from 'bignumber.js';
 
 type ButtonProps = {
     userAddress: string;
-    userBalance : Map<TOKEN_TYPE,number>;
+    userBalance : Map<TOKEN_TYPE,BigNumber>;
 };
 
 const UserWallet = ({
@@ -32,7 +32,7 @@ const UserWallet = ({
             sx={{justifyContent: "right"}}
             deleteIcon={<Avatar sx={{height:24,width:24}} src={value+".png"} />}
             onDelete={()=>{}}
-            label={userBalance.get(value)}
+            label={userBalance.get(value)?.toString()}
             variant="outlined" 
             />
             

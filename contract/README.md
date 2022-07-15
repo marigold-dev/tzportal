@@ -51,17 +51,33 @@ ligo run dry-run ./test/fa12.jsligo 'Transfer({from:"tz1VApBuWHuaTfDHtKzU3NBtWFY
 
 # FA2 Contract
 
+### uUSD 
+
 ligo compile contract ./test/fa2.jsligo --entry-point main --output-file ./test/fa2.tz --protocol jakarta
 
 ligo compile storage ./test/fa2.jsligo "$(cat ./test/fa2_uUSD_storage.jsligo)" --entry-point main  --output-file ./test/fa2_storage.tz --protocol jakarta
 
 ligo compile parameter ./test/fa2.jsligo 'Transfer(list([{    from_ :  "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,  tx    : list([ {    to_      : "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb" as address,    token_id : 0 as nat,    quantity : 1 as nat  }  ]) as list<atomic_trans>  }]))' --output-file fa2Parameter.tz --entry-point main
 
-tezos-client originate contract fa2Jakarta transferring 0 from alice running ./test/fa2.tz --init "$(cat ./test/fa2_storage.tz)"   --burn-cap 1
+tezos-client originate contract fa2uUSDJakarta transferring 0 from alice running ./test/fa2.tz --init "$(cat ./test/fa2_storage.tz)"   --burn-cap 1
 
 KT1H7jLQW6THnopwdcuMEPJ7F21fh8MAhqQH
 
-tezos-client transfer 0 from tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk to fa2Jakarta --arg "$(cat ./test/fa2Parameter.tz)" --burn-cap 1
+tezos-client transfer 0 from tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk to fa2uUSDJakarta --arg "$(cat ./test/fa2Parameter.tz)" --burn-cap 1
+
+## EURL
+
+ligo compile contract ./test/fa2.jsligo --entry-point main --output-file ./test/fa2.tz --protocol jakarta
+
+ligo compile storage ./test/fa2.jsligo "$(cat ./test/fa2_EURL_storage.jsligo)" --entry-point main  --output-file ./test/fa2_storage.tz --protocol jakarta
+
+ligo compile parameter ./test/fa2.jsligo 'Transfer(list([{    from_ :  "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,  tx    : list([ {    to_      : "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb" as address,    token_id : 0 as nat,    quantity : 1 as nat  }  ]) as list<atomic_trans>  }]))' --output-file fa2Parameter.tz --entry-point main
+
+tezos-client originate contract fa2EURLJakarta transferring 0 from alice running ./test/fa2.tz --init "$(cat ./test/fa2_storage.tz)"   --burn-cap 1
+
+KT1VAeEADYNGNEy7MZGvEqHmotVdeS5nsVCN
+
+tezos-client transfer 0 from tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk to fa2EURLJakarta --arg "$(cat ./test/fa2Parameter.tz)" --burn-cap 1
 
 # Mocked rollup Contract
 
