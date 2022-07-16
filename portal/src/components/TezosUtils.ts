@@ -133,7 +133,15 @@ export class RollupTORU {
           export enum TOKEN_TYPE {XTZ = "XTZ",CTEZ = "CTEZ",KUSD = "KUSD", UUSD = "UUSD", EURL = "EURL"};
           
           
-          
+          export async function getTokenBytes(){
+            return new Map([
+              [TOKEN_TYPE.XTZ, await getBytes(TOKEN_TYPE.XTZ)],
+              [TOKEN_TYPE.CTEZ, await getBytes(TOKEN_TYPE.CTEZ,process.env["REACT_APP_CTEZ_CONTRACT"]!)],
+              [TOKEN_TYPE.KUSD, await getBytes(TOKEN_TYPE.KUSD,process.env["REACT_APP_KUSD_CONTRACT"]!)],
+              [TOKEN_TYPE.UUSD, await getBytes(TOKEN_TYPE.UUSD,process.env["REACT_APP_UUSD_CONTRACT"]!)],
+              [TOKEN_TYPE.EURL, await getBytes(TOKEN_TYPE.EURL,process.env["REACT_APP_EURL_CONTRACT"]!)]
+            ]);
+          };
           
           export async function getBytes(tokenType : TOKEN_TYPE, contractAddress? : string) : Promise<string> {
             if(tokenType === TOKEN_TYPE.XTZ) return getXTZBytes();

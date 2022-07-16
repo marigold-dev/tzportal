@@ -7,7 +7,7 @@ import { AccountCircle, Add, Delete, InfoOutlined, Key, } from "@mui/icons-mater
 import { useSnackbar } from "notistack";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 import {   ContractFAStorage,  ContractStorage } from "./TicketerContractUtils";
-import {  getBytes, LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TOKEN_TYPE } from "./TezosUtils";
+import {  getBytes, getTokenBytes, LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TOKEN_TYPE } from "./TezosUtils";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
 import { RollupParameters, RollupParametersDEKU, RollupParametersTORU } from "./RollupParameters";
@@ -119,13 +119,7 @@ const Withdraw = ({
     
     useEffect( () => { (async () => {
         refreshContract();
-        
-        setTokenBytes(new Map([
-            [TOKEN_TYPE.XTZ, await getBytes(TOKEN_TYPE.XTZ)],
-            [TOKEN_TYPE.CTEZ, await getBytes(TOKEN_TYPE.CTEZ,process.env["REACT_APP_CTEZ_CONTRACT"]!)],
-            [TOKEN_TYPE.KUSD, await getBytes(TOKEN_TYPE.KUSD,process.env["REACT_APP_KUSD_CONTRACT"]!)]
-        ]));
-        
+        setTokenBytes(await getTokenBytes());
         refreshBalance();
         
         if(rollupType === ROLLUP_TYPE.DEKU)setL1Address(userAddress);
@@ -196,6 +190,8 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
         setTezosLoading(true);
         
         //2. Treasury give back tokens
+
+        //2.a for FA1.2
         let fa12Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
         
         console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
@@ -204,6 +200,28 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
             kind: OpKind.TRANSACTION,
             ...fa12Contract.methods.transfer(contractStorage?.treasuryAddress,to,contractFAStorage.amountToTransfer.toNumber()).toTransferParams()
         })
+
+        //2.b for FA2
+        let fa2Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+        
+        console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
+
+        operations.push({
+            kind: OpKind.TRANSACTION,
+            ...fa2Contract.methods.transfer([
+                {
+                    "from_" : contractStorage?.treasuryAddress,
+                    "tx" : [
+                        {
+                            to_ : to,
+                            token_id : 0,
+                            quantity : contractFAStorage.amountToTransfer.toNumber()
+                        }
+                    ]
+                }
+                ,
+            ]).toTransferParams()
+        });
         
         const batch : WalletOperationBatch = await Tezos.wallet.batch(operations);
         const batchOp = await batch.send();
@@ -242,7 +260,7 @@ const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
         new RollupParametersDEKU(
             process.env["REACT_APP_CONTRACT"]!+"%withdrawDEKU", 
             quantity,
-            tokenType == TOKEN_TYPE.XTZ ? await getBytes(TOKEN_TYPE.XTZ) : tokenType == TOKEN_TYPE.CTEZ ? await getBytes(TOKEN_TYPE.CTEZ,process.env["REACT_APP_CTEZ_CONTRACT"]!) : await getBytes(TOKEN_TYPE.KUSD,process.env["REACT_APP_KUSD_CONTRACT"]!) ,
+            tokenType == TOKEN_TYPE.XTZ ? await getBytes(TOKEN_TYPE.XTZ) : await getBytes(TOKEN_TYPE[tokenType.toUpperCase() as keyof typeof TOKEN_TYPE],process.env["REACT_APP_"+tokenType+"_CONTRACT"]!) ,
             handleId,
             l1Address,
             process.env["REACT_APP_CONTRACT"]!,

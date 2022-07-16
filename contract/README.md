@@ -5,13 +5,13 @@
 ```bash
 ligo compile contract ./src/contract.jsligo --output-file contract.tz --protocol jakarta
 
-ligo compile storage ./src/contract.jsligo '{treasuryAddress : "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,fa12PendingDeposits : Map.empty as fa12PendingMapType, fa12PendingWithdrawals : Map.empty as fa12PendingMapType}' --output-file contractStorage.tz --protocol jakarta
+ligo compile storage ./src/contract.jsligo '{treasuryAddress : "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,faPendingDeposits : Map.empty as faPendingMapType, faPendingWithdrawals : Map.empty as faPendingMapType}' --output-file contractStorage.tz --protocol jakarta
 ```
 
 ## Deploy
 
 ```bash
-tezos-client originate contract tzportalJakartaChusai transferring 0 from myFirstKey running contract.tz --init "$(cat contractStorage.tz)" --burn-cap 1 --force
+tezos-client originate contract tzportalJakarta transferring 0 from myFirstKey running contract.tz --init "$(cat contractStorage.tz)" --burn-cap 1 --force
 ```
 > - Ithaca : KT1Kk2QwSaF8SU89DqWBFG6qtB73yeWLFT9d
 > - Jakarta : KT1CLTN23c3DEwUKWeUfw7QQS3dqc36eYZT3

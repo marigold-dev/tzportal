@@ -7,7 +7,7 @@ import { AccountBalanceWallet, AccountCircle, AddShoppingCartOutlined, ArrowDrop
 import { useSnackbar } from "notistack";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 import {  ContractFAParameters, ContractFAStorage, ContractParameters, ContractStorage, ContractXTZParameters } from "./TicketerContractUtils";
-import {  getBytes, LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
+import {  getBytes, getTokenBytes, LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
 import {  styled } from "@mui/system";
@@ -95,16 +95,16 @@ const Deposit = ({
         const eurltokenMap : BigMapAbstraction = eurlContractStorage.ledger;
         let eurlBalance : BigNumber|undefined = await eurltokenMap.get<BigNumber>([userAddress,0]);
         
-        let balance = new Map();
-        balance.set(TOKEN_TYPE.XTZ,XTZbalance.toNumber() / Math.pow(10,6)); //convert mutez to tez
+        let balance = new Map<TOKEN_TYPE,BigNumber>();
+        balance.set(TOKEN_TYPE.XTZ,XTZbalance.dividedBy(Math.pow(10,6))); //convert mutez to tez
         if(kUSDBalance !== undefined) balance.set(TOKEN_TYPE.KUSD,kUSDBalance.dividedBy(Math.pow(10,(await kUSDContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest kUSD decimal
-        else balance.set(TOKEN_TYPE.KUSD,0); 
+        else balance.set(TOKEN_TYPE.KUSD,new BigNumber(0)); 
         if(ctezBalance !== undefined) balance.set(TOKEN_TYPE.CTEZ,ctezBalance.dividedBy(Math.pow(10,(await ctezContract.tzip12().getTokenMetadata(0)).decimals)));//convert from muctez
-        else balance.set(TOKEN_TYPE.CTEZ,0); 
+        else balance.set(TOKEN_TYPE.CTEZ,new BigNumber(0)); 
         if(uusdBalance !== undefined) balance.set(TOKEN_TYPE.UUSD,uusdBalance.dividedBy(Math.pow(10,(await uusdContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest UUSD decimal
-        else balance.set(TOKEN_TYPE.UUSD,0); 
+        else balance.set(TOKEN_TYPE.UUSD,new BigNumber(0)); 
         if(eurlBalance !== undefined) balance.set(TOKEN_TYPE.EURL,eurlBalance.dividedBy(Math.pow(10,(await eurlContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest EURL decimal
-        else balance.set(TOKEN_TYPE.EURL,0); 
+        else balance.set(TOKEN_TYPE.EURL,new BigNumber(0)); 
         
         setUserBalance(balance);
         
@@ -115,16 +115,14 @@ const Deposit = ({
         const store : ContractStorage = {...(await c?.storage())}; //copy fields
         setContract(c);        
         setContractStorage(store);
+        console.log(store)
     }
     
     useEffect(() => { (async () => {
         refreshContract();
         refreshBalance();
         await myRef!.current!.refreshRollup();
-        setTokenBytes(new Map([
-            [TOKEN_TYPE.XTZ, await getBytes(TOKEN_TYPE.XTZ)],
-            [TOKEN_TYPE.CTEZ, await getBytes(TOKEN_TYPE.CTEZ,process.env["REACT_APP_CTEZ_CONTRACT"]!)]
-        ]));
+        setTokenBytes(await getTokenBytes());
     })();
 }, []);
 
@@ -152,12 +150,35 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
         console.log("from",from);
         
         //1. Treasury takes tokens
+
+        //1.a for FA1.2
+        if(tokenType === TOKEN_TYPE.CTEZ || tokenType === TOKEN_TYPE.KUSD){
         let fa12Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
-        
         operations.push({
             kind: OpKind.TRANSACTION,
             ...fa12Contract.methods.transfer(from,contractStorage?.treasuryAddress,contractFAStorage.amountToTransfer.toNumber()).toTransferParams()
-        })
+        });
+    }
+        //1.B for FA2
+        if(tokenType === TOKEN_TYPE.UUSD || tokenType === TOKEN_TYPE.EURL){
+            let fa2Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+            operations.push({
+                kind: OpKind.TRANSACTION,
+                ...fa2Contract.methods.transfer([
+                    {
+                        "from_" : from,
+                        "tx" : [
+                            {
+                                to_ : contractStorage?.treasuryAddress,
+                                token_id : 0,
+                                quantity : contractFAStorage.amountToTransfer.toNumber()
+                            }
+                        ]
+                    }
+                    ,
+                ]).toTransferParams()
+            });
+        }
         
         enqueueSnackbar("Treasury has batched collaterization "+contractFAStorage.amountToTransfer.toNumber()+" tokens from "+from, {variant: "success", autoHideDuration:10000});        
         refreshBalance();
@@ -243,7 +264,9 @@ const handleDeposit = async (event : MouseEvent) => {
             alert("CHUSAI is not yet ready for other token than native XTZ");
             return;
         }
+
         let decimals = Math.pow(10,6);
+
         //in case of FA1.2, an allowance should be granted with minimum tokens
         if(tokenType === TOKEN_TYPE.CTEZ || tokenType === TOKEN_TYPE.KUSD){
             let faContract = await Tezos.wallet.at( tokenType === TOKEN_TYPE.CTEZ?process.env["REACT_APP_CTEZ_CONTRACT"]! : process.env["REACT_APP_KUSD_CONTRACT"]!  , compose(tzip12,tzip16));
@@ -288,9 +311,10 @@ const handleDeposit = async (event : MouseEvent) => {
         
         //in case of FA2, adding Treasury as operator is mandatory
         if(tokenType === TOKEN_TYPE.EURL || tokenType === TOKEN_TYPE.UUSD){
-            let fa2Contract = await Tezos.wallet.at( tokenType === TOKEN_TYPE.UUSD?process.env["REACT_APP_UUSD_CONTRACT"]! : process.env["REACT_APP_EURL_CONTRACT"]!  );
+            let fa2Contract = await Tezos.wallet.at( tokenType === TOKEN_TYPE.UUSD?process.env["REACT_APP_UUSD_CONTRACT"]! : process.env["REACT_APP_EURL_CONTRACT"]! , tzip12  );
             
-            
+            decimals = Math.pow(10,(await fa2Contract.tzip12().getTokenMetadata(0)).decimals);
+
             console.log("parameter signature",fa2Contract.parameterSchema.ExtractSignatures());
             
             operations.push({
