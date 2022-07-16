@@ -139,7 +139,7 @@ const isDepositButtonDisabled = () : boolean | undefined => {
     return isDisabled;
 }
 
-const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from : string,contractFAStorage : ContractFAStorage) => {
+const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from : string,contractFAStorage : ContractFAStorage, ticketTokenType : string ) => {
     event.preventDefault();
     
     const operations : WalletParamsWithKind[]= [];
@@ -148,11 +148,14 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
         setTezosLoading(true);
         
         console.log("from",from);
+        console.log("contractFAStorage",contractFAStorage);
+
+        
         
         //1. Treasury takes tokens
 
         //1.a for FA1.2
-        if(tokenType === TOKEN_TYPE.CTEZ || tokenType === TOKEN_TYPE.KUSD){
+        if(ticketTokenType === TOKEN_TYPE.CTEZ || ticketTokenType === TOKEN_TYPE.KUSD){
         let fa12Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
         operations.push({
             kind: OpKind.TRANSACTION,
@@ -160,7 +163,7 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
         });
     }
         //1.B for FA2
-        if(tokenType === TOKEN_TYPE.UUSD || tokenType === TOKEN_TYPE.EURL){
+        if(ticketTokenType === TOKEN_TYPE.UUSD || ticketTokenType === TOKEN_TYPE.EURL){
             let fa2Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
             operations.push({
                 kind: OpKind.TRANSACTION,
@@ -326,9 +329,9 @@ const handleDeposit = async (event : MouseEvent) => {
                         operator : contractStorage?.treasuryAddress,
                         token_id : 0
                     }}]).toTransferParams(),
-                })
+                });
                 
-                enqueueSnackbar("Treasury "+contractStorage?.treasuryAddress+" has been added to operator list", {variant: "success", autoHideDuration:10000});        
+            enqueueSnackbar("Treasury "+contractStorage?.treasuryAddress+" has been added to operator list", {variant: "success", autoHideDuration:10000});        
                 
             }
             
@@ -352,7 +355,7 @@ const handleDeposit = async (event : MouseEvent) => {
                 kind: OpKind.TRANSACTION,
                 ...c.methods.deposit(...Object.values(param)).toTransferParams(),
                 amount: tokenType === TOKEN_TYPE.XTZ?quantity:0,
-            })
+            });
             
             const batch : WalletOperationBatch = await Tezos.wallet.batch(operations);
             const batchOp = await batch.send();

@@ -130,7 +130,7 @@ const Withdraw = ({
 
 
 
-const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : string,contractFAStorage : ContractFAStorage) => {
+const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : string,contractFAStorage : ContractFAStorage, ticketTokenType :string) => {
     event.preventDefault();
     
     const operations : WalletParamsWithKind[]= [];
@@ -192,16 +192,23 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
         //2. Treasury give back tokens
 
         //2.a for FA1.2
-        let fa12Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+        if(ticketTokenType === TOKEN_TYPE.CTEZ || ticketTokenType === TOKEN_TYPE.KUSD){
+            let fa12Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
         
         console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
         
         operations.push({
             kind: OpKind.TRANSACTION,
             ...fa12Contract.methods.transfer(contractStorage?.treasuryAddress,to,contractFAStorage.amountToTransfer.toNumber()).toTransferParams()
-        })
+        });
+
+        enqueueSnackbar("Treasury enqueing  "+contractFAStorage.amountToTransfer.toNumber()+" FA1.2 tokens for "+to, {variant: "success", autoHideDuration:10000});        
+
+    }
 
         //2.b for FA2
+        console.log("ticketTokenType",ticketTokenType)
+        if(ticketTokenType === TOKEN_TYPE.UUSD || ticketTokenType === TOKEN_TYPE.EURL){
         let fa2Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
         
         console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
@@ -222,7 +229,10 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
                 ,
             ]).toTransferParams()
         });
-        
+        enqueueSnackbar("Treasury enqueing  "+contractFAStorage.amountToTransfer.toNumber()+" FA2 tokens for "+to, {variant: "success", autoHideDuration:10000});        
+
+    }
+
         const batch : WalletOperationBatch = await Tezos.wallet.batch(operations);
         const batchOp = await batch.send();
         const br = await batchOp.confirmation(1);
@@ -290,8 +300,6 @@ const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
     
     return (
         <Box color="primary.main" alignContent={"space-between"} textAlign={"center"} sx={{ margin: "1em", padding : "1em",  backgroundColor : "#FFFFFFAA"}} >
-        
-        
         
         <Backdrop
         sx={{ color: '#fff', zIndex: (theme : any) => theme.zIndex.drawer + 1 }}

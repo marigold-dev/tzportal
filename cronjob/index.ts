@@ -2,7 +2,7 @@ import { MichelsonMap, OpKind, TezosToolkit, WalletContract, WalletOperationBatc
 import { InMemorySigner } from "@taquito/signer";
 import { config } from "dotenv";
 import { ContractFAStorage, ContractStorage } from "../portal/src/components/TicketerContractUtils";
-import { LAYER2Type } from "../portal/src/components/TezosUtils";
+import { getTokenBytes, LAYER2Type, TOKEN_TYPE } from "../portal/src/components/TezosUtils";
 
 // Set's up our environment variables from the file .env
 config();
@@ -22,9 +22,14 @@ Tezos.setProvider({ signer: new InMemorySigner(TEZOS_SECRET_KEY) });
 
 const handlePendingDeposit = async (from : string,tokenTypeBytes : string,  contractFAStorage: ContractFAStorage,contractStorage : ContractStorage, contract : WalletContract ) : Promise<WalletParamsWithKind[]> => {
   
+
+
   return new Promise( async (resolve, reject) => 
   {
-    
+    let tokenBytes = await getTokenBytes();
+    let ticketTokenType : string = tokenBytes.get(TOKEN_TYPE.XTZ) == tokenTypeBytes? TOKEN_TYPE.XTZ : tokenBytes.get(TOKEN_TYPE.CTEZ) == tokenTypeBytes ?  TOKEN_TYPE.CTEZ : tokenBytes.get(TOKEN_TYPE.KUSD) == tokenTypeBytes ?  TOKEN_TYPE.KUSD : tokenBytes.get(TOKEN_TYPE.UUSD) == tokenTypeBytes ?  TOKEN_TYPE.UUSD : TOKEN_TYPE.EURL ;
+
+
     const operations : WalletParamsWithKind[]= [];
     
     try{
@@ -32,16 +37,35 @@ const handlePendingDeposit = async (from : string,tokenTypeBytes : string,  cont
       
       console.log("from",from);
       
-      //1. Treasury takes tokens
-      let faContract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress); 
-      console.log("Treasury has batched collaterization "+contractFAStorage.amountToTransfer.toNumber()+" tokens from "+from );        
-      
-      operations.push(
-        {
-          kind: OpKind.TRANSACTION,
-          ...faContract.methods.transfer(from,contractStorage.treasuryAddress,contractFAStorage.amountToTransfer.toNumber()).toTransferParams()
-        }
-        );
+
+         //1.a for FA1.2
+         if(ticketTokenType === TOKEN_TYPE.CTEZ || ticketTokenType === TOKEN_TYPE.KUSD){
+          let fa12Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+          operations.push({
+              kind: OpKind.TRANSACTION,
+              ...fa12Contract.methods.transfer(from,contractStorage?.treasuryAddress,contractFAStorage.amountToTransfer.toNumber()).toTransferParams()
+          });
+      }
+          //1.B for FA2
+          if(ticketTokenType === TOKEN_TYPE.UUSD || ticketTokenType === TOKEN_TYPE.EURL){
+              let fa2Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+              operations.push({
+                  kind: OpKind.TRANSACTION,
+                  ...fa2Contract.methods.transfer([
+                      {
+                          "from_" : from,
+                          "tx" : [
+                              {
+                                  to_ : contractStorage?.treasuryAddress,
+                                  token_id : 0,
+                                  quantity : contractFAStorage.amountToTransfer.toNumber()
+                              }
+                          ]
+                      }
+                      ,
+                  ]).toTransferParams()
+              });
+          }
         
       }catch (error : any) {
         console.table(`Error: ${JSON.stringify(error, null, 2)}`);
@@ -102,6 +126,11 @@ const handlePendingDeposit = async (from : string,tokenTypeBytes : string,  cont
     
     return new Promise( async (resolve, reject) => 
     {
+
+      let tokenBytes = await getTokenBytes();
+      let ticketTokenType : string = tokenBytes.get(TOKEN_TYPE.XTZ) == tokenTypeBytes? TOKEN_TYPE.XTZ : tokenBytes.get(TOKEN_TYPE.CTEZ) == tokenTypeBytes ?  TOKEN_TYPE.CTEZ : tokenBytes.get(TOKEN_TYPE.KUSD) == tokenTypeBytes ?  TOKEN_TYPE.KUSD : tokenBytes.get(TOKEN_TYPE.UUSD) == tokenTypeBytes ?  TOKEN_TYPE.UUSD : TOKEN_TYPE.EURL ;
+  
+  
       
       const operations : WalletParamsWithKind[]= [];
       
@@ -155,15 +184,46 @@ const handlePendingDeposit = async (from : string,tokenTypeBytes : string,  cont
       
       try{
         
-        //2. Treasury give back tokens
-        let faContract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
-        
-        console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
-        
-        operations.push({
+         //2. Treasury give back tokens
+
+        //2.a for FA1.2
+        if(ticketTokenType === TOKEN_TYPE.CTEZ || ticketTokenType === TOKEN_TYPE.KUSD){
+          let fa12Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+      
+      console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
+      
+      operations.push({
           kind: OpKind.TRANSACTION,
-          ...faContract.methods.transfer(contractStorage?.treasuryAddress,to,contractFAStorage.amountToTransfer.toNumber()).toTransferParams()
-        })
+          ...fa12Contract.methods.transfer(contractStorage?.treasuryAddress,to,contractFAStorage.amountToTransfer.toNumber()).toTransferParams()
+      });
+
+
+  }
+
+      //2.b for FA2
+      if(ticketTokenType === TOKEN_TYPE.UUSD || ticketTokenType === TOKEN_TYPE.EURL){
+      let fa2Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+      
+      console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
+
+      operations.push({
+          kind: OpKind.TRANSACTION,
+          ...fa2Contract.methods.transfer([
+              {
+                  "from_" : contractStorage?.treasuryAddress,
+                  "tx" : [
+                      {
+                          to_ : to,
+                          token_id : 0,
+                          quantity : contractFAStorage.amountToTransfer.toNumber()
+                      }
+                  ]
+              }
+              ,
+          ]).toTransferParams()
+      });
+
+  }
         
         
         console.log("Treasury gave back  "+contractFAStorage.amountToTransfer.toNumber()+" tokens to "+to+ " on ticket type "+tokenTypeBytes);        

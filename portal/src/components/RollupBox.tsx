@@ -13,8 +13,8 @@ type RollupProps = {
     Tezos : TezosToolkit;
     userAddress: string;
     tokenBytes:Map<TOKEN_TYPE,string>;
-    handlePendingWithdraw : ((event: React.MouseEvent<HTMLButtonElement, MouseEvent>, to: string, contractFAStorage: ContractFAStorage) => Promise<void>) | undefined;
-    handlePendingDeposit : ((event : React.MouseEvent<HTMLButtonElement>,from : string,contractFAStorage : ContractFAStorage) => Promise<void>) | undefined;
+    handlePendingWithdraw : ((event: React.MouseEvent<HTMLButtonElement, MouseEvent>, to: string, contractFAStorage: ContractFAStorage,ticketTokenType : string) => Promise<void>) | undefined;
+    handlePendingDeposit : ((event : React.MouseEvent<HTMLButtonElement>,from : string,contractFAStorage : ContractFAStorage,ticketTokenType : string) => Promise<void>) | undefined;
     contractStorage : ContractStorage | undefined;
     setRollupType : Dispatch<SetStateAction<ROLLUP_TYPE>>;
     rollupType : ROLLUP_TYPE;
@@ -218,16 +218,18 @@ const RollupBox = ({
                         
                         {handlePendingWithdraw && contractStorage.faPendingWithdrawals?  Array.from(contractStorage.faPendingWithdrawals.entries()).map(( [key,val]: [[string,string],ContractFAStorage]) => 
                             {
+                                let tokenType : string = tokenBytes.get(TOKEN_TYPE.XTZ) == key[1]? TOKEN_TYPE.XTZ : tokenBytes.get(TOKEN_TYPE.CTEZ) == key[1] ?  TOKEN_TYPE.CTEZ : tokenBytes.get(TOKEN_TYPE.KUSD) == key[1] ?  TOKEN_TYPE.KUSD : tokenBytes.get(TOKEN_TYPE.UUSD) == key[1] ?  TOKEN_TYPE.UUSD : TOKEN_TYPE.EURL ;
+
                                 return <div key={key[0]+key[1]+val.type}>  
                                 <Badge  max={999999999999999999}
                                 badgeContent={val.amountToTransfer.toNumber()}         
                                 color="primary">
-                                <Avatar component="span" src={tokenBytes.get(TOKEN_TYPE.XTZ) == key[1]? TOKEN_TYPE.XTZ+".png" : tokenBytes.get(TOKEN_TYPE.CTEZ) == key[1] ?  TOKEN_TYPE.CTEZ+".png" : tokenBytes.get(TOKEN_TYPE.KUSD) == key[1] ?  TOKEN_TYPE.KUSD+".png" : tokenBytes.get(TOKEN_TYPE.UUSD) == key[1] ?  TOKEN_TYPE.UUSD+".png" : TOKEN_TYPE.EURL+".png" } />
+                                <Avatar component="span" src={tokenType+".png"} />
                                 <Avatar variant="square" src="ticket.png" />
                                 </Badge>
                                 <span> for {<span className="address"><span className="address1">{key[0].substring(0,key[0].length/2)}</span><span className="address2">{key[0].substring(key[0].length/2)}</span></span>} </span>
                                 <Tooltip title="Redeem collaterized user's tokens from tickets' rollup">
-                                <Button onClick={(e)=>handlePendingWithdraw(e,key[0],val)} startIcon={<AddShoppingCartOutlined/>}></Button>
+                                <Button onClick={(e)=>handlePendingWithdraw(e,key[0],val,tokenType)} startIcon={<AddShoppingCartOutlined/>}></Button>
                                 </Tooltip>
                                 </div>
                             }
@@ -236,20 +238,21 @@ const RollupBox = ({
                             
                             {handlePendingDeposit && contractStorage.faPendingDeposits ?Array.from(contractStorage.faPendingDeposits.entries()).map(( [key,val]: [[string,string],ContractFAStorage]) => 
                                 {let l2Address : string = val.l2Type.l2_DEKU?val.l2Type.l2_DEKU : val.l2Type.l2_TORU;
+                                let tokenType : string = tokenBytes.get(TOKEN_TYPE.XTZ) == key[1]? TOKEN_TYPE.XTZ : tokenBytes.get(TOKEN_TYPE.CTEZ) == key[1] ?  TOKEN_TYPE.CTEZ : tokenBytes.get(TOKEN_TYPE.KUSD) == key[1] ?  TOKEN_TYPE.KUSD : tokenBytes.get(TOKEN_TYPE.UUSD) == key[1] ?  TOKEN_TYPE.UUSD : TOKEN_TYPE.EURL ;
                                     
                                     return <div key={key[0]+key[1]+val.type}>   
                                     
                                     <Badge  max={999999999999999999}
                                     badgeContent={val.amountToTransfer.toNumber()}         
                                     color="primary">
-                                    <Avatar component="span" src={tokenBytes.get(TOKEN_TYPE.XTZ) == key[1]? TOKEN_TYPE.XTZ+".png" : tokenBytes.get(TOKEN_TYPE.CTEZ) == key[1] ?  TOKEN_TYPE.CTEZ+".png" : tokenBytes.get(TOKEN_TYPE.KUSD) == key[1] ?  TOKEN_TYPE.KUSD+".png" : tokenBytes.get(TOKEN_TYPE.UUSD) == key[1] ?  TOKEN_TYPE.UUSD+".png" : TOKEN_TYPE.EURL+".png" } />
+                                    <Avatar component="span" src={tokenType+".png"} />
                                     <Avatar variant="square" src="ticket.png" />
                                     </Badge>
                                     <span> for {<span className="address"><span className="address1">{l2Address.substring(0,l2Address.length/2)}</span><span className="address2">{l2Address.substring(l2Address.length/2)}</span></span>} </span>
                                     
                                     
                                     <Tooltip title="Collaterize user's tokens and swap to real tickets for rollup">
-                                    <Button onClick={(e)=>handlePendingDeposit(e,key[0],val)} startIcon={<AddShoppingCartOutlined/>}></Button>
+                                    <Button onClick={(e)=>handlePendingDeposit(e,key[0],val,tokenType)} startIcon={<AddShoppingCartOutlined/>}></Button>
                                     </Tooltip>
                                     </div>
                                 }
