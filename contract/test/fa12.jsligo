@@ -45,7 +45,7 @@ type getTotalSupply =
 
 export type action =
 // @layout:comb
-| ["Transfer" , transfer]
+| ["TransferFA12" , transfer]
 | ["Approve"   , approve]
 | ["GetAllowance" , getAllowance]
 | ["GetBalance"   , getBalance]
@@ -53,16 +53,16 @@ export type action =
 
 
 let getAllowances = ([p,s] : [transfer,storage]) : allowances => {
-    if(Tezos.source == p.from) return s.allowances;
+    if(Tezos.get_source() == p.from) return s.allowances;
     
-    let authorized_value = match(Big_map.find_opt([Tezos.source,p.from],s.allowances) , {
+    let authorized_value = match(Big_map.find_opt([Tezos.get_source(),p.from],s.allowances) , {
                 Some : (value : nat) => value,
                 None : ()      => 0 as nat
                 });
 
-    if (authorized_value < p.value) failwith("Not Enough Allowance");
+    if (authorized_value < p.value) return failwith("Not Enough Allowance");
     
-    return Big_map.update([Tezos.source,p.from],Some(abs(authorized_value - p.value)),s.allowances); 
+    return Big_map.update([Tezos.get_source(),p.from],Some(abs(authorized_value - p.value)),s.allowances); 
 };
 
 let transfer = ([p,s] : [transfer,storage]) : [list<operation> , storage] => {
@@ -72,7 +72,7 @@ let transfer = ([p,s] : [transfer,storage]) : [list<operation> , storage] => {
         None : ()      => 0 as nat
         });
 
-    if (sender_balance < p.value) failwith("Not Enough Balance");
+    if (sender_balance < p.value) return failwith("Not Enough Balance");
 
     let new_tokens_map = Big_map.update(p.from,Some(abs(sender_balance - p.value)),s.tokens);
     let receiver_balance = match(Big_map.find_opt(p.to_,s.tokens), {
@@ -86,14 +86,14 @@ let transfer = ([p,s] : [transfer,storage]) : [list<operation> , storage] => {
 
 
 let approve = ([p,s] : [approve , storage]) : [list<operation> , storage] => {
-    let previous_value = match(Big_map.find_opt([p.spender, Tezos.source],s.allowances) , {
+    let previous_value = match(Big_map.find_opt([p.spender, Tezos.get_source()],s.allowances) , {
       Some : (value : nat) => value,
       None : () => 0 as nat
     });
 
-    if(previous_value > (0 as nat) && p.value > (0 as nat)) failwith("Unsafe Allowance Change");
+    if(previous_value > (0 as nat) && p.value > (0 as nat)) return failwith("Unsafe Allowance Change");
     
-    let new_allowances = Big_map.update([p.spender, Tezos.source],Some(p.value),s.allowances); 
+    let new_allowances = Big_map.update([p.spender, Tezos.get_source()],Some(p.value),s.allowances); 
     
     return [ list([]) as list<operation> , {...s , allowances : new_allowances}];
 };        
@@ -126,7 +126,7 @@ let getTotalSupply = ([p,s] : [getTotalSupply , storage]) : [list<operation>, st
 
 export let main = ([a,s]:[action , storage]) : [list<operation>, storage] => {
   return match(a , {
-    Transfer : (p : transfer) => transfer (p,s),
+    TransferFA12 : (p : transfer) => transfer (p,s),
     Approve : (p: transfer) => approve (p,s),
     GetAllowance : (p: transfer) => getAllowance (p,s),
     GetBalance : (p: transfer) => getBalance (p,s),

@@ -1,0 +1,17 @@
+{
+  token_ids : list([0 as nat]) as list<nat>,
+  operators :  Big_map.empty  as big_map<[address, address], set<nat>> ,
+  ledger : ( Big_map.literal( list([
+    [ ["tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address, 0 as nat] , (1000000000000000000 as nat)]])
+   ) as big_map<[address,nat],nat> ),
+  token_metadata : ( Big_map.literal ( list([
+    [ (0 as nat) , 
+      {token_id : (0 as nat),
+       token_info : Map.literal ( list([
+       ["decimals", (0x3132 as bytes)] , 
+       ["name", (0x796f757665732075555344 as bytes) ],
+       ["symbol", (0x75555344 as bytes) ],
+       ["thumbnailUri", (0x697066733a2f2f516d627668616e4e437879645a45624775315264716b47334c63704e4776375859734348677a5742586e6d785264 as bytes)] 
+      ]))  
+      }] ]) ) as big_map<nat, {token_id:nat,token_info:map<string,bytes>}>)
+}

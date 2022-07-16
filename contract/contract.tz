@@ -1,12 +1,12 @@
 { parameter
     (or (or %deposit
-           (pair %fA12_OP
+           (pair %fA_OP
               (nat %amountToTransfer)
               (address %rollupAddress)
               (or %l2Type
                  (or (unit %l2_CHUSAI) (address %l2_DEKU))
                  (tx_rollup_l2_address %l2_TORU))
-              (address %fa12Address))
+              (address %faAddress))
            (pair %xTZ_OP
               (nat %amountToTransfer)
               (address %rollupAddress)
@@ -20,7 +20,7 @@
                      (or %l2Type
                         (or (unit %l2_CHUSAI) (address %l2_DEKU))
                         (tx_rollup_l2_address %l2_TORU))
-                     (address %fa12Address)))
+                     (address %faAddress)))
             (or (ticket %withdrawTORU bytes)
                 (or (ticket %withdrawDEKU bytes)
                     (pair %withdrawPendingDEKU
@@ -30,24 +30,24 @@
                              (or %l2Type
                                 (or (unit %l2_CHUSAI) (address %l2_DEKU))
                                 (tx_rollup_l2_address %l2_TORU))
-                             (address %fa12Address))))))) ;
+                             (address %faAddress))))))) ;
   storage
-    (pair (pair (map %fa12PendingDeposits
+    (pair (pair (map %faPendingDeposits
                    (pair address bytes)
                    (pair (nat %amountToTransfer)
                          (address %rollupAddress)
                          (or %l2Type
                             (or (unit %l2_CHUSAI) (address %l2_DEKU))
                             (tx_rollup_l2_address %l2_TORU))
-                         (address %fa12Address)))
-                (map %fa12PendingWithdrawals
+                         (address %faAddress)))
+                (map %faPendingWithdrawals
                    (pair address bytes)
                    (pair (nat %amountToTransfer)
                          (address %rollupAddress)
                          (or %l2Type
                             (or (unit %l2_CHUSAI) (address %l2_DEKU))
                             (tx_rollup_l2_address %l2_TORU))
-                         (address %fa12Address))))
+                         (address %faAddress))))
           (address %treasuryAddress)) ;
   code { LAMBDA
            address
@@ -267,7 +267,7 @@
                          NEQ ;
                          IF { DROP 3 ; PUSH string "4" ; FAILWITH }
                             { DUP ;
-                              UNPACK (or (unit %xTZ) (address %fA12)) ;
+                              UNPACK (or (unit %xTZ) (address %fA)) ;
                               IF_NONE
                                 { DROP 3 ; PUSH string "6" ; FAILWITH }
                                 { IF_LEFT

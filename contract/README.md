@@ -5,13 +5,13 @@
 ```bash
 ligo compile contract ./src/contract.jsligo --output-file contract.tz --protocol jakarta
 
-ligo compile storage ./src/contract.jsligo '{treasuryAddress : "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,fa12PendingDeposits : Map.empty as fa12PendingMapType, fa12PendingWithdrawals : Map.empty as fa12PendingMapType}' --output-file contractStorage.tz --protocol jakarta
+ligo compile storage ./src/contract.jsligo '{treasuryAddress : "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,faPendingDeposits : Map.empty as faPendingMapType, faPendingWithdrawals : Map.empty as faPendingMapType}' --output-file contractStorage.tz --protocol jakarta
 ```
 
 ## Deploy
 
 ```bash
-tezos-client originate contract tzportalJakartaChusai transferring 0 from myFirstKey running contract.tz --init "$(cat contractStorage.tz)" --burn-cap 1 --force
+tezos-client originate contract tzportalJakarta transferring 0 from myFirstKey running contract.tz --init "$(cat contractStorage.tz)" --burn-cap 1 --force
 ```
 > - Ithaca : KT1Kk2QwSaF8SU89DqWBFG6qtB73yeWLFT9d
 > - Jakarta : KT1CLTN23c3DEwUKWeUfw7QQS3dqc36eYZT3
@@ -48,6 +48,36 @@ tezos-client originate contract fa12Jakarta transferring 0 from faucetJakarta ru
 tezos-client transfer 0 from myFirstKey to fa12Jakarta --arg '(Left (Left (Left (Pair "KT1LZANqpM24Adb5Rp7GLXdd4g9sV4v8yDnw" 10000))))' --burn-cap 1
 
 ligo run dry-run ./test/fa12.jsligo 'Transfer({from:"tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,to_:"tz1MoBsVL9i7eQ8ExptgRrSZDFbFZx2c8ski" as address,value:42 as nat})' '{tokens : Big_map.literal(list([ ["tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,4200 as nat] ])) as big_map<address,nat>,allowances : Big_map.empty as big_map<[address,address],nat> ,total_amount : 4200 as nat}'  --entry-point fa12Main --sender tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk --source tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk
+
+# FA2 Contract
+
+### uUSD 
+
+ligo compile contract ./test/fa2.jsligo --entry-point main --output-file ./test/fa2.tz --protocol jakarta
+
+ligo compile storage ./test/fa2.jsligo "$(cat ./test/fa2_uUSD_storage.jsligo)" --entry-point main  --output-file ./test/fa2_storage.tz --protocol jakarta
+
+ligo compile parameter ./test/fa2.jsligo 'Transfer(list([{    from_ :  "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,  tx    : list([ {    to_      : "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb" as address,    token_id : 0 as nat,    quantity : 1 as nat  }  ]) as list<atomic_trans>  }]))' --output-file fa2Parameter.tz --entry-point main
+
+tezos-client originate contract fa2uUSDJakarta transferring 0 from alice running ./test/fa2.tz --init "$(cat ./test/fa2_storage.tz)"   --burn-cap 1
+
+KT1H7jLQW6THnopwdcuMEPJ7F21fh8MAhqQH
+
+tezos-client transfer 0 from tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk to fa2uUSDJakarta --arg "$(cat ./test/fa2Parameter.tz)" --burn-cap 1
+
+## EURL
+
+ligo compile contract ./test/fa2.jsligo --entry-point main --output-file ./test/fa2.tz --protocol jakarta
+
+ligo compile storage ./test/fa2.jsligo "$(cat ./test/fa2_EURL_storage.jsligo)" --entry-point main  --output-file ./test/fa2_storage.tz --protocol jakarta
+
+ligo compile parameter ./test/fa2.jsligo 'Transfer(list([{    from_ :  "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,  tx    : list([ {    to_      : "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb" as address,    token_id : 0 as nat,    quantity : 1 as nat  }  ]) as list<atomic_trans>  }]))' --output-file fa2Parameter.tz --entry-point main
+
+tezos-client originate contract fa2EURLJakarta transferring 0 from alice running ./test/fa2.tz --init "$(cat ./test/fa2_storage.tz)"   --burn-cap 1
+
+KT1VAeEADYNGNEy7MZGvEqHmotVdeS5nsVCN
+
+tezos-client transfer 0 from tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk to fa2EURLJakarta --arg "$(cat ./test/fa2Parameter.tz)" --burn-cap 1
 
 # Mocked rollup Contract
 

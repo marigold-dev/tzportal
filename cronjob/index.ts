@@ -1,8 +1,8 @@
 import { MichelsonMap, OpKind, TezosToolkit, WalletContract, WalletOperationBatch, WalletParamsWithKind } from "@taquito/taquito";
 import { InMemorySigner } from "@taquito/signer";
 import { config } from "dotenv";
-import { ContractFA12Storage, ContractStorage } from "../portal/src/components/TicketerContractUtils";
-import { LAYER2Type } from "../portal/src/components/TezosUtils";
+import { ContractFAStorage, ContractStorage } from "../portal/src/components/TicketerContractUtils";
+import { getTokenBytes, LAYER2Type, TOKEN_TYPE } from "../portal/src/components/TezosUtils";
 
 // Set's up our environment variables from the file .env
 config();
@@ -20,11 +20,16 @@ const Tezos = new TezosToolkit(TEZOS_RPC_URL);
 Tezos.setProvider({ signer: new InMemorySigner(TEZOS_SECRET_KEY) });
 
 
-const handlePendingDeposit = async (from : string,tokenTypeBytes : string,  contractFA12Storage: ContractFA12Storage,contractStorage : ContractStorage, contract : WalletContract ) : Promise<WalletParamsWithKind[]> => {
+const handlePendingDeposit = async (from : string,tokenTypeBytes : string,  contractFAStorage: ContractFAStorage,contractStorage : ContractStorage, contract : WalletContract ) : Promise<WalletParamsWithKind[]> => {
   
+
+
   return new Promise( async (resolve, reject) => 
   {
-    
+    let tokenBytes = await getTokenBytes();
+    let ticketTokenType : string = tokenBytes.get(TOKEN_TYPE.XTZ) == tokenTypeBytes? TOKEN_TYPE.XTZ : tokenBytes.get(TOKEN_TYPE.CTEZ) == tokenTypeBytes ?  TOKEN_TYPE.CTEZ : tokenBytes.get(TOKEN_TYPE.KUSD) == tokenTypeBytes ?  TOKEN_TYPE.KUSD : tokenBytes.get(TOKEN_TYPE.UUSD) == tokenTypeBytes ?  TOKEN_TYPE.UUSD : TOKEN_TYPE.EURL ;
+
+
     const operations : WalletParamsWithKind[]= [];
     
     try{
@@ -32,16 +37,35 @@ const handlePendingDeposit = async (from : string,tokenTypeBytes : string,  cont
       
       console.log("from",from);
       
-      //1. Treasury takes tokens
-      let fa12Contract : WalletContract = await Tezos.wallet.at(contractFA12Storage.fa12Address); 
-      console.log("Treasury has batched collaterization "+contractFA12Storage.amountToTransfer.toNumber()+" tokens from "+from );        
-      
-      operations.push(
-        {
-          kind: OpKind.TRANSACTION,
-          ...fa12Contract.methods.transfer(from,contractStorage.treasuryAddress,contractFA12Storage.amountToTransfer.toNumber()).toTransferParams()
-        }
-        );
+
+         //1.a for FA1.2
+         if(ticketTokenType === TOKEN_TYPE.CTEZ || ticketTokenType === TOKEN_TYPE.KUSD){
+          let fa12Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+          operations.push({
+              kind: OpKind.TRANSACTION,
+              ...fa12Contract.methods.transfer(from,contractStorage?.treasuryAddress,contractFAStorage.amountToTransfer.toNumber()).toTransferParams()
+          });
+      }
+          //1.B for FA2
+          if(ticketTokenType === TOKEN_TYPE.UUSD || ticketTokenType === TOKEN_TYPE.EURL){
+              let fa2Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+              operations.push({
+                  kind: OpKind.TRANSACTION,
+                  ...fa2Contract.methods.transfer([
+                      {
+                          "from_" : from,
+                          "tx" : [
+                              {
+                                  to_ : contractStorage?.treasuryAddress,
+                                  token_id : 0,
+                                  quantity : contractFAStorage.amountToTransfer.toNumber()
+                              }
+                          ]
+                      }
+                      ,
+                  ]).toTransferParams()
+              });
+          }
         
       }catch (error : any) {
         console.table(`Error: ${JSON.stringify(error, null, 2)}`);
@@ -51,32 +75,32 @@ const handlePendingDeposit = async (from : string,tokenTypeBytes : string,  cont
       try{
         
         //2. Treasury call pending deposit to create tickets and send it
-        let l2Type : LAYER2Type = contractFA12Storage.l2Type.l2_TORU && contractFA12Storage.l2Type.l2_TORU !== "" ?  
-        LAYER2Type.L2_TORU: contractFA12Storage.l2Type.l2_DEKU && contractFA12Storage.l2Type.l2_DEKU !== "" ? LAYER2Type.L2_DEKU :LAYER2Type.L2_CHUSAI ;
+        let l2Type : LAYER2Type = contractFAStorage.l2Type.l2_TORU && contractFAStorage.l2Type.l2_TORU !== "" ?  
+        LAYER2Type.L2_TORU: contractFAStorage.l2Type.l2_DEKU && contractFAStorage.l2Type.l2_DEKU !== "" ? LAYER2Type.L2_DEKU :LAYER2Type.L2_CHUSAI ;
         const param = l2Type == LAYER2Type.L2_TORU?
         {
           "address": from,
-          "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
-          "rollupAddress": contractFA12Storage.rollupAddress,
+          "amountToTransfer": contractFAStorage.amountToTransfer.toNumber(),
+          "rollupAddress": contractFAStorage.rollupAddress,
           "l2Type": l2Type,
-          "l2_TORU": contractFA12Storage.l2Type.l2_TORU,
-          "fa12Address": contractFA12Storage.fa12Address
+          "l2_TORU": contractFAStorage.l2Type.l2_TORU,
+          "faAddress": contractFAStorage.faAddress
         }: l2Type == LAYER2Type.L2_DEKU?
         {
           "address": from,
-          "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
-          "rollupAddress": contractFA12Storage.rollupAddress,
+          "amountToTransfer": contractFAStorage.amountToTransfer.toNumber(),
+          "rollupAddress": contractFAStorage.rollupAddress,
           "l2Type": l2Type,
-          "l2_DEKU": contractFA12Storage.l2Type.l2_DEKU,
-          "fa12Address": contractFA12Storage.fa12Address
+          "l2_DEKU": contractFAStorage.l2Type.l2_DEKU,
+          "faAddress": contractFAStorage.faAddress
         }:
         {
           "address": from,
-          "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
-          "rollupAddress": contractFA12Storage.rollupAddress,
+          "amountToTransfer": contractFAStorage.amountToTransfer.toNumber(),
+          "rollupAddress": contractFAStorage.rollupAddress,
           "l2Type": l2Type,
-          "l2_CHUSAI": contractFA12Storage.l2Type.l2_CHUSAI,
-          "fa12Address": contractFA12Storage.fa12Address
+          "l2_CHUSAI": contractFAStorage.l2Type.l2_CHUSAI,
+          "faAddress": contractFAStorage.faAddress
         }
         
         operations.push({
@@ -98,10 +122,15 @@ const handlePendingDeposit = async (from : string,tokenTypeBytes : string,  cont
     
   }
   
-  const handlePendingWithdraw = async (to : string,tokenTypeBytes : string,  contractFA12Storage: ContractFA12Storage,contractStorage : ContractStorage, contract : WalletContract) : Promise<WalletParamsWithKind[]> => {
+  const handlePendingWithdraw = async (to : string,tokenTypeBytes : string,  contractFAStorage: ContractFAStorage,contractStorage : ContractStorage, contract : WalletContract) : Promise<WalletParamsWithKind[]> => {
     
     return new Promise( async (resolve, reject) => 
     {
+
+      let tokenBytes = await getTokenBytes();
+      let ticketTokenType : string = tokenBytes.get(TOKEN_TYPE.XTZ) == tokenTypeBytes? TOKEN_TYPE.XTZ : tokenBytes.get(TOKEN_TYPE.CTEZ) == tokenTypeBytes ?  TOKEN_TYPE.CTEZ : tokenBytes.get(TOKEN_TYPE.KUSD) == tokenTypeBytes ?  TOKEN_TYPE.KUSD : tokenBytes.get(TOKEN_TYPE.UUSD) == tokenTypeBytes ?  TOKEN_TYPE.UUSD : TOKEN_TYPE.EURL ;
+  
+  
       
       const operations : WalletParamsWithKind[]= [];
       
@@ -109,33 +138,33 @@ const handlePendingDeposit = async (from : string,tokenTypeBytes : string,  cont
         
         //1. Treasury call pending withdraw to destroy tickets
         
-        let l2Type : LAYER2Type = contractFA12Storage.l2Type.l2_TORU && contractFA12Storage.l2Type.l2_TORU !== "" ?  
-        LAYER2Type.L2_TORU: contractFA12Storage.l2Type.l2_DEKU && contractFA12Storage.l2Type.l2_DEKU !== "" ? LAYER2Type.L2_DEKU :LAYER2Type.L2_CHUSAI ;
+        let l2Type : LAYER2Type = contractFAStorage.l2Type.l2_TORU && contractFAStorage.l2Type.l2_TORU !== "" ?  
+        LAYER2Type.L2_TORU: contractFAStorage.l2Type.l2_DEKU && contractFAStorage.l2Type.l2_DEKU !== "" ? LAYER2Type.L2_DEKU :LAYER2Type.L2_CHUSAI ;
         
         const param = l2Type == LAYER2Type.L2_TORU?
         {
           "address": to,
-          "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
-          "rollupAddress": contractFA12Storage.rollupAddress,
+          "amountToTransfer": contractFAStorage.amountToTransfer.toNumber(),
+          "rollupAddress": contractFAStorage.rollupAddress,
           "l2Type": l2Type,
-          "l2_TORU": contractFA12Storage.l2Type.l2_TORU,
-          "fa12Address": contractFA12Storage.fa12Address
+          "l2_TORU": contractFAStorage.l2Type.l2_TORU,
+          "faAddress": contractFAStorage.faAddress
         }: l2Type == LAYER2Type.L2_DEKU?
         {
           "address": to,
-          "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
-          "rollupAddress": contractFA12Storage.rollupAddress,
+          "amountToTransfer": contractFAStorage.amountToTransfer.toNumber(),
+          "rollupAddress": contractFAStorage.rollupAddress,
           "l2Type": l2Type,
-          "l2_DEKU": contractFA12Storage.l2Type.l2_DEKU,
-          "fa12Address": contractFA12Storage.fa12Address
+          "l2_DEKU": contractFAStorage.l2Type.l2_DEKU,
+          "faAddress": contractFAStorage.faAddress
         }:
         {
           "address": to,
-          "amountToTransfer": contractFA12Storage.amountToTransfer.toNumber(),
-          "rollupAddress": contractFA12Storage.rollupAddress,
+          "amountToTransfer": contractFAStorage.amountToTransfer.toNumber(),
+          "rollupAddress": contractFAStorage.rollupAddress,
           "l2Type": l2Type,
-          "l2_CHUSAI": contractFA12Storage.l2Type.l2_CHUSAI,
-          "fa12Address": contractFA12Storage.fa12Address
+          "l2_CHUSAI": contractFAStorage.l2Type.l2_CHUSAI,
+          "faAddress": contractFAStorage.faAddress
         }
         
         //console.log("param",param);
@@ -155,18 +184,49 @@ const handlePendingDeposit = async (from : string,tokenTypeBytes : string,  cont
       
       try{
         
-        //2. Treasury give back tokens
-        let fa12Contract : WalletContract = await Tezos.wallet.at(contractFA12Storage.fa12Address);
-        
-        console.log("contractFA12Storage.fa12Address",contractFA12Storage.fa12Address);
-        
-        operations.push({
+         //2. Treasury give back tokens
+
+        //2.a for FA1.2
+        if(ticketTokenType === TOKEN_TYPE.CTEZ || ticketTokenType === TOKEN_TYPE.KUSD){
+          let fa12Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+      
+      console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
+      
+      operations.push({
           kind: OpKind.TRANSACTION,
-          ...fa12Contract.methods.transfer(contractStorage?.treasuryAddress,to,contractFA12Storage.amountToTransfer.toNumber()).toTransferParams()
-        })
+          ...fa12Contract.methods.transfer(contractStorage?.treasuryAddress,to,contractFAStorage.amountToTransfer.toNumber()).toTransferParams()
+      });
+
+
+  }
+
+      //2.b for FA2
+      if(ticketTokenType === TOKEN_TYPE.UUSD || ticketTokenType === TOKEN_TYPE.EURL){
+      let fa2Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+      
+      console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
+
+      operations.push({
+          kind: OpKind.TRANSACTION,
+          ...fa2Contract.methods.transfer([
+              {
+                  "from_" : contractStorage?.treasuryAddress,
+                  "tx" : [
+                      {
+                          to_ : to,
+                          token_id : 0,
+                          quantity : contractFAStorage.amountToTransfer.toNumber()
+                      }
+                  ]
+              }
+              ,
+          ]).toTransferParams()
+      });
+
+  }
         
         
-        console.log("Treasury gave back  "+contractFA12Storage.amountToTransfer.toNumber()+" tokens to "+to+ " on ticket type "+tokenTypeBytes);        
+        console.log("Treasury gave back  "+contractFAStorage.amountToTransfer.toNumber()+" tokens to "+to+ " on ticket type "+tokenTypeBytes);        
         
         resolve(operations);
 
@@ -192,13 +252,13 @@ const handlePendingDeposit = async (from : string,tokenTypeBytes : string,  cont
     
     let operations : WalletParamsWithKind[] = [] ;
     
-    if (store.fa12PendingDeposits.size > 0) {
+    if (store.faPendingDeposits.size > 0) {
       
-      console.log(`Found ${store.fa12PendingDeposits.size} pending deposit to execute`);
+      console.log(`Found ${store.faPendingDeposits.size} pending deposit to execute`);
       
       
-      for(let fa12PendingDeposit of store.fa12PendingDeposits.entries()) {
-        let [key , deposit] = fa12PendingDeposit;
+      for(let faPendingDeposit of store.faPendingDeposits.entries()) {
+        let [key , deposit] = faPendingDeposit;
         let ops = await handlePendingDeposit(key[0],key[1],deposit,store,c);
         operations.push(... ops);
         console.log(`1 pending deposit batched`);
@@ -207,12 +267,12 @@ const handlePendingDeposit = async (from : string,tokenTypeBytes : string,  cont
       
     }  
     
-    if (store.fa12PendingWithdrawals.size > 0) {
+    if (store.faPendingWithdrawals.size > 0) {
       
-      console.log(`Found ${store.fa12PendingWithdrawals.size} pending withdrawal to execute`);
+      console.log(`Found ${store.faPendingWithdrawals.size} pending withdrawal to execute`);
       
-      for(let fa12PendingWithdrawal of store.fa12PendingWithdrawals.entries()) {
-        let [key , withdraw] = fa12PendingWithdrawal;
+      for(let faPendingWithdrawal of store.faPendingWithdrawals.entries()) {
+        let [key , withdraw] = faPendingWithdrawal;
         let ops = await handlePendingWithdraw(key[0],key[1],withdraw,store,c);
         operations.push(... ops);
         console.log(`1 pending withdraw batched`);
