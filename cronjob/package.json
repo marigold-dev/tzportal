@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "ts-node ./index.ts",
-    "build": "tsc",
+    "build": "rm -rf dist/cronjob/* && tsc",
     "start": "node dist/cronjob/index.js"
   },
   "authors": [
