@@ -364,7 +364,7 @@ const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
                 type="number"
                 onChange={(e)=>setQuantity(e.target.value?parseFloat(e.target.value):0)}
                 value={quantity}
-                label={<span>Quantity <Tooltip title="Ticket quantity is expressed with the lowest decimal 10^-6. Example : mutez, muctez, etc ..."><InfoOutlined/></Tooltip></span> }
+                label={<span>Quantity <Tooltip title="Ticket quantity is expressed with the lowest decimal of your token type. Example : For XTZ, we have 6 decimals, the lowest unity is called mutez = 10^-6. Same rule applies for other token types, 10^x where w is the decimal count"><InfoOutlined/></Tooltip></span> }
                 inputProps={{style: { textAlign: 'right' }}} 
                 variant="standard"
                 />
@@ -381,9 +381,14 @@ const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
                 >
                 { Object.keys(TOKEN_TYPE).map((key)  => 
                     <MenuItem key={key} value={key}>
-                    <Badge >
+                    
+
+                    <Badge                   
+                    color="primary">
                     <Avatar component="span" src={key+".png"}></Avatar>
+                    <Avatar variant="square" src="ticket.png" />
                     </Badge>
+                    
                     </MenuItem>
                     ) }
                     
