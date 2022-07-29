@@ -1,7 +1,8 @@
-import { Dispatch, SetStateAction, useEffect } from "react";
+import React, { Dispatch, Fragment, SetStateAction, useEffect } from "react";
 import { BigMapAbstraction, TezosToolkit, WalletContract } from "@taquito/taquito";
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import {
+    AccountInfo,
     NetworkType
 } from "@airgap/beacon-types";
 import Button from "@mui/material/Button";
@@ -9,78 +10,62 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { PAGES } from "../App";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
+import { Avatar, Chip } from "@mui/material";
+import { LogoutOutlined } from "@mui/icons-material";
 
 
 type ButtonProps = {
     Tezos: TezosToolkit;
     setWallet: Dispatch<SetStateAction<any>>;
+    userAddress:string;
     setUserAddress: Dispatch<SetStateAction<string>>;
     setUserBalance: Dispatch<SetStateAction<number>>;
-    setUserCtezBalance : Dispatch<SetStateAction<number>>;
-    setActivePage: Dispatch<SetStateAction<PAGES>>;
     wallet: BeaconWallet;
+    disconnectWallet:any;
+    activeAccount : AccountInfo;
+    setActiveAccount :  Dispatch<SetStateAction<AccountInfo|undefined>>;
+
 };
 
 const ConnectButton = ({
     Tezos,
     setWallet,
+    userAddress,
     setUserAddress,
     setUserBalance,
-    setActivePage,
-    wallet
+    wallet,
+    disconnectWallet,
+    activeAccount,
+    setActiveAccount
 }: ButtonProps): JSX.Element => {
 
-    const setup = async (userAddress: string): Promise<void> => {
-        setUserAddress(userAddress);
-        // updates balance
-        const balance = await Tezos.tz.getBalance(userAddress);
-        setUserBalance(balance.toNumber());   
-    };
+    
 
     const connectWallet = async (): Promise<void> => {
         try {
-            if (!wallet) await createWallet();
             await wallet.requestPermissions({
                 network: {
                     type: process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType]  : NetworkType.JAKARTANET,
                     rpcUrl: process.env["REACT_APP_TEZOS_NODE"]!
                 }
             });
-            // gets user's address
-            const userAddress = await wallet.getPKH();
-            await setup(userAddress);
-            setActivePage(PAGES.DEPOSIT);
+            //force refresh here like this
+            const activeAccount = await wallet.client.getActiveAccount();
+            setUserAddress(activeAccount!.address);
+            setActiveAccount(activeAccount);
         } catch (error) {
             console.log(error);
         }
     };
 
-    const createWallet = async () => {
-        // creates a wallet instance if not exists
-        if (!wallet) {
-            wallet = new BeaconWallet({
-                name: "TzPortal",
-                preferredNetwork: process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType]  : NetworkType.JAKARTANET,
-            });
-        }
-        Tezos.setWalletProvider(wallet);
-        setWallet(wallet);
-        // checks if wallet was connected before
-        const activeAccount = await wallet.client.getActiveAccount();
-        if (activeAccount) {
-            const userAddress = await wallet.getPKH();
-            await setup(userAddress);
-        }
-    }
-
-    useEffect(() => {
-        (async () => createWallet())();
-    }, []);
-
-    return (
+    return (<Fragment>
+        {!userAddress || userAddress === ""?
             <Button variant="contained" onClick={connectWallet}>
-               <AccountBalanceWalletIcon /> &nbsp; Connect
+               <AccountBalanceWalletIcon /> &nbsp; Connect L1 Tezos
             </Button>
+            :<Chip   avatar={<Avatar src="XTZ.png" />}
+ variant={activeAccount?.address == userAddress ?"filled":"outlined"}  color="secondary"      onDelete={disconnectWallet}     label={userAddress} deleteIcon={<LogoutOutlined />}/> }
+         </Fragment>
     );
 };
 

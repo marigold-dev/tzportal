@@ -84,24 +84,7 @@ const RollupBox = ({
         
         return (
             <Fragment>
-            <Popover
-            id="selectRollupPopup"
-            open={selectRollupPopupOpen}
-            anchorEl={selectRollupPopupAnchorEl}
-            onClose={closeSelectRollupPopup}
-            anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'left',
-            }}
-            >
-            <Paper title="Choose rollup or sidechain" sx={{padding : 1}} elevation={3}>
-            <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.DEKU);closeSelectRollupPopup();}}>{ROLLUP_TYPE.DEKU.name} : {ROLLUP_TYPE.DEKU.address}</HoverBox>
-            <hr />
-            <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.TORU);closeSelectRollupPopup();}}>{ROLLUP_TYPE.TORU.name} : {ROLLUP_TYPE.TORU.address}</HoverBox>
-            <hr />
-            <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.CHUSAI);closeSelectRollupPopup();}}>{ROLLUP_TYPE.CHUSAI.name} : {ROLLUP_TYPE.CHUSAI.address}</HoverBox>
-            </Paper>
-            </Popover>
+
             
             
             <Grid item xs={12} md={5} >

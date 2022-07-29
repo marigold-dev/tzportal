@@ -1,4 +1,4 @@
-import React, { useState, useEffect, MouseEvent, Fragment, useRef } from "react";
+import React, { useState, useEffect, MouseEvent, Fragment, useRef, SetStateAction, Dispatch } from "react";
 import { BigMapAbstraction, compose, OpKind, TezosToolkit, WalletContract, WalletOperationBatch, WalletParamsWithKind } from "@taquito/taquito";
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import Button from "@mui/material/Button";
@@ -23,12 +23,21 @@ type DepositProps = {
     Tezos: TezosToolkit;
     wallet: BeaconWallet;
     userAddress:string;
+    rollupType : ROLLUP_TYPE;
+    setRollupType : Dispatch<SetStateAction<ROLLUP_TYPE>>;
+    rollup : RollupTORU | RollupDEKU | RollupCHUSAI | undefined;
+    setRollup : Dispatch<SetStateAction<RollupTORU | RollupDEKU | RollupCHUSAI | undefined>>;
+
 };
 
 const Deposit = ({
     Tezos,
     wallet,
-    userAddress
+    userAddress,
+    rollupType,
+    setRollupType,
+    rollup,
+    setRollup
 }: DepositProps): JSX.Element => {
     
     const [userBalance, setUserBalance] = useState<Map<TOKEN_TYPE,BigNumber>>(new Map());
@@ -36,9 +45,7 @@ const Deposit = ({
     const [quantity, setQuantity]  = useState<number>(0); //in float TEZ
     const [l2Address, setL2Address]  = useState<string>("");
     const [tokenType, setTokenType]  = useState<string>(TOKEN_TYPE.XTZ);
-    
-    const [rollupType , setRollupType] = useState<ROLLUP_TYPE>(ROLLUP_TYPE.DEKU);
-    const [rollup , setRollup] = useState<RollupTORU | RollupDEKU | RollupCHUSAI>();
+ 
     
     const [contractStorage, setContractStorage] = useState<ContractStorage>();
     const [contract, setContract] =  useState<WalletContract>();
@@ -55,16 +62,7 @@ const Deposit = ({
     const myRef = useRef<RollupBoxComponentType>();
     
     
-    //POPUP
-    const [selectRollupPopupAnchorEl, setSelectRollupPopupAnchorEl] = React.useState<null | HTMLElement>(null);
-    const showSelectRollupPopup = (event : React.MouseEvent<HTMLButtonElement>) => {
-        setSelectRollupPopupAnchorEl(event.currentTarget);
-    };
-    const closeSelectRollupPopup = () => {
-        setSelectRollupPopupAnchorEl(null);
-    };
-    const selectRollupPopupOpen = Boolean(selectRollupPopupAnchorEl);
-    
+  
     const refreshBalance = async() => {
         //XTZ
         const XTZbalance = await Tezos.tz.getBalance(userAddress);
@@ -407,31 +405,11 @@ const handleDeposit = async (event : MouseEvent) => {
         
         setTezosLoading(false);
     };
-    
-    //just needed for the selectRollupPopup selection
-    const HoverBox = styled(Box)`&:hover {background-color: #a9a9a9;}`;
-    
+   
     return (
         <Box color="primary.main" alignContent={"space-between"} textAlign={"center"} sx={{ margin: "1em", padding : "1em",  backgroundColor : "#FFFFFFAA"}} >
         
-        <Popover
-        id="selectRollupPopup"
-        open={selectRollupPopupOpen}
-        anchorEl={selectRollupPopupAnchorEl}
-        onClose={closeSelectRollupPopup}
-        anchorOrigin={{
-            vertical: 'top',
-            horizontal: 'left',
-        }}
-        >
-        <Paper title="Choose rollup or sidechain" sx={{padding : 1}} elevation={3}>
-        <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.DEKU);closeSelectRollupPopup();}}>{ROLLUP_TYPE.DEKU.name} : {ROLLUP_TYPE.DEKU.address}</HoverBox>
-        <hr />
-        <HoverBox onClick={()=>{setRollupType(ROLLUP_TYPE.TORU);closeSelectRollupPopup();}}>{ROLLUP_TYPE.TORU.name} : {ROLLUP_TYPE.TORU.address}</HoverBox>
-        <hr />
-        <HoverBox onClick={()=>{setL2Address(userAddress);setRollupType(ROLLUP_TYPE.CHUSAI);closeSelectRollupPopup();}}>{ROLLUP_TYPE.CHUSAI.name} : {ROLLUP_TYPE.CHUSAI.address}</HoverBox>
-        </Paper>
-        </Popover>
+
         
         <Backdrop
         sx={{ color: '#fff', zIndex: (theme : any) => theme.zIndex.drawer + 1 }}
