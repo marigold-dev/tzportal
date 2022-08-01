@@ -34,7 +34,10 @@ const ConnectButtonL2 = ({
 }: ButtonProps): JSX.Element => {
     
     const connectWallet = async (): Promise<void> => {
-        try {
+        try 
+        {
+            const l1ActiveAccount = (await wallet.client.getAccounts())[0];
+            console.log("l1ActiveAccount",l1ActiveAccount);
             await wallet.requestPermissions({
                 network: {
                     type: process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType]  : NetworkType.JAKARTANET,
@@ -44,7 +47,8 @@ const ConnectButtonL2 = ({
             //force refresh here like this
             const activeAccount = await wallet.client.getActiveAccount();
             setUserL2Address(activeAccount!.address);
-            setActiveAccount((await  wallet.client.getAccounts())[0]);
+            console.log("Connected to Layer 2");
+            setActiveAccount(l1ActiveAccount); //reset to L1 for deposit
         } catch (error) {
             console.log(error);
         }
@@ -57,6 +61,7 @@ const ConnectButtonL2 = ({
         setUserL2Address("");
         setUserL2Balance(0);
         wallet.client.setActiveAccount(accounts[0]);
+        console.log("Disconnected from Layer 2");
     };
     
     return (

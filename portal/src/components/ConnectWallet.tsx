@@ -52,6 +52,7 @@ const ConnectButton = ({
             //force refresh here like this
             const activeAccount = await wallet.client.getActiveAccount();
             setUserAddress(activeAccount!.address);
+            console.log("Connected to Layer 1");
             setActiveAccount(activeAccount);
         } catch (error) {
             console.log(error);

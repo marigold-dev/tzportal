@@ -97,20 +97,23 @@ function App() {
       if(l2Account){
         console.log("Found Layer 2 account");
         setUserL2Address(l2Account.address);
+      }else{
+        console.log("Layer 2 account not found");
       }
 
     } if (activeAccount && (activeAccount.network.rpcUrl === process.env["REACT_APP_DEKU_NODE"]!)){
-      console.log("we have a L2 here");
+      console.log("activeAccount is a L2");
       setActiveAccount(activeAccount);
       console.log(activeAccount);
       setUserL2Address(activeAccount.address);
 
+      if(!userAddress || userAddress === ""){
       console.log("searching for the Layer 1");
       const l1Account = accounts.find((a)=>{return a.network.rpcUrl ===  process.env["REACT_APP_TEZOS_NODE"]!} );
       if(l1Account){
         console.log("Found Layer 1 account");
         setUserAddress(l1Account.address);
-      }
+      }}
     }else {
       wallet.client.removeAllAccounts();
     }
@@ -122,7 +125,7 @@ function App() {
     setUserL2Address("");
     setUserL2Balance(0);
     await wallet!.disconnect();
-    console.log("wallet disconnected");
+    console.log("Wallet disconnected");
     await createWallet();
 };
   
