@@ -17,6 +17,7 @@ import RollupBox, { RollupBoxComponentType } from "./RollupBox";
 import { TokenMetadata, tzip12, Tzip12ContractAbstraction } from "@taquito/tzip12";
 import { tzip16 } from "@taquito/tzip16";
 import { FA2Contract } from "./fa2Contract";
+import { AccountInfo } from "@airgap/beacon-types";
 
 
 type DepositProps = {
@@ -27,6 +28,7 @@ type DepositProps = {
     setRollupType : Dispatch<SetStateAction<ROLLUP_TYPE>>;
     rollup : RollupTORU | RollupDEKU | RollupCHUSAI | undefined;
     setRollup : Dispatch<SetStateAction<RollupTORU | RollupDEKU | RollupCHUSAI | undefined>>;
+    activeAccount : AccountInfo;
 
 };
 
@@ -37,7 +39,8 @@ const Deposit = ({
     rollupType,
     setRollupType,
     rollup,
-    setRollup
+    setRollup,
+    activeAccount
 }: DepositProps): JSX.Element => {
     
     const [userBalance, setUserBalance] = useState<Map<TOKEN_TYPE,BigNumber>>(new Map());
@@ -420,8 +423,14 @@ const handleDeposit = async (event : MouseEvent) => {
         <Grid container spacing={2} >
         
         <UserWallet 
+        direction="FROM"
         userAddress={userAddress}
-        userBalance={userBalance} />
+        userBalance={userBalance} 
+        activeAccount={activeAccount!}
+        quantity={quantity}
+        setQuantity={setQuantity}
+        tokenType={tokenType}
+        setTokenType={setTokenType}/>
         
         <Grid item xs={12} md={4} >
         

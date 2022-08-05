@@ -12,6 +12,7 @@ import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
 import { Avatar, Chip } from "@mui/material";
 import { LogoutOutlined } from "@mui/icons-material";
+import { LAYER2Type } from "./TezosUtils";
 
 
 type ButtonProps = {
@@ -19,12 +20,11 @@ type ButtonProps = {
     setWallet: Dispatch<SetStateAction<any>>;
     userAddress:string;
     setUserAddress: Dispatch<SetStateAction<string>>;
-    setUserBalance: Dispatch<SetStateAction<number>>;
     wallet: BeaconWallet;
     disconnectWallet:any;
     activeAccount : AccountInfo;
     setActiveAccount :  Dispatch<SetStateAction<AccountInfo|undefined>>;
-
+    accounts : AccountInfo[];
 };
 
 const ConnectButton = ({
@@ -32,14 +32,17 @@ const ConnectButton = ({
     setWallet,
     userAddress,
     setUserAddress,
-    setUserBalance,
     wallet,
     disconnectWallet,
     activeAccount,
-    setActiveAccount
+    setActiveAccount,
+    accounts
 }: ButtonProps): JSX.Element => {
 
-    
+    const setL1AccountAsActive = async() => {
+        const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU}); 
+        setActiveAccount(l1Account);
+    }
 
     const connectWallet = async (): Promise<void> => {
         try {
@@ -50,10 +53,11 @@ const ConnectButton = ({
                 }
             });
             //force refresh here like this
-            const activeAccount = await wallet.client.getActiveAccount();
+            const activeAccount = (await wallet.client.getActiveAccount())as AccountInfo;
             setUserAddress(activeAccount!.address);
             console.log("Connected to Layer 1");
             setActiveAccount(activeAccount);
+            accounts.push(activeAccount);
         } catch (error) {
             console.log(error);
         }
@@ -64,10 +68,12 @@ const ConnectButton = ({
             <Button variant="contained" onClick={connectWallet}>
                <AccountBalanceWalletIcon /> &nbsp; Connect L1 Tezos
             </Button>
-            :<Chip   avatar={<Avatar src="XTZ.png" />}
- variant={activeAccount?.address == userAddress ?"filled":"outlined"}  color="secondary"      onDelete={disconnectWallet}     label={userAddress} deleteIcon={<LogoutOutlined />}/> }
+            :<Chip onClick={()=>setL1AccountAsActive()}  avatar={<Avatar src="XTZ.png" />}
+ variant={activeAccount?.address == userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU ?"filled":"outlined"}  color="secondary"      onDelete={disconnectWallet}     label={userAddress} deleteIcon={<LogoutOutlined />}/> }
          </Fragment>
     );
 };
 
 export default ConnectButton;
+
+

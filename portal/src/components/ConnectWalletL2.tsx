@@ -1,25 +1,28 @@
-import { Dispatch, Fragment, SetStateAction, useEffect } from "react";
-import { BigMapAbstraction, TezosToolkit, WalletContract } from "@taquito/taquito";
-import { BeaconWallet } from "@taquito/beacon-wallet";
+import { ChangeEvent, Dispatch, Fragment, SetStateAction } from "react";
+import {  TezosToolkit } from "@taquito/taquito";
 
-import { AccountInfo, NetworkType} from "@airgap/beacon-types";
+import { AccountInfo, NetworkType, Origin} from "@airgap/beacon-types";
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 
 import Button from "@mui/material/Button";
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import { PAGES } from "../App";
-import { FA12Contract } from "./fa12Contract";
-import BigNumber from 'bignumber.js';
+
 import { Avatar, Chip } from "@mui/material";
-import { LogoutOutlined } from "@mui/icons-material";
+import {  LogoutOutlined } from "@mui/icons-material";
+import { InMemorySigner } from "@taquito/signer";
+import { LAYER2Type } from "./TezosUtils";
+import { DEKUWallet } from "./DEKUClient";
+
+
 
 
 type ButtonProps = {
     userL2Address:string;
     setUserL2Address: Dispatch<SetStateAction<string>>;
-    setUserL2Balance: Dispatch<SetStateAction<number>>;
-    wallet: BeaconWallet;
+    TezosL2: TezosToolkit;
     activeAccount : AccountInfo;
     setActiveAccount :  Dispatch<SetStateAction<AccountInfo|undefined>>;
+    accounts : AccountInfo[];
+    disconnectWalletL2:any;
 };
 
 
@@ -27,51 +30,76 @@ type ButtonProps = {
 const ConnectButtonL2 = ({
     userL2Address,
     setUserL2Address,
-    setUserL2Balance,
-    wallet,
+    TezosL2,
     activeAccount,
-    setActiveAccount
+    setActiveAccount,
+    accounts,
+    disconnectWalletL2
 }: ButtonProps): JSX.Element => {
     
-    const connectWallet = async (): Promise<void> => {
-        try 
-        {
-            const l1ActiveAccount = (await wallet.client.getAccounts())[0];
-            console.log("l1ActiveAccount",l1ActiveAccount);
-            await wallet.requestPermissions({
-                network: {
-                    type: process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType]  : NetworkType.JAKARTANET,
-                    rpcUrl: process.env["REACT_APP_DEKU_NODE"]!
-                }
-            });
-            //force refresh here like this
-            const activeAccount = await wallet.client.getActiveAccount();
-            setUserL2Address(activeAccount!.address);
-            console.log("Connected to Layer 2");
-            setActiveAccount(l1ActiveAccount); //reset to L1 for deposit
-        } catch (error) {
-            console.log(error);
+    const setL2AccountAsActive = async() => {
+        const l2Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU}); 
+        setActiveAccount(l2Account);
+    }
+   
+    const connectWallet = (e: ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files) {
+            return;
         }
-    };
+        const file = e.target.files[0];
+        const fileReader = new FileReader();
+        
+        fileReader.readAsText(file);
+        fileReader.onload = async(e) => {
+            if (!e?.target?.result) {
+                return;
+            }
+            const l2Wallet : DEKUWallet = JSON.parse(e.target.result as string);
+            setUserL2Address(l2Wallet.address);
 
-    const removeAccount = async () => {
-        const accounts = await wallet.client.getAccounts();
-        const l2Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userL2Address}); 
-        wallet.client.removeAccount(l2Account!.accountIdentifier);
-        setUserL2Address("");
-        setUserL2Balance(0);
-        wallet.client.setActiveAccount(accounts[0]);
-        console.log("Disconnected from Layer 2");
+            const accountInfo : AccountInfo = { address: l2Wallet.address,
+                network: {
+                    type: NetworkType[process.env["REACT_APP_NETWORK"]!.toUpperCase() as keyof typeof NetworkType]
+                } ,
+                scopes: [],
+                accountIdentifier: LAYER2Type.L2_DEKU,
+                senderId: "string",
+                origin: {
+                    type: Origin.EXTENSION,
+                    id: "string"
+                },
+                publicKey: "string",
+                connectedAt: new Date().getTime()
+            } as AccountInfo;
+            if(accounts.length == 0)setActiveAccount(accountInfo);
+            accounts.push(accountInfo);
+            TezosL2.setProvider({ signer: await InMemorySigner.fromSecretKey(l2Wallet.priv_key) });
+           
+            console.log("Connected to Layer 2");
+
+        };
     };
     
     return (
         <Fragment>
         {!userL2Address?
-            <Button variant="contained" onClick={connectWallet}>
-            <AccountBalanceWalletIcon /> &nbsp; Connect L2
+            
+            
+            
+            <Button
+            variant="contained"
+            component="label"
+            ><AccountBalanceWalletIcon />  &nbsp;
+            Upload L2 wallet file
+            <input
+            type="file"
+            hidden
+            onChange={(e: ChangeEvent<HTMLInputElement>)=>connectWallet(e)}
+            />
             </Button>
-            :<Chip   avatar={<Avatar src="DEKU.png" />}
-            variant={activeAccount?.address == userL2Address ?"filled":"outlined"} color="secondary"  onDelete={removeAccount}   label={userL2Address} deleteIcon={<LogoutOutlined />}/> }
+            
+            :<Chip  onClick={setL2AccountAsActive} avatar={<Avatar src="DEKU.png" />}
+            variant={activeAccount?.address == userL2Address && activeAccount.accountIdentifier===LAYER2Type.L2_DEKU?"filled":"outlined"} color="secondary"  onDelete={disconnectWalletL2}   label={userL2Address} deleteIcon={<LogoutOutlined />}/> }
             </Fragment>
             );
         };

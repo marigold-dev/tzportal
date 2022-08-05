@@ -1,9 +1,14 @@
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { SnackbarProvider } from "notistack";
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
+
 import App from "./App";
 import reportWebVitals from './reportWebVitals';
+
+const container = document.getElementById('app');
+const root = createRoot(container!); // createRoot(container!) if you use TypeScript
+
 
 const themeLight = createTheme({
   palette: {
@@ -16,15 +21,14 @@ const themeLight = createTheme({
   }
 });
 
-ReactDOM.render(
+root.render(
   <React.StrictMode>
     <SnackbarProvider maxSnack={3}>
     <ThemeProvider theme={themeLight}>
     <App />
     </ThemeProvider>
     </SnackbarProvider>
-  </React.StrictMode>,
-  document.getElementById("root")
+  </React.StrictMode>
 );
 
 // If you want to start measuring performance in your app, pass a function

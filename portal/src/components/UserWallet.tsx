@@ -1,52 +1,87 @@
-import { Avatar, Card, CardContent, CardHeader, Chip, Divider, Grid, Stack } from "@mui/material";
-import AccountBalanceWallet from "@mui/icons-material/AccountBalanceWallet";
-import { TOKEN_TYPE } from "./TezosUtils";
+import { Avatar, Card, CardContent, CardHeader, Chip, Divider, Grid, MenuItem, Paper, Select, SelectChangeEvent, Stack, TextField } from "@mui/material";
+import { LAYER2Type, TOKEN_TYPE } from "./TezosUtils";
 import BigNumber from 'bignumber.js';
+import { AccountInfo } from "@airgap/beacon-types";
+import { Dispatch, Fragment, SetStateAction } from "react";
+import { Badge } from "@mui/icons-material";
 
 type ButtonProps = {
+    direction : string;
     userAddress: string;
     userBalance : Map<TOKEN_TYPE,BigNumber>;
+    activeAccount : AccountInfo;
+    quantity : number;
+    setQuantity :Dispatch<SetStateAction<number>>;
+    tokenType : string;
+    setTokenType : Dispatch<SetStateAction<string>>;
 };
 
 const UserWallet = ({
+    direction,
     userAddress,
-    userBalance
+    userBalance,
+    activeAccount,
+    quantity,
+    setQuantity,
+    tokenType,
+    setTokenType
 }: ButtonProps): JSX.Element => {
-
+    
     return (
-              
+        
         <Grid item xs={12} md={3}>
+            
         <Card>
         <CardHeader
         sx={{color:"secondary.main",backgroundColor:"primary.main"}}
-        avatar={<Avatar aria-label="recipe"><AccountBalanceWallet /> </Avatar>}
-        title="Tezos Wallet"
-        subheader={<div className="address"><span className="address1">{userAddress.substring(0,userAddress.length/2)}</span><span className="address2">{userAddress.substring(userAddress.length/2)}</span></div> }
+        avatar={<Avatar aria-label="recipe" src="XTZ.png"/>}
+        title={direction+" Tezos"}
         />
         <CardContent>
-        <Stack spacing={1} direction="column"  divider={<Divider orientation="horizontal" flexItem />}>
         
-        {Object.values(TOKEN_TYPE).map((value)=>
-            <Chip 
-            key={value}
-            sx={{justifyContent: "right"}}
-            deleteIcon={<Avatar sx={{height:24,width:24}} src={value+".png"} />}
-            onDelete={()=>{}}
-            label={userBalance.get(value)?.toString()}
-            variant="outlined" 
+        <div> Balance : {userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString()}</div>
+        
+        {activeAccount && activeAccount.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU?
+            <Paper
+            component="form"
+            sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', width: 400 }}
+            >
+            <TextField fullWidth 
+            required 
+            type="number"
+            onChange={(e)=>setQuantity(e.target.value?parseFloat(e.target.value):0)}
+            value={quantity}
+            label="Enter amount"
+            inputProps={{style: { textAlign: 'right' }}} 
+            variant="filled"
             />
             
-            )
-        }
-        
-        
-        
-        </Stack>
-        </CardContent>
-        </Card>
-        </Grid>
-        
-    );
-};
-
-export default UserWallet;
+            <Select 
+            labelId="demo-simple-select-label"
+            id="demo-simple-select"
+            defaultValue={TOKEN_TYPE.XTZ}
+            value={tokenType}
+            label="token type"
+            onChange={(e : SelectChangeEvent)=>{setTokenType(e.target.value)}}
+            >
+            { Object.keys(TOKEN_TYPE).map((key)  => 
+                <MenuItem key={key} value={key}>
+                <Chip sx={{border:"none"}}
+                avatar={<Avatar component="span" src={key+".png"} ></Avatar>}
+                label={key}
+                />
+                </MenuItem>
+                ) }
+                
+                
+                </Select>
+                </Paper>
+                :""}
+                </CardContent>
+                </Card>
+                </Grid>
+                
+                );
+            };
+            
+            export default UserWallet;

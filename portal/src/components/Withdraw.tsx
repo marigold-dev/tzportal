@@ -17,18 +17,21 @@ import RollupBox, { RollupBoxComponentType } from "./RollupBox";
 import { tzip12 } from "@taquito/tzip12";
 import { tzip16 } from "@taquito/tzip16";
 import { FA2Contract } from "./fa2Contract";
+import { AccountInfo } from "@airgap/beacon-types";
 
 
 type WithdrawProps = {
     Tezos: TezosToolkit;
     wallet: BeaconWallet;
     userAddress:string;
+    activeAccount : AccountInfo;
 };
 
 const Withdraw = ({
     Tezos,
     wallet,
-    userAddress
+    userAddress,
+    activeAccount 
 }: WithdrawProps): JSX.Element => {
     
     const [userBalance, setUserBalance] = useState<Map<TOKEN_TYPE,BigNumber>>(new Map());
@@ -493,8 +496,14 @@ const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
                                 </Grid>
                                 
                                 <UserWallet 
+                                direction="TO"
                                 userAddress={userAddress}
                                 userBalance={userBalance}
+                                activeAccount={activeAccount}
+                                quantity={quantity}
+                                setQuantity={setQuantity}
+                                tokenType={tokenType}
+                                setTokenType={setTokenType}
                                 />
                                 
                                 </Grid>
