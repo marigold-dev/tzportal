@@ -172,19 +172,19 @@ return (
   value={selectedRollupType}
   label="Rollup type"
   SelectDisplayProps={{style : {paddingTop : "0.2em",paddingBottom : "0.2em" }}}
-  sx={{bgcolor:"white",height: "fit-content",marginTop: "20px",marginBottom: "20px"}}
+  sx={{bgcolor:"white",height: "fit-content",marginTop: "20px",marginBottom: "20px",marginRight:"2em"}}
   onChange={(e : SelectChangeEvent)=>{setSelectedRollupType(e.target.value); setRollupType(ROLLUP_TYPE[e.target.value as keyof typeof ROLLUP_TYPE])}}
   >
   <MenuItem key={ROLLUP_TYPE.DEKU.name} value={ROLLUP_TYPE.DEKU.name}>
-  <Chip sx={{border: "none"}}
-  avatar={<Avatar alt="Natacha" src="DEKU.png" />}
+  <Chip sx={{border: "none",margin: 0}}
+  avatar={<Avatar sx={{backgroundColor:"secondary.main"}} src="deku_white.png" />}
   label={ROLLUP_TYPE.DEKU.name}
   variant="outlined"
   />
   </MenuItem>
   
   <MenuItem key={ROLLUP_TYPE.CHUSAI.name} value={ROLLUP_TYPE.CHUSAI.name}>
-  <Chip sx={{border: "none"}}
+  <Chip sx={{border: "none",margin: 0}}
   avatar={<Avatar alt="Natacha" src="CHUSAI.png" />}
   label={ROLLUP_TYPE.CHUSAI.name}
   variant="outlined"
@@ -192,7 +192,7 @@ return (
   </MenuItem>
   
   <MenuItem key={ROLLUP_TYPE.TORU.name} value={ROLLUP_TYPE.TORU.name}>
-  <Chip sx={{border: "none"}}
+  <Chip sx={{border: "none",margin: 0}}
   avatar={<Avatar alt="Natacha" src="TORU.png" />}
   label={ROLLUP_TYPE.TORU.name}
   variant="outlined"
@@ -204,7 +204,7 @@ return (
   
   </Select>
   
-  <img src="icon.png" height="80px" style={{position: "absolute",left: 0,marginLeft: "50px"}}/>
+  <img src="icon_colored.png" height="80px" style={{position: "absolute",left: 0,marginLeft: "50px"}}/>
   
   </Stack>
   
@@ -248,17 +248,17 @@ return (
     bgcolor="secondary.main">
     
     <Grid item xs={3}>
-    <Stack   divider={<Divider color='white' sx={{height:"70%"}} orientation="horizontal" flexItem />}
- alignContent="space-between" alignItems="center" spacing={5}>
-    <span style={{fontFamily:"Chilanka" }}> Claim your L1 Withdraw &rarr; </span>
-    <span style={{fontFamily:"Chilanka" }}> Do L2 Transfer &rarr;</span>
+    <Stack height="100%"   divider={<Divider color='white' orientation="horizontal" flexItem />}
+ alignContent="space-between" alignItems="center" spacing={1} >
+    <span style={{fontFamily:"Chilanka", height:"50%", paddingTop:"25%" }}> Claim your L1 Withdraw &rarr; </span>
+    <span style={{fontFamily:"Chilanka", height:"50%", paddingTop:"25%" }}> Do L2 Transfer &rarr;</span>
     </Stack>
    
     </Grid >
     <Grid item xs={6}>
     
-    <Stack >
-    <div style={{backgroundColor:"var(--tertiary-color)"}} >
+    <Stack spacing={2} >
+    <div style={{padding:"1em", backgroundColor:"var(--tertiary-color)"}} >
     
     
     
@@ -278,7 +278,7 @@ return (
     </div>
     
     
-    <div style={{backgroundColor:"var(--tertiary-color)"}} >
+    <div style={{padding:"1em", backgroundColor:"var(--tertiary-color)"}} >
     
     
     
@@ -299,14 +299,15 @@ return (
 
     </Grid>
     <Grid item xs={3}>
-    <Stack direction="row" style={{fontFamily:"Chilanka" }}> 
+    <Stack direction="row" height="100%" style={{fontFamily:"Chilanka" }}> 
     
     <span style={{width: "min-content"}}>
-    &larr; &nbsp;&nbsp;&nbsp; <br /><br /><br /><br /><br /><br /><br /><br/>
+    <br /><br />&larr;
+    <br /><br /><br /><br /><br /><br /><br/>
     &larr;
     </span>
     <Divider color='white' sx={{borderWidth:"1px"}} orientation="vertical" flexItem />
-    <span style={{paddingTop:"25%",paddingBottom:"25%",paddingLeft:"1em"}}>
+    <span style={{paddingTop:"40%",paddingLeft:"1em"}}>
     Do Deposit or Withdraw
     </span>
     
@@ -333,7 +334,7 @@ return (
   alignItems="center" id="footer" style={{backgroundColor:"#0E1E2E", position:"absolute",
   left:0,bottom:0,right:0, height:"80px" , paddingLeft:"50px" , paddingRight:"50px"}}>
   
-  <a href="https://www.marigold.dev/project/deku-sidechain" target="_blank"><img src="deku_white.png" height={60}/></a>
+  <a href="https://www.marigold.dev/project/deku-sidechain" target="_blank"><img src="deku_logo_white.png" height={60}/></a>
   <a href="https://tezos.gitlab.io/alpha/transaction_rollups.html" target="_blank"><img src="toru.png" height={60}/></a>
   
   <Divider orientation='vertical'  color='white' sx={{height:"70%"}}/>

@@ -7,7 +7,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 
 import Button from "@mui/material/Button";
 
-import { Avatar, Chip } from "@mui/material";
+import { Avatar, Chip, Stack } from "@mui/material";
 import {  LogoutOutlined } from "@mui/icons-material";
 import { InMemorySigner } from "@taquito/signer";
 import { LAYER2Type } from "./TezosUtils";
@@ -87,22 +87,24 @@ const ConnectButtonL2 = ({
         <Fragment>
         {!userL2Address?
             
-            
-            
+            <Stack direction="row" alignContent="center" alignItems="center">
+            <img src="deku_white.png" height={24}/>
             <Button
             variant="contained"
-            component="label"
-            ><AccountBalanceWalletIcon />  &nbsp;
-            Upload L2 wallet file
+            component="label" 
+            >  &nbsp;
+            Upload DEKU wallet file
             <input
             type="file"
             hidden
             onChange={(e: ChangeEvent<HTMLInputElement>)=>connectWallet(e)}
             />
             </Button>
-            
-            :!hideAfterConnect? <Chip  onClick={setL2AccountAsActive} avatar={<Avatar src="DEKU.png" />}
-            variant={activeAccount?.address == userL2Address && activeAccount.accountIdentifier===LAYER2Type.L2_DEKU?"filled":"outlined"} color="secondary"  onDelete={disconnectWalletL2}   label={userL2Address} deleteIcon={<LogoutOutlined />
+            </Stack>
+            :!hideAfterConnect? <Chip
+            style={{ opacity: (activeAccount?.address == userL2Address && activeAccount.accountIdentifier===LAYER2Type.L2_DEKU?1:0.38)}}
+            color="primary"  onClick={setL2AccountAsActive} avatar={<Avatar src="deku_white.png" />}
+             onDelete={disconnectWalletL2}   label={userL2Address} deleteIcon={<LogoutOutlined />
             
         }/> 
         :""

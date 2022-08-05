@@ -8,8 +8,11 @@
   --endFixedChars       : 10;    
   --startWidth :  1em * 1 * var(--startFixedChars) ;
   --endWidth   :  1em * 1 * (var(--endFixedChars ));
-  --tertiary-color:#55606A;
+  --tertiary-color: #22313F;
 }
+
+a:link { text-decoration: none; }
+
 
 body {
   margin: 0px;

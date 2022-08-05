@@ -9,7 +9,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { PAGES } from "../App";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
-import { Avatar, Button, Chip } from "@mui/material";
+import { Avatar, Button, Chip, Icon, Stack } from "@mui/material";
 import { LogoutOutlined } from "@mui/icons-material";
 import { LAYER2Type } from "./TezosUtils";
 import './../App.css';
@@ -67,11 +67,16 @@ const ConnectButton = ({
 
     return (<Fragment>
         {!userAddress || userAddress === ""?
+          <Stack direction="row" alignContent="center" alignItems="center">
+          <img src="XTZ_white.png" height={24}/>
             <Button variant="contained" onClick={connectWallet}>
-               <AccountBalanceWalletIcon /> &nbsp; Connect L1 Tezos
+               Connect Tezos wallet
             </Button>
-            : !hideAfterConnect? <Chip  onClick={()=>setL1AccountAsActive()}  avatar={<Avatar src="XTZ.png" />}
- variant={activeAccount?.address == userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU ?"filled":"outlined"}  color="secondary"      onDelete={disconnectWallet}     label={userAddress} deleteIcon={<LogoutOutlined />}/>
+            </Stack>
+            : !hideAfterConnect? <Chip  
+            style={{ opacity: (activeAccount?.address == userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU?1:0.38)}}
+            onClick={()=>setL1AccountAsActive()}  avatar={<Avatar src="XTZ_white.png" />}
+   color="primary"      onDelete={disconnectWallet}     label={userAddress} deleteIcon={<LogoutOutlined />}/>
 :""
 }
          </Fragment>

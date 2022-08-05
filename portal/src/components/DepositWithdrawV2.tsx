@@ -578,7 +578,7 @@ const handleDeposit = async (event : MouseEvent) => {
                     textAlign={"center"} 
                     bgcolor="secondary.main"
                     width="auto"
-                    sx={{ margin : "10vh 20vw", padding : "2em"}}
+                    sx={{ margin : "5vh 20vw", padding : "2em"}}
                     >
 
                     

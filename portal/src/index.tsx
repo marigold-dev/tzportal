@@ -13,10 +13,7 @@ const root = createRoot(container!); // createRoot(container!) if you use TypeSc
 const themeLight = createTheme({
   typography: {
     fontFamily: [
-      'cursive',
-      'monospace',
-      'Nunito',
-      'Roboto',
+      'Chilanka',
       'Helvetica Neue',
       'Arial',
       'sans-serif',
@@ -28,10 +25,25 @@ const themeLight = createTheme({
       styleOverrides : {
         root : {
           height : "fit-content",
-          margin: "20px"
+          margin: "20px",
+          textTransform: "none",
+          fontWeight : "bolder"
         }
       }
-    }
+    },
+    MuiChip : {
+      styleOverrides : {
+        root : {
+          fontWeight: "bolder",
+          margin: "20px",
+          border: "1px solid white" ,
+          height: "38px"
+        },
+        avatarColorPrimary : {
+          backgroundColor : "black"
+        }
+      }
+    } 
   },
   palette: {
     primary: {
