@@ -78,7 +78,7 @@ const DepositWithdrawV2 = ({
     const switchActiveAccount = async()=> {
         const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU}); 
         const l2Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU}); 
-        setActiveAccount(activeAccount?.address === l1Account?.address ? l2Account : l1Account);
+        setActiveAccount(activeAccount?.address === l1Account?.address && activeAccount?.accountIdentifier!==LAYER2Type.L2_DEKU ? l2Account : l1Account);
     }
     
     const refreshBalance = async() => {
@@ -566,15 +566,21 @@ const handleDeposit = async (event : MouseEvent) => {
                 const isDesktop = useMediaQuery('(min-width:600px)');
                 
                 return (
+
+
+                  
+
                     <Box display="flex"
                     justifyContent="center"
                     alignItems="center" 
                     color="primary.main" 
                     alignContent={"space-between"} 
                     textAlign={"center"} 
-                    sx={{ margin: "1em", padding : "1em"}}
-                    minHeight="100vh"
+                    bgcolor="secondary.main"
+                    width="auto"
+                    sx={{ margin : "10vh 20vw", padding : "2em"}}
                     >
+
                     
                     
                     <Backdrop

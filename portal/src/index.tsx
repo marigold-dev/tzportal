@@ -11,13 +11,35 @@ const root = createRoot(container!); // createRoot(container!) if you use TypeSc
 
 
 const themeLight = createTheme({
+  typography: {
+    fontFamily: [
+      'cursive',
+      'monospace',
+      'Nunito',
+      'Roboto',
+      'Helvetica Neue',
+      'Arial',
+      'sans-serif',
+      'Chilanka'
+    ].join(','),
+  },
+  components :{
+    MuiButton : {
+      styleOverrides : {
+        root : {
+          height : "fit-content",
+          margin: "20px"
+        }
+      }
+    }
+  },
   palette: {
     primary: {
-      main : "#333399"
+      main : "#ffffff"
     },
     secondary: {
-      main : "#ffffff"
-    }
+      main : "#0E1E2E"
+    },
   }
 });
 

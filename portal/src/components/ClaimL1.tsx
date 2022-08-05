@@ -22,11 +22,11 @@ import { RollupParameters, RollupParametersDEKU, RollupParametersTORU } from "./
 
 
 
-type TransferL2Props = {
+type ClaimL1Props = {
 };
 
-const TransferL2 = ({
-}: TransferL2Props): JSX.Element => {
+const ClaimL1 = ({
+}: ClaimL1Props): JSX.Element => {
     
     
     return (
@@ -37,14 +37,14 @@ const TransferL2 = ({
     sx={{ margin : "20vh 20vw", padding : "2em"}}
     bgcolor="secondary.main">
         
-        Transfer   
+        ClaimL1   
         
         
         </Grid>
         );
     };
     
-    export default TransferL2;
+    export default ClaimL1;
     
     
     

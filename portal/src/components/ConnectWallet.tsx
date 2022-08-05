@@ -5,14 +5,14 @@ import {
     AccountInfo,
     NetworkType
 } from "@airgap/beacon-types";
-import Button from "@mui/material/Button";
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { PAGES } from "../App";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
-import { Avatar, Chip } from "@mui/material";
+import { Avatar, Button, Chip } from "@mui/material";
 import { LogoutOutlined } from "@mui/icons-material";
 import { LAYER2Type } from "./TezosUtils";
+import './../App.css';
 
 
 type ButtonProps = {
@@ -25,6 +25,7 @@ type ButtonProps = {
     activeAccount : AccountInfo;
     setActiveAccount :  Dispatch<SetStateAction<AccountInfo|undefined>>;
     accounts : AccountInfo[];
+    hideAfterConnect : boolean;
 };
 
 const ConnectButton = ({
@@ -36,7 +37,8 @@ const ConnectButton = ({
     disconnectWallet,
     activeAccount,
     setActiveAccount,
-    accounts
+    accounts,
+    hideAfterConnect
 }: ButtonProps): JSX.Element => {
 
     const setL1AccountAsActive = async() => {
@@ -68,8 +70,10 @@ const ConnectButton = ({
             <Button variant="contained" onClick={connectWallet}>
                <AccountBalanceWalletIcon /> &nbsp; Connect L1 Tezos
             </Button>
-            :<Chip onClick={()=>setL1AccountAsActive()}  avatar={<Avatar src="XTZ.png" />}
- variant={activeAccount?.address == userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU ?"filled":"outlined"}  color="secondary"      onDelete={disconnectWallet}     label={userAddress} deleteIcon={<LogoutOutlined />}/> }
+            : !hideAfterConnect? <Chip  onClick={()=>setL1AccountAsActive()}  avatar={<Avatar src="XTZ.png" />}
+ variant={activeAccount?.address == userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU ?"filled":"outlined"}  color="secondary"      onDelete={disconnectWallet}     label={userAddress} deleteIcon={<LogoutOutlined />}/>
+:""
+}
          </Fragment>
     );
 };

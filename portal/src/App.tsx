@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import './App.css';
+
 import ConnectButton from './components/ConnectWallet';
 import DisconnectButton from './components/DisconnectWallet';
 import { MichelCodecPacker, TezosToolkit, Wallet } from '@taquito/taquito';
@@ -18,7 +19,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import MenuIcon from '@mui/icons-material/Menu';
 import { ArchiveOutlined, ArrowDropDown, Badge, CameraRoll, SettingsBackupRestoreOutlined } from '@mui/icons-material';
-import { Button, CardHeader, Chip, Grid, makeStyles, Paper, Popover, Select, SelectChangeEvent } from '@mui/material';
+import { Button, CardHeader, Chip, Grid, makeStyles, Paper, Popover, Select, SelectChangeEvent, Stack } from '@mui/material';
 import Deposit from './components/Deposit';
 import { AccountInfo, NetworkType} from "@airgap/beacon-types";
 import Withdraw from './components/Withdraw';
@@ -30,6 +31,7 @@ import { BeaconWallet } from '@taquito/beacon-wallet';
 import DepositWithdrawV2 from './components/DepositWithdrawV2';
 import { InMemorySigner } from '@taquito/signer';
 import TransferL2 from './components/TransferL2';
+import ClaimL1 from './components/ClaimL1';
 
 
 export enum PAGES {
@@ -51,7 +53,7 @@ function App() {
   
   const [activeAccount, setActiveAccount] = useState<AccountInfo>(); //used to display selected wallet
   const [accounts, setAccounts] = useState<AccountInfo[]>([]); //used to track both wallets
-
+  
   
   
   const [userAddress, setUserAddress] = useState<string>("");
@@ -73,51 +75,51 @@ function App() {
   
   
   const createWallet = async () => {
-     let wallet = new BeaconWallet({
+    let wallet = new BeaconWallet({
       name: "TzPortal",
       preferredNetwork: process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType]  : NetworkType.JAKARTANET,
     });
-     Tezos.setWalletProvider(wallet);
+    Tezos.setWalletProvider(wallet);
     setWallet(wallet);  
-    }
-    
-    const disconnectWallet = async (e:any): Promise<void> => {
-      setUserAddress("");
-      const newAccounts = accounts.filter(a => a.address===userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU); 
-      setAccounts(newAccounts);//keep only L2 if still exists
-      if(newAccounts.length==1)setActiveAccount(newAccounts[0])//set a activeAcccount
-      await wallet!.disconnect();
-      await wallet!.client.destroy();
-      console.log("Wallet L1 disconnected");
-      await createWallet();
-    };
-
-    const disconnectWalletL2 = async (e:any): Promise<void> => {
-      setUserL2Address("");
-      const newAccounts = accounts.filter(a => a.address===userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU); 
-      setAccounts(newAccounts);//keep only L1 if still exists
-      if(newAccounts.length==1)setActiveAccount(newAccounts[0])//set a activeAcccount
-      TezosL2.setSignerProvider(undefined);
-      console.log("Wallet L2 disconnected");
-    };
-    
-    const [rollupType , setRollupType] = useState<ROLLUP_TYPE>(ROLLUP_TYPE.DEKU);
-    const [selectedRollupType , setSelectedRollupType] = useState<string>(ROLLUP_TYPE.DEKU.name);
-    const [rollup , setRollup] = useState<RollupTORU | RollupDEKU | RollupCHUSAI>();
-    
-    
-    //POPUP
-    const [selectRollupPopupAnchorEl, setSelectRollupPopupAnchorEl] = React.useState<null | HTMLElement>(null);
-    const showSelectRollupPopup = (event : React.MouseEvent<HTMLButtonElement>) => {
-      setSelectRollupPopupAnchorEl(event.currentTarget);
-    };
-    const closeSelectRollupPopup = () => {
-      setSelectRollupPopupAnchorEl(null);
-    };
-    const selectRollupPopupOpen = Boolean(selectRollupPopupAnchorEl);
-    
-    //just needed for the selectRollupPopup selection
-    const HoverBox = styled(Box)`&:hover {background-color: #a9a9a9;}`;
+  }
+  
+  const disconnectWallet = async (e:any): Promise<void> => {
+    setUserAddress("");
+    const newAccounts = accounts.filter(a => a.address===userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU); 
+    setAccounts(newAccounts);//keep only L2 if still exists
+    if(newAccounts.length==1)setActiveAccount(newAccounts[0])//set a activeAcccount
+    await wallet!.disconnect();
+    await wallet!.client.destroy();
+    console.log("Wallet L1 disconnected");
+    await createWallet();
+  };
+  
+  const disconnectWalletL2 = async (e:any): Promise<void> => {
+    setUserL2Address("");
+    const newAccounts = accounts.filter(a => a.address===userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU); 
+    setAccounts(newAccounts);//keep only L1 if still exists
+    if(newAccounts.length==1)setActiveAccount(newAccounts[0])//set a activeAcccount
+    TezosL2.setSignerProvider(undefined);
+    console.log("Wallet L2 disconnected");
+  };
+  
+  const [rollupType , setRollupType] = useState<ROLLUP_TYPE>(ROLLUP_TYPE.DEKU);
+  const [selectedRollupType , setSelectedRollupType] = useState<string>(ROLLUP_TYPE.DEKU.name);
+  const [rollup , setRollup] = useState<RollupTORU | RollupDEKU | RollupCHUSAI>();
+  
+  
+  //POPUP
+  const [selectRollupPopupAnchorEl, setSelectRollupPopupAnchorEl] = React.useState<null | HTMLElement>(null);
+  const showSelectRollupPopup = (event : React.MouseEvent<HTMLButtonElement>) => {
+    setSelectRollupPopupAnchorEl(event.currentTarget);
+  };
+  const closeSelectRollupPopup = () => {
+    setSelectRollupPopupAnchorEl(null);
+  };
+  const selectRollupPopupOpen = Boolean(selectRollupPopupAnchorEl);
+  
+  //just needed for the selectRollupPopup selection
+  const HoverBox = styled(Box)`&:hover {background-color: #a9a9a9;}`;
   
   
   React.useEffect(() => { (async () => {
@@ -127,21 +129,50 @@ function App() {
 
 
 return (
-  <div style={{backgroundImage : "url('/bg.jpg')" , minHeight: "100vh" ,backgroundSize: "cover"}} >
+  <div style={{position:"relative"  ,backgroundImage : "url('/bg.jpg')" , minHeight: "100vh" ,backgroundSize: "cover", paddingBottom:"0px"}} >
   
   
   
-  {(network != NetworkType.MAINNET)?<div className="banner">WARNING: TEST ONLY {network}</div>:<span />}
+  {(network != NetworkType.MAINNET)?<div className="banner" style={{height:"20px"}}>WARNING: (TEST ONLY) You are on {network}</div>:<span />}
   
-  <Grid bgcolor="#00000080" >
-  <Typography color="secondary.main" variant="h4">TzPortal</Typography>
+  <Stack direction="row-reverse" id="header" style={{backgroundColor:"#0E1E2E",height:"80px",padding : "0 50px"}}>
+  
+  
+  
+  
+  
+  <ConnectButtonL2 
+  userL2Address={userL2Address}
+  setUserL2Address={setUserL2Address}
+  TezosL2={TezosL2!}
+  activeAccount={activeAccount!}
+  setActiveAccount={setActiveAccount}
+  accounts={accounts}
+  disconnectWalletL2={disconnectWalletL2}
+  hideAfterConnect={false}
+  />
+  
+  
+  <ConnectButton
+  Tezos={Tezos}
+  setWallet={setWallet}
+  userAddress={userAddress}
+  setUserAddress={setUserAddress}
+  wallet={wallet!}
+  disconnectWallet={disconnectWallet}
+  activeAccount={activeAccount!}
+  setActiveAccount={setActiveAccount}
+  accounts={accounts}
+  hideAfterConnect={false}
+  />
   
   <Select 
   id="layer2-select"
   defaultValue={ROLLUP_TYPE.DEKU.name}
   value={selectedRollupType}
   label="Rollup type"
-  sx={{bgcolor:"white"}}
+  SelectDisplayProps={{style : {paddingTop : "0.2em",paddingBottom : "0.2em" }}}
+  sx={{bgcolor:"white",height: "fit-content",marginTop: "20px",marginBottom: "20px"}}
   onChange={(e : SelectChangeEvent)=>{setSelectedRollupType(e.target.value); setRollupType(ROLLUP_TYPE[e.target.value as keyof typeof ROLLUP_TYPE])}}
   >
   <MenuItem key={ROLLUP_TYPE.DEKU.name} value={ROLLUP_TYPE.DEKU.name}>
@@ -173,20 +204,84 @@ return (
   
   </Select>
   
+  <img src="icon.png" height="80px" style={{position: "absolute",left: 0,marginLeft: "50px"}}/>
   
-  <ConnectButton
-  Tezos={Tezos}
-  setWallet={setWallet}
-  userAddress={userAddress}
-  setUserAddress={setUserAddress}
-  wallet={wallet!}
-  disconnectWallet={disconnectWallet}
-  activeAccount={activeAccount!}
-  setActiveAccount={setActiveAccount}
-  accounts={accounts}
-  />
+  </Stack>
   
- 
+  
+  
+  {
+    (userAddress && userL2Address)? 
+    <DepositWithdrawV2 
+    Tezos={Tezos}
+    wallet={wallet!}
+    TezosL2={TezosL2}
+    userAddress={userAddress}
+    userL2Address={userL2Address}
+    rollupType={rollupType}
+    setRollupType={setRollupType}
+    rollup={rollup}
+    setRollup={setRollup}
+    activeAccount={activeAccount}
+    setActiveAccount={setActiveAccount}
+    accounts={accounts}
+    />
+    :
+    ( !userAddress && userL2Address )? 
+    <TransferL2 />
+    :
+    ( userAddress && !userL2Address )? 
+    <ClaimL1 />
+    : 
+    
+    
+    
+    
+    
+    
+
+<Grid container  borderRadius={5}
+    spacing={2}
+    color="primary.main" 
+    width="auto"
+    sx={{ margin : "20vh 20vw", padding : "2em"}}
+    bgcolor="secondary.main">
+    
+    <Grid item xs={3}>
+    <Stack   divider={<Divider color='white' sx={{height:"70%"}} orientation="horizontal" flexItem />}
+ alignContent="space-between" alignItems="center" spacing={5}>
+    <span style={{fontFamily:"Chilanka" }}> Claim your L1 Withdraw &rarr; </span>
+    <span style={{fontFamily:"Chilanka" }}> Do L2 Transfer &rarr;</span>
+    </Stack>
+   
+    </Grid >
+    <Grid item xs={6}>
+    
+    <Stack >
+    <div style={{backgroundColor:"var(--tertiary-color)"}} >
+    
+    
+    
+    <ConnectButton
+    Tezos={Tezos}
+    setWallet={setWallet}
+    userAddress={userAddress}
+    setUserAddress={setUserAddress}
+    wallet={wallet!}
+    disconnectWallet={disconnectWallet}
+    activeAccount={activeAccount!}
+    setActiveAccount={setActiveAccount}
+    accounts={accounts}
+    hideAfterConnect={true}
+    />
+    
+    </div>
+    
+    
+    <div style={{backgroundColor:"var(--tertiary-color)"}} >
+    
+    
+    
     <ConnectButtonL2 
     userL2Address={userL2Address}
     setUserL2Address={setUserL2Address}
@@ -195,52 +290,70 @@ return (
     setActiveAccount={setActiveAccount}
     accounts={accounts}
     disconnectWalletL2={disconnectWalletL2}
+    hideAfterConnect={true}
     />
     
+    </div>
+
+    </Stack>
+
+    </Grid>
+    <Grid item xs={3}>
+    <Stack direction="row" style={{fontFamily:"Chilanka" }}> 
+    
+    <span style={{width: "min-content"}}>
+    &larr; &nbsp;&nbsp;&nbsp; <br /><br /><br /><br /><br /><br /><br /><br/>
+    &larr;
+    </span>
+    <Divider color='white' sx={{borderWidth:"1px"}} orientation="vertical" flexItem />
+    <span style={{paddingTop:"25%",paddingBottom:"25%",paddingLeft:"1em"}}>
+    Do Deposit or Withdraw
+    </span>
+    
+    </Stack>
+
+    
+
     </Grid>
     
+    </Grid>
+
     
-  
-    {
-      (userAddress && userL2Address)? 
-      <DepositWithdrawV2 
-      Tezos={Tezos}
-      wallet={wallet!}
-      TezosL2={TezosL2}
-      userAddress={userAddress}
-      userL2Address={userL2Address}
-      rollupType={rollupType}
-      setRollupType={setRollupType}
-      rollup={rollup}
-      setRollup={setRollup}
-      activeAccount={activeAccount}
-      setActiveAccount={setActiveAccount}
-      accounts={accounts}
-      />
-      :
-      ( !userAddress && userL2Address )? 
-      <TransferL2 />
-      : 
-      <Box color="primary.main" alignContent={"space-between"} textAlign={"center"} sx={{ margin: "1em", padding : "1em",  backgroundColor : "#FFFFFFAA"}} >
-      <h1>Tezos Layer 1&2 bridge</h1>
-      <p>Transfer tokens via deposit and withdrawal operations</p>
-      <p>Designed for :</p>
-      <ul style={{listStylePosition: "inside"}}>
-      <li>TORU rollups : <a href="https://tezos.gitlab.io/alpha/transaction_rollups.html">TORU documentation</a></li>
-      <li>DEKU sidechain : <a href="https://www.marigold.dev/project/deku-sidechain">DEKU documentation</a></li>
-      <li>CHUSAI rollups : <a href="https://github.com/marigold-dev/chusai">CHUSAI documentation</a></li>
-      </ul>
-      </Box>
-       
-    }
+   
     
     
     
-    </div>
     
     
-    
-    );
   }
   
-  export default App;
+  <Grid   container
+  direction="row"
+  justifyContent="space-between"
+  alignItems="center" id="footer" style={{backgroundColor:"#0E1E2E", position:"absolute",
+  left:0,bottom:0,right:0, height:"80px" , paddingLeft:"50px" , paddingRight:"50px"}}>
+  
+  <a href="https://www.marigold.dev/project/deku-sidechain" target="_blank"><img src="deku_white.png" height={60}/></a>
+  <a href="https://tezos.gitlab.io/alpha/transaction_rollups.html" target="_blank"><img src="toru.png" height={60}/></a>
+  
+  <Divider orientation='vertical'  color='white' sx={{height:"70%"}}/>
+  <a href="https://tzstamp.io/" target="_blank"><img src="tzstamp.png" height={60}/></a>
+  <a href="https://faucet.marigold.dev/" target="_blank"><img src="faucet.png" height={60}/></a>
+  <a href="https://tzvote.marigold.dev/" target="_blank"><img src="tzvote.png" height={60}/></a>
+  
+  <Divider orientation='vertical'  color='white' sx={{height:"70%"}}/>
+  
+  
+  
+  <a href="https://marigold.dev/" target="_blank" ><Typography variant='h5' color="primary" >Powered by Marigold</Typography></a>
+  
+  </Grid>
+  
+  </div>
+  
+  
+  
+  );
+}
+
+export default App;
