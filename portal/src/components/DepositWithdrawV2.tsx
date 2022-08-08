@@ -454,35 +454,8 @@ const handleDeposit = async (event : MouseEvent) => {
             const [inputProof1,setInputProof1] = useState<string>("");
             const [inputProof2,setInputProof2] = useState<string>("");
 
-            const [opHash,setOpHash] = useState<string>("");
             
-            const handleL1Withdraw = async (event : MouseEvent<HTMLButtonElement>) => {
-
-                event.preventDefault();
-                setTezosLoading(true);
-                const dekuClient = new DEKUClient(process.env["REACT_APP_DEKU_NODE"]!,process.env["REACT_APP_CONTRACT"]!,TezosL2);
-
-                try {
-                const withdrawProof : DEKUWithdrawProof = await dekuClient.getWithdrawProof(opHash);
-                alert(JSON.stringify(withdrawProof));
-                console.log("withdrawProof",withdrawProof);
-  
-                await handleWithdraw(withdrawProof); 
-
-                enqueueSnackbar("Your L1 Withdraw has been accepted", {variant: "success", autoHideDuration:10000});
-
-            } catch (error : any) {
-                console.table(`Error: ${JSON.stringify(error, null, 2)}`);
-                let tibe : TransactionInvalidBeaconError = new TransactionInvalidBeaconError(error);
-                enqueueSnackbar(tibe.data_message, { variant:"error" , autoHideDuration:10000});
-                
-            } finally {
-                setTezosLoading(false);
-            }
-            
-            setTezosLoading(false);
-        };
-
+         
             const handleL2Withdraw = async (event : MouseEvent<HTMLButtonElement>) => {
                 
                 event.preventDefault();
@@ -523,45 +496,7 @@ const handleDeposit = async (event : MouseEvent) => {
                 setTezosLoading(false);
             };
             
-            const handleWithdraw = async (withdrawProof : DEKUWithdrawProof) => {
-                
-                setTezosLoading(true);
-                
-                let rollupContract : Contract = await TezosL2.contract.at(rollupType === ROLLUP_TYPE.DEKU ?process.env["REACT_APP_ROLLUP_CONTRACT_DEKU"]!:process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
-
-                try {
-                    let param : RollupParameters = 
-                    rollupType === ROLLUP_TYPE.DEKU ? 
-                    new RollupParametersDEKU(
-                        process.env["REACT_APP_CONTRACT"]!+"%withdrawDEKU", 
-                        withdrawProof.withdrawal_handle.amount,
-                        tokenType == TOKEN_TYPE.XTZ ? await getBytes(TOKEN_TYPE.XTZ) : await getBytes(TOKEN_TYPE[tokenType.toUpperCase() as keyof typeof TOKEN_TYPE],process.env["REACT_APP_"+tokenType+"_CONTRACT"]!) ,
-                        withdrawProof.withdrawal_handle.id,
-                        userAddress,
-                        process.env["REACT_APP_CONTRACT"]!,
-                        withdrawProof.withdrawal_handles_hash,
-                        withdrawProof.proof) 
-                        : new RollupParametersTORU();
-                        
-                        console.log("param",param);
-
-                        const op = await rollupContract.methods.withdraw(...Object.values(param)).send();
-                        await op.confirmation();
-                        enqueueSnackbar("Your Withdraw has been accepted", {variant: "success", autoHideDuration:10000});
-                        await myRef!.current!.refreshRollup();
-                        await refreshBalance();
-                        await refreshContract();
-                    } catch (error : any) {
-                        console.table(`Error: ${JSON.stringify(error, null, 2)}`);
-                        let tibe : TransactionInvalidBeaconError = new TransactionInvalidBeaconError(error);
-                        enqueueSnackbar(tibe.data_message, { variant:"error" , autoHideDuration:10000});
-                        
-                    } finally {
-                        setTezosLoading(false);
-                    }
-                    
-                    setTezosLoading(false);
-                };
+         
                 
                 const isDesktop = useMediaQuery('(min-width:600px)');
                 
@@ -577,7 +512,7 @@ const handleDeposit = async (event : MouseEvent) => {
                     alignContent={"space-between"} 
                     textAlign={"center"} 
                     bgcolor="secondary.main"
-                    width="auto"
+                    width={!isDesktop?"100%":"700px"}
                     sx={{ margin : "5vh 20vw", padding : "2em"}}
                     >
 
@@ -590,7 +525,7 @@ const handleDeposit = async (event : MouseEvent) => {
                     <CircularProgress color="inherit" />
                     </Backdrop>
                     
-                    <Stack width={!isDesktop?"100%":"700px"}   >
+                    <Stack      width="inherit"  >
                     
                     
                     {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU ? 
@@ -625,15 +560,9 @@ const handleDeposit = async (event : MouseEvent) => {
                     
                     {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU?
                         
-                        <Fragment>
-                        <Button variant="contained" disabled={isDepositButtonDisabled()} onClick={(e)=>handleDeposit(e)}>DEPOSIT</Button>
-
-                        <div>
-                        <TextField value={opHash} label="Enter your operation hash here" onChange={(e)=>setOpHash(e.target.value?e.target.value.trim():"")}/>
-                        <Button variant="contained" onClick={(e)=>handleL1Withdraw(e)}>L1 Claim</Button>    
-                        </div>                        
-
-                        </Fragment>
+                        <div style={{height:0}}>
+                        <Button sx={{position:"relative",top:"-70px"}} color="warning" variant="contained" disabled={isDepositButtonDisabled()} onClick={(e)=>handleDeposit(e)}>DEPOSIT</Button>
+                        </div>
                         
                         :   <Button disabled={rollupType === ROLLUP_TYPE.CHUSAI || rollupType === ROLLUP_TYPE.TORU } variant="contained" onClick={(e)=>handleL2Withdraw(e)}>Withdraw</Button>
                         

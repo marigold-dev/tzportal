@@ -9,6 +9,7 @@
   --startWidth :  1em * 1 * var(--startFixedChars) ;
   --endWidth   :  1em * 1 * (var(--endFixedChars ));
   --tertiary-color: #22313F;
+  --quaternary-color: #D38700;
 }
 
 a:link { text-decoration: none; }

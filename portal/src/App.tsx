@@ -171,8 +171,7 @@ return (
   defaultValue={ROLLUP_TYPE.DEKU.name}
   value={selectedRollupType}
   label="Rollup type"
-  SelectDisplayProps={{style : {paddingTop : "0.2em",paddingBottom : "0.2em" }}}
-  sx={{bgcolor:"white",height: "fit-content",marginTop: "20px",marginBottom: "20px",marginRight:"2em"}}
+  sx={{marginRight:"2em"}}
   onChange={(e : SelectChangeEvent)=>{setSelectedRollupType(e.target.value); setRollupType(ROLLUP_TYPE[e.target.value as keyof typeof ROLLUP_TYPE])}}
   >
   <MenuItem key={ROLLUP_TYPE.DEKU.name} value={ROLLUP_TYPE.DEKU.name}>
@@ -231,7 +230,11 @@ return (
     <TransferL2 />
     :
     ( userAddress && !userL2Address )? 
-    <ClaimL1 />
+    <ClaimL1 
+    TezosL2={TezosL2}
+    rollupType={rollupType}
+    userAddress={userAddress}
+    />
     : 
     
     
