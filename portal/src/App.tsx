@@ -167,11 +167,12 @@ return (
   />
   
   <Select 
+  variant="standard"
   id="layer2-select"
   defaultValue={ROLLUP_TYPE.DEKU.name}
   value={selectedRollupType}
   label="Rollup type"
-  sx={{marginRight:"2em"}}
+  sx={{marginRight:"2em",backgroundColor:"transparent",  paddingRight: 0,  marginTop: "0.5em"}}
   onChange={(e : SelectChangeEvent)=>{setSelectedRollupType(e.target.value); setRollupType(ROLLUP_TYPE[e.target.value as keyof typeof ROLLUP_TYPE])}}
   >
   <MenuItem key={ROLLUP_TYPE.DEKU.name} value={ROLLUP_TYPE.DEKU.name}>

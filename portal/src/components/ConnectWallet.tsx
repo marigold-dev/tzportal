@@ -74,7 +74,9 @@ const ConnectButton = ({
             </Button>
             </Stack>
             : !hideAfterConnect? <Chip  
-            style={{ opacity: (activeAccount?.address == userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU?1:0.38)}}
+            style={{
+                marginTop: "20px", marginRight: "20px",
+                opacity: (activeAccount?.address == userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU?1:0.38)}}
             onClick={()=>setL1AccountAsActive()}  avatar={<Avatar src="XTZ_white.png" />}
    color="primary"      onDelete={disconnectWallet}     label={userAddress} deleteIcon={<LogoutOutlined />}/>
 :""

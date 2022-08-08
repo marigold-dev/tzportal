@@ -69,15 +69,16 @@ const UserWallet = ({
             endAdornment={
                 <Fragment>
                 <Select 
-                sx={{marginTop: "20px",marginBottom: "20px",marginRight:"2em"}}
+                variant="standard"
                 defaultValue={TOKEN_TYPE.XTZ}
                 value={tokenType}
                 label="token type"
+                sx={{paddingRight: 0}}
                 onChange={(e : SelectChangeEvent)=>{setTokenType(e.target.value)}}
                 >
                 { Object.keys(TOKEN_TYPE).map((key)  => 
                     <MenuItem key={key} value={key}>
-                    <Chip sx={{border:"none"}}
+                    <Chip sx={{border:"none"}} variant="outlined"
                     avatar={<Avatar component="span" src={key+".png"} ></Avatar>}
                     label={key}
                     />

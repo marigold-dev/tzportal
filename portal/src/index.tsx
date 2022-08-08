@@ -42,13 +42,13 @@ const themeLight = createTheme({
       styleOverrides : {
         root : {
           fontWeight: "bolder",
-          margin: "20px",
           border: "1px solid white" ,
-          height: "38px"
+          height: "3em"
         },
         avatarColorPrimary : {
           backgroundColor : "black"
-        }
+        },
+        
       }
     },
     MuiInputBase : {
@@ -56,7 +56,18 @@ const themeLight = createTheme({
         root : {
           color : "#ffffff",
           backgroundColor : "#55606A",
-          border : 0
+          border : 0,
+          fontWeight : "bolder",
+          padding: "1em",
+          height: "4em",
+          borderRadius : "0.4em"
+        }
+      }
+    },
+    MuiInputAdornment : {
+      styleOverrides : {
+        root : {
+          backgroundColor : "#55606A",
         }
       }
     },
@@ -75,15 +86,30 @@ const themeLight = createTheme({
     MuiOutlinedInput : {
       defaultProps : {
         notched : false,
+      },
+      styleOverrides : {
+        root : {
+        },
+        input : {
+          backgroundColor : "#55606A",
+        }
       }
     },
     MuiSelect : {
       styleOverrides : {
         select : {
           backgroundColor:"#ffffff",
-          height: "fit-content"
-        }
+          padding : 0,
+        },
+        standard : {
+          borderRadius: "4px",
+        },
+        
+      },
+      defaultProps : {
+        disableUnderline : true
       }
+     
     }
 },
 palette: {
