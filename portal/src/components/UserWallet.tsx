@@ -1,9 +1,15 @@
-import { Avatar, Card, CardContent, CardHeader, Chip, Divider, Grid, Input, InputAdornment, MenuItem, OutlinedInput, Paper, Select, SelectChangeEvent, Stack, TextField, Typography } from "@mui/material";
+import { Avatar, Card, CardContent, CardHeader, Chip, Divider, Grid, Input, InputAdornment, keyframes, MenuItem, OutlinedInput, Paper, Select, SelectChangeEvent, Stack, TextField, Typography } from "@mui/material";
 import { LAYER2Type, TOKEN_TYPE } from "./TezosUtils";
 import BigNumber from 'bignumber.js';
 import { AccountInfo } from "@airgap/beacon-types";
-import { Dispatch, Fragment, SetStateAction } from "react";
+import React, { Dispatch, forwardRef, Fragment, SetStateAction, useImperativeHandle } from "react";
 import { Badge, InputOutlined } from "@mui/icons-material";
+import { useState } from "react";
+
+export type UserWalletComponentType = {
+    setShouldBounce : (b : boolean) => Promise<void>,
+    setChangeTicketColor : (color : string) => Promise<void>
+}
 
 type ButtonProps = {
     direction : string;
@@ -25,8 +31,28 @@ const UserWallet = ({
     setQuantity,
     tokenType,
     setTokenType
-}: ButtonProps): JSX.Element => {
+}: ButtonProps, ref : any): JSX.Element => {
     
+    const layer1 = React.createRef<any>();
+    const [shouldBounce,setShouldBounce] = useState(true);
+    const [changeTicketColor,setChangeTicketColor] = useState("#55606A");
+
+    useImperativeHandle(ref, () =>  ({setShouldBounce, setChangeTicketColor }));
+
+    const myKeyframe = keyframes`
+    0 %  { transform: translate(1px, 1px)   rotate(0deg)    },
+    10%  { transform: translate(-1px, -2px) rotate(-1deg);  },
+    20%  { transform: translate(-3px, 0px)  rotate(1deg);   },
+    30%  { transform: translate(3px, 2px)   rotate(0deg);   },
+    40%  { transform: translate(1px, -1px)  rotate(1deg);   },
+    50%  { transform: translate(-1px, 2px)  rotate(-1deg);  },
+    60%  { transform: translate(-3px, 1px)  rotate(0deg);   },
+    70%  { transform: translate(3px, 1px)   rotate(-1deg);  },
+    80%  { transform: translate(-1px, -1px) rotate(1deg);   },
+    90%  { transform: translate(1px, 2px)   rotate(0deg);   },
+    100% { transform: translate(1px, -2px)  rotate(-1deg);  }
+    `;
+
     return (
         
         <Grid bgcolor="var(--tertiary-color)" padding="1em" container spacing={1}>
@@ -44,6 +70,13 @@ const UserWallet = ({
         
         <OutlinedInput 
         fullWidth
+        ref={layer1}
+            sx={
+                shouldBounce ? {animation : `${myKeyframe} 1s ease`,
+                backgroundColor : changeTicketColor
+            } : {animation : "" ,
+        backgroundColor : "#55606A"}
+               }
         inputProps={{
             style : {
                 textAlign : "right",
@@ -98,4 +131,4 @@ const UserWallet = ({
                     );
                 };
                 
-                export default UserWallet;
+                export default forwardRef(UserWallet);

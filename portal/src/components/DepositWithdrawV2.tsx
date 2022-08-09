@@ -12,7 +12,7 @@ import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
 import {  styled } from "@mui/system";
 import { OperationContentsAndResultTransaction , OperationResultTransaction} from "@taquito/rpc";
-import UserWallet from "./UserWallet";
+import UserWallet, { UserWalletComponentType } from "./UserWallet";
 import RollupBox, { RollupBoxComponentType } from "./RollupBox";
 import { TokenMetadata, tzip12, Tzip12ContractAbstraction } from "@taquito/tzip12";
 import { tzip16 } from "@taquito/tzip16";
@@ -74,8 +74,10 @@ const DepositWithdrawV2 = ({
     // MESSAGES
     const { enqueueSnackbar } = useSnackbar();
     
-    const myRef = useRef<RollupBoxComponentType>();
-    let oldCurrentBalance = useRef(0);
+    const rollupBoxRef = useRef<RollupBoxComponentType>();
+    const userWalletRef = useRef<UserWalletComponentType>();
+    let oldTicketBalance = useRef(0);
+    let oldBalance = useRef(new BigNumber(0));
 
     
     const switchActiveAccount = async()=> {
@@ -85,35 +87,43 @@ const DepositWithdrawV2 = ({
     }
     
     const refreshBalance = async() => {
+
+        let newCurrentBalance  : BigNumber = new BigNumber(0) ;
+
         //XTZ
         const XTZbalance = await Tezos.tz.getBalance(userAddress);
-        
+        if(tokenType === TOKEN_TYPE.XTZ)newCurrentBalance=XTZbalance;
+
         //FA1.2 LOOP
         
         //kUSD
         let kUSDContract = await Tezos.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!,compose(tzip12, tzip16));
         const kUSDtokenMap : BigMapAbstraction = (await kUSDContract.storage() as FA12Contract).tokens;
         let kUSDBalance : BigNumber|undefined = await kUSDtokenMap.get<BigNumber>(userAddress);
-        
+        if(kUSDBalance && tokenType === TOKEN_TYPE.KUSD)newCurrentBalance=kUSDBalance;
+
         
         //CTEZ
         let ctezContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!,compose(tzip12, tzip16));
         const ctezContractStorage : FA12Contract = (await ctezContract.storage() as FA12Contract)
         const cteztokenMap : BigMapAbstraction = ctezContractStorage.tokens;
         let ctezBalance : BigNumber|undefined = await cteztokenMap.get<BigNumber>(userAddress);
-        
+        if(ctezBalance && tokenType === TOKEN_TYPE.CTEZ)newCurrentBalance=ctezBalance;
+
         //UUSD
         let uusdContract = await Tezos.wallet.at(process.env["REACT_APP_UUSD_CONTRACT"]!,tzip12);
         const uusdContractStorage : FA2Contract = (await uusdContract.storage() as FA2Contract)
         const uusdtokenMap : BigMapAbstraction = uusdContractStorage.ledger;
         let uusdBalance : BigNumber|undefined = await uusdtokenMap.get<BigNumber>([userAddress,0]);
-        
+        if(uusdBalance && tokenType === TOKEN_TYPE.UUSD)newCurrentBalance=uusdBalance;
+
         //EURL
         let eurlContract = await Tezos.wallet.at(process.env["REACT_APP_EURL_CONTRACT"]!,tzip12);
         const eurlContractStorage : FA2Contract = (await eurlContract.storage() as FA2Contract)
         const eurltokenMap : BigMapAbstraction = eurlContractStorage.ledger;
         let eurlBalance : BigNumber|undefined = await eurltokenMap.get<BigNumber>([userAddress,0]);
-        
+        if(eurlBalance && tokenType === TOKEN_TYPE.EURL)newCurrentBalance=eurlBalance;
+
         let balance = new Map<TOKEN_TYPE,BigNumber>();
         balance.set(TOKEN_TYPE.XTZ,XTZbalance.dividedBy(Math.pow(10,6))); //convert mutez to tez
         if(kUSDBalance !== undefined) balance.set(TOKEN_TYPE.KUSD,kUSDBalance.dividedBy(Math.pow(10,(await kUSDContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest kUSD decimal
@@ -127,6 +137,19 @@ const DepositWithdrawV2 = ({
         
         setUserBalance(balance);
         console.log("All balances initialized",balance);
+
+        userWalletRef!.current!.setShouldBounce(false);
+        
+        if(!newCurrentBalance.isEqualTo(oldBalance.current)){
+            setTimeout(() => {
+                userWalletRef!.current!.setChangeTicketColor(newCurrentBalance.isGreaterThan(oldBalance.current)?"green":"red");
+                userWalletRef!.current!.setShouldBounce(true)
+                setTimeout(() => {
+                    userWalletRef!.current!.setChangeTicketColor("");
+                    oldBalance.current = newCurrentBalance; //keep old value before it vanishes
+                }, 1000);
+            }, 500);
+        }
     }
     
     const refreshTicketBalance = async() => {
@@ -170,16 +193,16 @@ const DepositWithdrawV2 = ({
         setUserTicketBalance(balance);
         console.log("All ticket balances initialized",balance);
 
-        myRef!.current!.setShouldBounce(false);
+        rollupBoxRef!.current!.setShouldBounce(false);
         
-        if(newCurrentBalance !== oldCurrentBalance.current){
-            console.log("newCurrentBalance",newCurrentBalance,"oldCurrentBalance",oldCurrentBalance.current)
+        if(newCurrentBalance !== oldTicketBalance.current){
+            console.log("newCurrentBalance",newCurrentBalance,"oldCurrentBalance",oldTicketBalance.current)
             setTimeout(() => {
-                myRef!.current!.setChangeTicketColor(newCurrentBalance>oldCurrentBalance.current?"green":"red");
-                myRef!.current!.setShouldBounce(true)
+                rollupBoxRef!.current!.setChangeTicketColor(newCurrentBalance>oldTicketBalance.current?"green":"red");
+                rollupBoxRef!.current!.setShouldBounce(true)
                 setTimeout(() => {
-                    myRef!.current!.setChangeTicketColor("");
-                    oldCurrentBalance.current = newCurrentBalance; //keep old value before it vanishes
+                    rollupBoxRef!.current!.setChangeTicketColor("");
+                    oldTicketBalance.current = newCurrentBalance; //keep old value before it vanishes
                 }, 1000);
             }, 500);
         }
@@ -204,7 +227,8 @@ const DepositWithdrawV2 = ({
         refreshContract();
         refreshBalance();
         refreshTicketBalance();
-        setInterval(refreshTicketBalance, 15*1000); //refresh async L2 balances 
+        setInterval(refreshBalance, 8*1000); //refresh async L1 balances 
+        setInterval(refreshTicketBalance, 8*1000); //refresh async L2 balances 
     })();
 }, []);
 
@@ -266,7 +290,6 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
         }
         
         enqueueSnackbar("Treasury has batched collaterization "+contractFAStorage.amountToTransfer.toNumber()+" tokens from "+from, {variant: "success", autoHideDuration:10000});        
-        refreshBalance();
         setTezosLoading(false);
     }catch (error : any) {
         console.table(`Error: ${JSON.stringify(error, null, 2)}`);
@@ -318,7 +341,7 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
         const br = await batchOp.confirmation(1);
         
         await refreshContract();
-        await myRef!.current!.refreshRollup();
+        await rollupBoxRef!.current!.refreshRollup();
         enqueueSnackbar("Pending deposit from "+from+" has been successfully processed", {variant: "success", autoHideDuration:10000});
         
     }catch (error : any) {
@@ -496,8 +519,7 @@ const handleDeposit = async (event : MouseEvent) => {
                         enqueueSnackbar("Store your ticket hash somewhere, you will need it later : "+ticketHash, {variant: "success", autoHideDuration:10000});
                     }
                     
-                    await myRef!.current!.refreshRollup();
-                    await refreshBalance();
+                    await rollupBoxRef!.current!.refreshRollup();
                     await refreshContract();
                 } catch (error : any) {
                     console.table(`Error: ${JSON.stringify(error, null, 2)}`);
@@ -546,8 +568,7 @@ const handleDeposit = async (event : MouseEvent) => {
                     console.log("The proof will be available in 10s...Give this opHash to "+userL2Address+".Login to L1 and call withdraw-proof+CLAIM on ophash...");
                     console.log("opHash",opHash);
                     enqueueSnackbar("Your L2 Withdraw has been accepted with opHash"+opHash, {variant: "success", autoHideDuration:10000});
-                    await myRef!.current!.refreshRollup();
-                    await refreshBalance();
+                    await rollupBoxRef!.current!.refreshRollup();
                     await refreshContract();
                 } catch (error : any) {
                     console.table(`Error: ${JSON.stringify(error, null, 2)}`);
@@ -595,6 +616,7 @@ const handleDeposit = async (event : MouseEvent) => {
                 
                 {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU ? 
                     <UserWallet 
+                    ref={userWalletRef}
                     direction="From"
                     userAddress={userAddress}
                     userBalance={userBalance}
@@ -606,7 +628,7 @@ const handleDeposit = async (event : MouseEvent) => {
                     />    
                     : 
                     <RollupBox 
-                    ref={myRef}
+                    ref={rollupBoxRef}
                     Tezos={Tezos}
                     userAddress={userL2Address}
                     userBalance={userTicketBalance}
@@ -660,7 +682,7 @@ const handleDeposit = async (event : MouseEvent) => {
                 
                 {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU? 
                     <RollupBox 
-                    ref={myRef}
+                    ref={rollupBoxRef}
                     Tezos={Tezos}
                     userAddress={userL2Address}
                     userBalance={userTicketBalance}
