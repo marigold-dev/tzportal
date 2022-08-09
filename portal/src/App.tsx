@@ -20,9 +20,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import MenuIcon from '@mui/icons-material/Menu';
 import { ArchiveOutlined, ArrowDropDown, Badge, CameraRoll, SettingsBackupRestoreOutlined } from '@mui/icons-material';
 import { Button, CardHeader, Chip, Grid, makeStyles, Paper, Popover, Select, SelectChangeEvent, Stack } from '@mui/material';
-import Deposit from './components/Deposit';
 import { AccountInfo, NetworkType} from "@airgap/beacon-types";
-import Withdraw from './components/Withdraw';
 import { Tzip12Module } from "@taquito/tzip12";
 import { LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE } from './components/TezosUtils';
 import styled from '@emotion/styled';
@@ -182,7 +180,7 @@ return (
   variant="outlined"
   />
   </MenuItem>
-  
+  {/* 
   <MenuItem key={ROLLUP_TYPE.CHUSAI.name} value={ROLLUP_TYPE.CHUSAI.name}>
   <Chip sx={{border: "none",margin: 0}}
   avatar={<Avatar alt="Natacha" src="CHUSAI.png" />}
@@ -198,7 +196,7 @@ return (
   variant="outlined"
   />
   </MenuItem>
-  
+  */}
   
   
   

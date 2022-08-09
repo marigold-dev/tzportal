@@ -99,7 +99,6 @@ export interface DEKUOperation {
             };
             const response : Response = await fetch(this.dekuNodeUrl+"/ticket-balance", requestOptions);
             const responseJson : {amount : number}= await response.json();
-            console.log(responseJson);
             return responseJson.amount;
             
         }    

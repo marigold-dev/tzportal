@@ -522,6 +522,8 @@ const handleDeposit = async (event : MouseEvent) => {
                 rollupType={rollupType}
                 rollup={rollup}
                 setRollup={setRollup}
+                direction="To"
+
                 />
                 
                 </Grid>

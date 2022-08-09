@@ -55,8 +55,7 @@ const UserWallet = ({
         startAdornment="Available balance"
         value={userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType} />
         
-        {activeAccount && activeAccount.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU?
-            
+        {direction === "From"?
             <Fragment>
 
             <Input
@@ -86,7 +85,8 @@ const UserWallet = ({
                     ) }</Select>
                     </Fragment>}
                     />
-                    <div style={{height:"50px"}}>  </div></Fragment>
+                    <div style={{height:"70px"}}>  </div>
+                    </Fragment>
                 
                     
                     :""}

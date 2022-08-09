@@ -3,7 +3,7 @@ import { BigMapAbstraction, compose, Contract, OpKind, TezosToolkit, WalletContr
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import Button from "@mui/material/Button";
 import { Avatar, Backdrop, Badge, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, IconButton, InputAdornment, InputLabel, ListItem, MenuItem, Paper, Popover, Select, SelectChangeEvent, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip, useMediaQuery, useTheme } from "@mui/material";
-import { AccountBalanceWallet, AccountCircle, AddShoppingCartOutlined, ArrowDropDown, CameraRoll, SwapCallsRounded, SwapHorizontalCircleOutlined, SwapHorizOutlined, SwapHorizRounded } from "@mui/icons-material";
+import { AccountBalanceWallet, AccountCircle, AddShoppingCartOutlined, ArrowDropDown, CameraRoll, ChangeCircle, ChangeCircleOutlined, SwapCallsRounded, SwapHorizontalCircleOutlined, SwapHorizOutlined, SwapHorizRounded } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 import {  ContractFAParameters, ContractFAStorage, ContractParameters, ContractStorage, ContractXTZParameters } from "./TicketerContractUtils";
@@ -53,7 +53,11 @@ const DepositWithdrawV2 = ({
     accounts
 }: DepositWithdrawV2Props): JSX.Element => {
     
+    const dekuClient = new DEKUClient(process.env["REACT_APP_DEKU_NODE"]!,process.env["REACT_APP_CONTRACT"]!,TezosL2);
+    
     const [userBalance, setUserBalance] = useState<Map<TOKEN_TYPE,BigNumber>>(new Map());
+    const [userTicketBalance, setUserTicketBalance] = useState<Map<TOKEN_TYPE,number>>(new Map());
+    
     
     const [quantity, setQuantity]  = useState<number>(0); //in float TEZ
     const [tokenType, setTokenType]  = useState<string>(TOKEN_TYPE.XTZ);
@@ -70,10 +74,9 @@ const DepositWithdrawV2 = ({
     // MESSAGES
     const { enqueueSnackbar } = useSnackbar();
     
-    
     const myRef = useRef<RollupBoxComponentType>();
-    
-    
+    let oldCurrentBalance = useRef(0);
+
     
     const switchActiveAccount = async()=> {
         const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU}); 
@@ -126,6 +129,67 @@ const DepositWithdrawV2 = ({
         console.log("All balances initialized",balance);
     }
     
+    const refreshTicketBalance = async() => {
+        
+        const tokenBytes = await getTokenBytes();//need to call this first and wait for init
+        setTokenBytes(tokenBytes); 
+        
+        let newCurrentBalance  : number = 0 ;
+        
+        //XTZ
+        const XTZbalance = await dekuClient.getBalance(userAddress,tokenBytes.get(TOKEN_TYPE.XTZ)!);
+        if(tokenType === TOKEN_TYPE.XTZ)newCurrentBalance=XTZbalance;
+        
+        //kUSD
+        let kUSDContract = await Tezos.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!,compose(tzip12, tzip16));
+        let kUSDBalance = await dekuClient.getBalance(userAddress,tokenBytes.get(TOKEN_TYPE.KUSD)!);
+        if(tokenType === TOKEN_TYPE.KUSD)newCurrentBalance=kUSDBalance;
+        
+        //CTEZ
+        let ctezContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!,compose(tzip12, tzip16));
+        let ctezBalance =await dekuClient.getBalance(userAddress,tokenBytes.get(TOKEN_TYPE.CTEZ)!);
+        if(tokenType === TOKEN_TYPE.CTEZ)newCurrentBalance=ctezBalance;
+        
+        //UUSD
+        let uusdContract = await Tezos.wallet.at(process.env["REACT_APP_UUSD_CONTRACT"]!,tzip12);
+        let uusdBalance =await dekuClient.getBalance(userAddress,tokenBytes.get(TOKEN_TYPE.UUSD)!);
+        if(tokenType === TOKEN_TYPE.UUSD)newCurrentBalance=uusdBalance;
+        
+        //EURL
+        let eurlContract = await Tezos.wallet.at(process.env["REACT_APP_EURL_CONTRACT"]!,tzip12);
+        let eurlBalance =await dekuClient.getBalance(userAddress,tokenBytes.get(TOKEN_TYPE.UUSD)!);
+        if(tokenType === TOKEN_TYPE.EURL)newCurrentBalance=eurlBalance;
+        
+        let balance = new Map<TOKEN_TYPE,number>();
+        balance.set(TOKEN_TYPE.XTZ,XTZbalance/ (Math.pow(10,6))); //convert mutez to tez
+        balance.set(TOKEN_TYPE.KUSD,kUSDBalance/ (Math.pow(10,(await kUSDContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest kUSD decimal
+        balance.set(TOKEN_TYPE.CTEZ,ctezBalance/ (Math.pow(10,(await ctezContract.tzip12().getTokenMetadata(0)).decimals)));//convert from muctez
+        balance.set(TOKEN_TYPE.UUSD,uusdBalance/ (Math.pow(10,(await uusdContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest UUSD decimal
+        balance.set(TOKEN_TYPE.EURL,eurlBalance/ (Math.pow(10,(await eurlContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest EURL decimal
+        
+        setUserTicketBalance(balance);
+        console.log("All ticket balances initialized",balance);
+
+        myRef!.current!.setShouldBounce(false);
+        
+        if(newCurrentBalance !== oldCurrentBalance.current){
+            console.log("newCurrentBalance",newCurrentBalance,"oldCurrentBalance",oldCurrentBalance.current)
+            setTimeout(() => {
+                myRef!.current!.setChangeTicketColor(newCurrentBalance>oldCurrentBalance.current?"green":"red");
+                myRef!.current!.setShouldBounce(true)
+                setTimeout(() => {
+                    myRef!.current!.setChangeTicketColor("");
+                    oldCurrentBalance.current = newCurrentBalance; //keep old value before it vanishes
+                }, 1000);
+            }, 500);
+        }
+
+ 
+
+    }
+    
+    
+    
     const refreshContract = async() => {
         const c = await Tezos.wallet.at(process.env["REACT_APP_CONTRACT"]!);
         const store : ContractStorage = {...(await c?.storage())}; //copy fields
@@ -135,10 +199,12 @@ const DepositWithdrawV2 = ({
     }
     
     useEffect(() => { (async () => {
+        const tokenBytes = await getTokenBytes();//need to call this first and wait for init
+        setTokenBytes(tokenBytes); 
         refreshContract();
         refreshBalance();
-        await myRef!.current!.refreshRollup();
-        setTokenBytes(await getTokenBytes());
+        refreshTicketBalance();
+        setInterval(refreshTicketBalance, 15*1000); //refresh async L2 balances 
     })();
 }, []);
 
@@ -397,7 +463,7 @@ const handleDeposit = async (event : MouseEvent) => {
                     
                     
                     const br = await batchOp.confirmation(1);
-                    enqueueSnackbar(tokenType === TOKEN_TYPE.XTZ?"Your deposit has been accepted":"Your deposit is in pending, waiting for Treasury to get your tokens in collateral and continue process", {variant: "success", autoHideDuration:10000});
+                    enqueueSnackbar(tokenType === TOKEN_TYPE.XTZ?"Your deposit has been accepted (wait 1 or 2 blocks until your L2 balance get refreshed)":"Your deposit is in pending, waiting for Treasury to get your tokens in collateral and continue process", {variant: "success", autoHideDuration:10000});
                     
                     if(rollupType === ROLLUP_TYPE.TORU){//need to fecth the ticket hash to give it to the user 
                         
@@ -453,9 +519,9 @@ const handleDeposit = async (event : MouseEvent) => {
             const [proofList, setProofList] = useState<Array<[string,string]>>([]);
             const [inputProof1,setInputProof1] = useState<string>("");
             const [inputProof2,setInputProof2] = useState<string>("");
-
             
-         
+            
+            
             const handleL2Withdraw = async (event : MouseEvent<HTMLButtonElement>) => {
                 
                 event.preventDefault();
@@ -463,19 +529,18 @@ const handleDeposit = async (event : MouseEvent) => {
                 
                 try {
                     // 
-                    const dekuClient = new DEKUClient(process.env["REACT_APP_DEKU_NODE"]!,process.env["REACT_APP_CONTRACT"]!,TezosL2);
                     
                     alert(await dekuClient.getBalance(userL2Address,tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!));
                     
-
+                    
                     //alert(await dekuClient.getBlockLevel());
-
+                    
                     //alert(await dekuClient.requestNonce());
-
-
+                    
+                    
                     //alert(await dekuClient.getWithdrawProof("b7f65dd6fc72e9e825e894de6c798ed73baa86ffda5a52146e37c00eeb8a917a"));
-
-
+                    
+                    
                     const opHash = await dekuClient.withdraw(userL2Address,1,tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
                     alert(opHash);
                     console.log("The proof will be available in 10s...Give this opHash to "+userL2Address+".Login to L1 and call withdraw-proof+CLAIM on ophash...");
@@ -496,133 +561,141 @@ const handleDeposit = async (event : MouseEvent) => {
                 setTezosLoading(false);
             };
             
-         
-                
-                const isDesktop = useMediaQuery('(min-width:600px)');
-                
-                return (
-
-
-                  
-
-                    <Box display="flex"
-                    justifyContent="center"
-                    alignItems="center" 
-                    color="primary.main" 
-                    alignContent={"space-between"} 
-                    textAlign={"center"} 
-                    bgcolor="secondary.main"
-                    width={!isDesktop?"100%":"700px"}
-                    sx={{ margin : "5vh 20vw", padding : "2em"}}
-                    >
-
-                    
-                    
-                    <Backdrop
-                    sx={{ color: '#fff', zIndex: (theme : any) => theme.zIndex.drawer + 1 }}
-                    open={tezosLoading}
-                    >
-                    <CircularProgress color="inherit" />
-                    </Backdrop>
-                    
-                    <Stack      width="inherit"  >
-                    
-                    
-                    {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU ? 
-                        <UserWallet 
-                        direction="From"
-                        userAddress={userAddress}
-                        userBalance={userBalance}
-                        activeAccount={activeAccount}
-                        quantity={quantity}
-                        setQuantity={setQuantity}
-                        tokenType={tokenType}
-                        setTokenType={setTokenType}
-                        />    
-                        : 
-                        <RollupBox 
-                        ref={myRef}
-                        Tezos={Tezos}
-                        userAddress={userAddress}
-                        tokenBytes={tokenBytes}
-                        handlePendingWithdraw={undefined}
-                        handlePendingDeposit={handlePendingDeposit}
-                        contractStorage={contractStorage}
-                        setRollupType={setRollupType}
-                        rollupType={rollupType}
-                        rollup={rollup}
-                        setRollup={setRollup}
-                        />
-                    }
-                    
-                    <Grid item xs={12} md={3} >
-
-                    
-                    {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU?
-                        
-                        <div style={{height:0}}>
-                        <Button sx={{position:"relative",top:"-70px"}} color="warning" variant="contained" disabled={isDepositButtonDisabled()} onClick={(e)=>handleDeposit(e)}>DEPOSIT</Button>
-                        </div>
-                        
-                        :   <Button disabled={rollupType === ROLLUP_TYPE.CHUSAI || rollupType === ROLLUP_TYPE.TORU } variant="contained" onClick={(e)=>handleL2Withdraw(e)}>Withdraw</Button>
-                        
-                    }
-                  
-                    
-                    
-                    </Grid>
-                    
-                    <Grid item xs={12} md={1} >
-                    
-                    
-                    
-                    
-                    <Divider
-                    orientation= "horizontal" 
-                    flexItem
-                    >                        <Avatar onClick={()=>switchActiveAccount()} > <SwapHorizOutlined color="primary"/> </Avatar>
-                    </Divider>
-                    
-                    
-                    
-                    
-                    
-                    </Grid>
-                    
-                    {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU? 
-                        <RollupBox 
-                        ref={myRef}
-                        Tezos={Tezos}
-                        userAddress={userAddress}
-                        tokenBytes={tokenBytes}
-                        handlePendingWithdraw={undefined}
-                        handlePendingDeposit={handlePendingDeposit}
-                        contractStorage={contractStorage}
-                        setRollupType={setRollupType}
-                        rollupType={rollupType}
-                        rollup={rollup}
-                        setRollup={setRollup}
-                        />
-                        :
-                        <UserWallet 
-                        direction="To"
-                        userAddress={userAddress}
-                        userBalance={userBalance} 
-                        activeAccount={activeAccount!}
-                        quantity={quantity}
-                        setQuantity={setQuantity}
-                        tokenType={tokenType}
-                        setTokenType={setTokenType}
-                        />    
-                    }
-                    
-                    </Stack>
-                    
-                    </Box>
-                    );
-                };
-                
-                export default DepositWithdrawV2;
+            
+            
+            const isDesktop = useMediaQuery('(min-width:600px)');
+            
+            return (
                 
                 
                 
+                
+                <Box display="flex"
+                justifyContent="center"
+                alignItems="center" 
+                color="primary.main" 
+                alignContent={"space-between"} 
+                textAlign={"center"} 
+                bgcolor="secondary.main"
+                width={!isDesktop?"100%":"700px"}
+                sx={{ margin : "5vh 20vw", padding : "2em"}}
+                >
+                
+                
+                
+                <Backdrop
+                sx={{ color: '#fff', zIndex: (theme : any) => theme.zIndex.drawer + 1 }}
+                open={tezosLoading}
+                >
+                <CircularProgress color="inherit" />
+                </Backdrop>
+                
+                <Stack      width="inherit"  >
+                
+                
+                {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU ? 
+                    <UserWallet 
+                    direction="From"
+                    userAddress={userAddress}
+                    userBalance={userBalance}
+                    activeAccount={activeAccount}
+                    quantity={quantity}
+                    setQuantity={setQuantity}
+                    tokenType={tokenType}
+                    setTokenType={setTokenType}
+                    />    
+                    : 
+                    <RollupBox 
+                    ref={myRef}
+                    Tezos={Tezos}
+                    userAddress={userL2Address}
+                    userBalance={userTicketBalance}
+                    tokenBytes={tokenBytes}
+                    handlePendingWithdraw={undefined}
+                    handlePendingDeposit={handlePendingDeposit}
+                    contractStorage={contractStorage}
+                    setRollupType={setRollupType}
+                    rollupType={rollupType}
+                    rollup={rollup}
+                    setRollup={setRollup}
+                    direction="From"
+                    dekuClient={dekuClient}
+                    tokenType={TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]}
+                    />
+                }
+                
+                <Grid item xs={12} md={3} >
+                
+                
+                {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU?
+                    
+                    <div style={{height:0}}>
+                    <Button sx={{position:"relative",top:"-90px"}} color="warning" variant="contained" disabled={isDepositButtonDisabled()} onClick={(e)=>handleDeposit(e)}>DEPOSIT</Button>
+                    </div>
+                    
+                    :   <Button disabled={rollupType === ROLLUP_TYPE.CHUSAI || rollupType === ROLLUP_TYPE.TORU } variant="contained" onClick={(e)=>handleL2Withdraw(e)}>Withdraw</Button>
+                    
+                }
+                
+                
+                
+                </Grid>
+                
+                <Grid item xs={12} md={1} >
+                
+                
+                
+                
+                <Divider
+                orientation= "horizontal" 
+                flexItem
+                >                        <ChangeCircle sx={{transform : "scale(3.5)"}} color="primary" onClick={()=>switchActiveAccount()}/> 
+                </Divider>
+                
+                
+                
+                
+                
+                </Grid>
+                
+                {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU? 
+                    <RollupBox 
+                    ref={myRef}
+                    Tezos={Tezos}
+                    userAddress={userL2Address}
+                    userBalance={userTicketBalance}
+                    tokenBytes={tokenBytes}
+                    handlePendingWithdraw={undefined}
+                    handlePendingDeposit={handlePendingDeposit}
+                    contractStorage={contractStorage}
+                    setRollupType={setRollupType}
+                    rollupType={rollupType}
+                    rollup={rollup}
+                    setRollup={setRollup}
+                    direction="To"
+                    dekuClient={dekuClient}
+                    tokenType={TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]}
+                    />
+                    :
+                    <UserWallet 
+                    direction="To"
+                    userAddress={userAddress}
+                    userBalance={userBalance} 
+                    activeAccount={activeAccount!}
+                    quantity={quantity}
+                    setQuantity={setQuantity}
+                    tokenType={tokenType}
+                    setTokenType={setTokenType}
+                    />    
+                }
+                
+                </Stack>
+                
+                </Box>
+                );
+            };
+            
+            export default DepositWithdrawV2;
+            
+            
+            

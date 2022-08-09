@@ -325,6 +325,8 @@ const handleWithdraw = async (event : MouseEvent<HTMLButtonElement>) => {
         rollupType={rollupType}
         rollup={rollup}
         setRollup={setRollup}
+        direction="To"
+
         />
         
         
