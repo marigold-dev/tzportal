@@ -8,6 +8,8 @@ import DEKUClient from "./DEKUClient";
 import BigNumber from 'bignumber.js';
 import ReactCSSTransitionGroup, { CSSTransition } from 'react-transition-group'; // ES6
 
+BigNumber.config({ EXPONENTIAL_AT : 19});
+
 
 export type RollupBoxComponentType = {
     refreshRollup : () => Promise<void>,
@@ -18,7 +20,7 @@ export type RollupBoxComponentType = {
 type RollupProps = {
     Tezos : TezosToolkit;
     userAddress: string;
-    userBalance: Map<TOKEN_TYPE,number>;
+    userBalance: Map<TOKEN_TYPE,BigNumber>;
     tokenBytes:Map<TOKEN_TYPE,string>;
     handlePendingWithdraw : ((event: React.MouseEvent<HTMLButtonElement, MouseEvent>, to: string, contractFAStorage: ContractFAStorage,ticketTokenType : string) => Promise<void>) | undefined;
     handlePendingDeposit : ((event : React.MouseEvent<HTMLButtonElement>,from : string,contractFAStorage : ContractFAStorage,ticketTokenType : string) => Promise<void>) | undefined;
@@ -27,7 +29,7 @@ type RollupProps = {
     rollupType : ROLLUP_TYPE;
     rollup : RollupTORU | RollupDEKU | RollupCHUSAI | undefined;
     setRollup : Dispatch<SetStateAction<RollupTORU | RollupDEKU | RollupCHUSAI | undefined>>;
-    direction : string;
+    isDirectionDeposit : boolean;
     dekuClient : DEKUClient;
     tokenType : TOKEN_TYPE
 };
@@ -44,7 +46,7 @@ const RollupBox = ({
     rollupType,
     rollup,
     setRollup,
-    direction,
+    isDirectionDeposit,
     dekuClient,
     tokenType
 }: RollupProps, ref : any): JSX.Element => {
@@ -111,7 +113,7 @@ const RollupBox = ({
         
         <Grid xs={12} sm={2} item >   
         <Stack margin={1} spacing={1}>
-        <Typography fontWeight="bolder" color="secondary" variant="h6" sx={{backgroundColor:"primary.main"}} >{direction}</Typography>
+        <Typography fontWeight="bolder" color="secondary" variant="h6" sx={{backgroundColor:"primary.main"}} >{isDirectionDeposit?"To":"From"}</Typography>
         <Tooltip title={rollupType.address} >
         <img src="deku_white.png" width={80}/>
         </Tooltip>
@@ -120,7 +122,7 @@ const RollupBox = ({
         
         <Grid xs={12} sm={10} item>
         
-        {direction === "To"?<div style={{height:"70px"}}>  </div>:""}
+        {!isDirectionDeposit ?<div style={{height:"70px"}}>  </div>:""}
         
         
         <Stack direction={"column"} spacing={1} >
@@ -164,7 +166,7 @@ const RollupBox = ({
             startAdornment="Available balance"
             value=
             
-            {userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])
+            {userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString()
                 +" " + tokenType + "-ticket" 
             } />
             

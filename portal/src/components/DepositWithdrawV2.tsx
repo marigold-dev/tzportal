@@ -56,12 +56,20 @@ const DepositWithdrawV2 = ({
     const dekuClient = new DEKUClient(process.env["REACT_APP_DEKU_NODE"]!,process.env["REACT_APP_CONTRACT"]!,TezosL2);
     
     const [userBalance, setUserBalance] = useState<Map<TOKEN_TYPE,BigNumber>>(new Map());
-    const [userTicketBalance, setUserTicketBalance] = useState<Map<TOKEN_TYPE,number>>(new Map());
+    const [userTicketBalance, setUserTicketBalance] = useState<Map<TOKEN_TYPE,BigNumber>>(new Map());
     
     
-    const [quantity, setQuantity]  = useState<number>(0); //in float TEZ
+    const [quantity, setQuantity]  = useState<BigNumber>(new BigNumber(0)); //in float TEZ
+    
+    let oldTicketBalance = useRef(new BigNumber(0));
+    let oldBalance = useRef(new BigNumber(0));
     const [tokenType, setTokenType]  = useState<string>(TOKEN_TYPE.XTZ);
-    
+    const tokenTypeRef = useRef(tokenType); //TRICK : to track current value on async timeout functions
+    tokenTypeRef.current = tokenType;
+    useEffect(() => { 
+        oldBalance.current = userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!;
+        oldTicketBalance.current = userTicketBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!;
+    }, [tokenType]); //required to refresh to current when changing token type
     
     const [contractStorage, setContractStorage] = useState<ContractStorage>();
     const [contract, setContract] =  useState<WalletContract>();
@@ -76,10 +84,11 @@ const DepositWithdrawV2 = ({
     
     const rollupBoxRef = useRef<RollupBoxComponentType>();
     const userWalletRef = useRef<UserWalletComponentType>();
-    let oldTicketBalance = useRef(0);
-    let oldBalance = useRef(new BigNumber(0));
-
     
+    const isDirectionDeposit = () => { 
+        return activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU
+    }
+
     const switchActiveAccount = async()=> {
         const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU}); 
         const l2Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU}); 
@@ -87,43 +96,40 @@ const DepositWithdrawV2 = ({
     }
     
     const refreshBalance = async() => {
-
+        
+        //Note : tokenTypeRef.current is this ref instead of tokenType to get last current value to track
+        
         let newCurrentBalance  : BigNumber = new BigNumber(0) ;
-
+        
         //XTZ
         const XTZbalance = await Tezos.tz.getBalance(userAddress);
-        if(tokenType === TOKEN_TYPE.XTZ)newCurrentBalance=XTZbalance;
-
+        
         //FA1.2 LOOP
         
         //kUSD
         let kUSDContract = await Tezos.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!,compose(tzip12, tzip16));
         const kUSDtokenMap : BigMapAbstraction = (await kUSDContract.storage() as FA12Contract).tokens;
         let kUSDBalance : BigNumber|undefined = await kUSDtokenMap.get<BigNumber>(userAddress);
-        if(kUSDBalance && tokenType === TOKEN_TYPE.KUSD)newCurrentBalance=kUSDBalance;
-
+        
         
         //CTEZ
         let ctezContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!,compose(tzip12, tzip16));
         const ctezContractStorage : FA12Contract = (await ctezContract.storage() as FA12Contract)
         const cteztokenMap : BigMapAbstraction = ctezContractStorage.tokens;
         let ctezBalance : BigNumber|undefined = await cteztokenMap.get<BigNumber>(userAddress);
-        if(ctezBalance && tokenType === TOKEN_TYPE.CTEZ)newCurrentBalance=ctezBalance;
-
+        
         //UUSD
         let uusdContract = await Tezos.wallet.at(process.env["REACT_APP_UUSD_CONTRACT"]!,tzip12);
         const uusdContractStorage : FA2Contract = (await uusdContract.storage() as FA2Contract)
         const uusdtokenMap : BigMapAbstraction = uusdContractStorage.ledger;
         let uusdBalance : BigNumber|undefined = await uusdtokenMap.get<BigNumber>([userAddress,0]);
-        if(uusdBalance && tokenType === TOKEN_TYPE.UUSD)newCurrentBalance=uusdBalance;
-
+        
         //EURL
         let eurlContract = await Tezos.wallet.at(process.env["REACT_APP_EURL_CONTRACT"]!,tzip12);
         const eurlContractStorage : FA2Contract = (await eurlContract.storage() as FA2Contract)
         const eurltokenMap : BigMapAbstraction = eurlContractStorage.ledger;
         let eurlBalance : BigNumber|undefined = await eurltokenMap.get<BigNumber>([userAddress,0]);
-        if(eurlBalance && tokenType === TOKEN_TYPE.EURL)newCurrentBalance=eurlBalance;
-
+        
         let balance = new Map<TOKEN_TYPE,BigNumber>();
         balance.set(TOKEN_TYPE.XTZ,XTZbalance.dividedBy(Math.pow(10,6))); //convert mutez to tez
         if(kUSDBalance !== undefined) balance.set(TOKEN_TYPE.KUSD,kUSDBalance.dividedBy(Math.pow(10,(await kUSDContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest kUSD decimal
@@ -135,17 +141,25 @@ const DepositWithdrawV2 = ({
         if(eurlBalance !== undefined) balance.set(TOKEN_TYPE.EURL,eurlBalance.dividedBy(Math.pow(10,(await eurlContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest EURL decimal
         else balance.set(TOKEN_TYPE.EURL,new BigNumber(0)); 
         
+        switch(tokenTypeRef.current){
+            case TOKEN_TYPE.XTZ : newCurrentBalance=balance.get(TOKEN_TYPE.XTZ)!;break;
+            case TOKEN_TYPE.KUSD : newCurrentBalance=balance.get(TOKEN_TYPE.KUSD)!;break;
+            case TOKEN_TYPE.CTEZ : newCurrentBalance=balance.get(TOKEN_TYPE.CTEZ)!;break;
+            case TOKEN_TYPE.UUSD : newCurrentBalance=balance.get(TOKEN_TYPE.UUSD)!;break;
+            case TOKEN_TYPE.EURL : newCurrentBalance=balance.get(TOKEN_TYPE.EURL)!;break;
+        }
+        
         setUserBalance(balance);
         console.log("All balances initialized",balance);
-
-        userWalletRef!.current!.setShouldBounce(false);
         
+        userWalletRef?.current?.setShouldBounce(false);        
+                
         if(!newCurrentBalance.isEqualTo(oldBalance.current)){
             setTimeout(() => {
-                userWalletRef!.current!.setChangeTicketColor(newCurrentBalance.isGreaterThan(oldBalance.current)?"green":"red");
-                userWalletRef!.current!.setShouldBounce(true)
+                userWalletRef?.current?.setChangeTicketColor(newCurrentBalance.isGreaterThan(oldBalance.current)?"green":"red");
+                userWalletRef?.current?.setShouldBounce(true)
                 setTimeout(() => {
-                    userWalletRef!.current!.setChangeTicketColor("");
+                    userWalletRef?.current?.setChangeTicketColor("");
                     oldBalance.current = newCurrentBalance; //keep old value before it vanishes
                 }, 1000);
             }, 500);
@@ -154,61 +168,66 @@ const DepositWithdrawV2 = ({
     
     const refreshTicketBalance = async() => {
         
+        //Note : tokenTypeRef.current is this ref instead of tokenType to get last current value to track
+        
+        
         const tokenBytes = await getTokenBytes();//need to call this first and wait for init
         setTokenBytes(tokenBytes); 
         
-        let newCurrentBalance  : number = 0 ;
+        let newCurrentBalance  : BigNumber = new BigNumber(0) ;
         
         //XTZ
-        const XTZbalance = await dekuClient.getBalance(userAddress,tokenBytes.get(TOKEN_TYPE.XTZ)!);
-        if(tokenType === TOKEN_TYPE.XTZ)newCurrentBalance=XTZbalance;
+        const XTZbalance = await dekuClient.getBalance(userL2Address,tokenBytes.get(TOKEN_TYPE.XTZ)!);
         
         //kUSD
         let kUSDContract = await Tezos.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!,compose(tzip12, tzip16));
-        let kUSDBalance = await dekuClient.getBalance(userAddress,tokenBytes.get(TOKEN_TYPE.KUSD)!);
-        if(tokenType === TOKEN_TYPE.KUSD)newCurrentBalance=kUSDBalance;
+        let kUSDBalance = await dekuClient.getBalance(userL2Address,tokenBytes.get(TOKEN_TYPE.KUSD)!);
         
         //CTEZ
         let ctezContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!,compose(tzip12, tzip16));
-        let ctezBalance =await dekuClient.getBalance(userAddress,tokenBytes.get(TOKEN_TYPE.CTEZ)!);
-        if(tokenType === TOKEN_TYPE.CTEZ)newCurrentBalance=ctezBalance;
+        let ctezBalance =await dekuClient.getBalance(userL2Address,tokenBytes.get(TOKEN_TYPE.CTEZ)!);
         
         //UUSD
         let uusdContract = await Tezos.wallet.at(process.env["REACT_APP_UUSD_CONTRACT"]!,tzip12);
-        let uusdBalance =await dekuClient.getBalance(userAddress,tokenBytes.get(TOKEN_TYPE.UUSD)!);
-        if(tokenType === TOKEN_TYPE.UUSD)newCurrentBalance=uusdBalance;
+        let uusdBalance =await dekuClient.getBalance(userL2Address,tokenBytes.get(TOKEN_TYPE.UUSD)!);
         
         //EURL
         let eurlContract = await Tezos.wallet.at(process.env["REACT_APP_EURL_CONTRACT"]!,tzip12);
-        let eurlBalance =await dekuClient.getBalance(userAddress,tokenBytes.get(TOKEN_TYPE.UUSD)!);
-        if(tokenType === TOKEN_TYPE.EURL)newCurrentBalance=eurlBalance;
+        let eurlBalance =await dekuClient.getBalance(userL2Address,tokenBytes.get(TOKEN_TYPE.EURL)!);
         
-        let balance = new Map<TOKEN_TYPE,number>();
-        balance.set(TOKEN_TYPE.XTZ,XTZbalance/ (Math.pow(10,6))); //convert mutez to tez
-        balance.set(TOKEN_TYPE.KUSD,kUSDBalance/ (Math.pow(10,(await kUSDContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest kUSD decimal
-        balance.set(TOKEN_TYPE.CTEZ,ctezBalance/ (Math.pow(10,(await ctezContract.tzip12().getTokenMetadata(0)).decimals)));//convert from muctez
-        balance.set(TOKEN_TYPE.UUSD,uusdBalance/ (Math.pow(10,(await uusdContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest UUSD decimal
-        balance.set(TOKEN_TYPE.EURL,eurlBalance/ (Math.pow(10,(await eurlContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest EURL decimal
+        let balance = new Map<TOKEN_TYPE,BigNumber>();
+        balance.set(TOKEN_TYPE.XTZ,XTZbalance.dividedBy(Math.pow(10,6))); //convert mutez to tez
+        balance.set(TOKEN_TYPE.KUSD,kUSDBalance.dividedBy(Math.pow(10,(await kUSDContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest kUSD decimal
+        balance.set(TOKEN_TYPE.CTEZ,ctezBalance.dividedBy(Math.pow(10,(await ctezContract.tzip12().getTokenMetadata(0)).decimals)));//convert from muctez
+        balance.set(TOKEN_TYPE.UUSD,uusdBalance.dividedBy(Math.pow(10,(await uusdContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest UUSD decimal
+        balance.set(TOKEN_TYPE.EURL,eurlBalance.dividedBy(Math.pow(10,(await eurlContract.tzip12().getTokenMetadata(0)).decimals)));//convert from lowest EURL decimal
         
+        switch(tokenTypeRef.current){
+            case TOKEN_TYPE.XTZ : newCurrentBalance=balance.get(TOKEN_TYPE.XTZ)!;break;
+            case TOKEN_TYPE.KUSD : newCurrentBalance=balance.get(TOKEN_TYPE.KUSD)!;break;
+            case TOKEN_TYPE.CTEZ : newCurrentBalance=balance.get(TOKEN_TYPE.CTEZ)!;break;
+            case TOKEN_TYPE.UUSD : newCurrentBalance=balance.get(TOKEN_TYPE.UUSD)!;break;
+            case TOKEN_TYPE.EURL : newCurrentBalance=balance.get(TOKEN_TYPE.EURL)!;break;
+        }
+
         setUserTicketBalance(balance);
         console.log("All ticket balances initialized",balance);
-
-        rollupBoxRef!.current!.setShouldBounce(false);
         
-        if(newCurrentBalance !== oldTicketBalance.current){
-            console.log("newCurrentBalance",newCurrentBalance,"oldCurrentBalance",oldTicketBalance.current)
+        rollupBoxRef?.current?.setShouldBounce(false);
+        
+        if(!newCurrentBalance.isEqualTo(oldTicketBalance.current)){
             setTimeout(() => {
-                rollupBoxRef!.current!.setChangeTicketColor(newCurrentBalance>oldTicketBalance.current?"green":"red");
-                rollupBoxRef!.current!.setShouldBounce(true)
+                rollupBoxRef?.current?.setChangeTicketColor(newCurrentBalance.isGreaterThan(oldTicketBalance.current)?"green":"red");
+                rollupBoxRef?.current?.setShouldBounce(true)
                 setTimeout(() => {
-                    rollupBoxRef!.current!.setChangeTicketColor("");
+                    rollupBoxRef?.current?.setChangeTicketColor("");
                     oldTicketBalance.current = newCurrentBalance; //keep old value before it vanishes
                 }, 1000);
             }, 500);
         }
-
- 
-
+        
+        
+        
     }
     
     
@@ -236,11 +255,11 @@ const DepositWithdrawV2 = ({
 const isDepositButtonDisabled = () : boolean | undefined => {
     let isDisabled = true;
     switch(tokenType){
-        case TOKEN_TYPE.XTZ : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.XTZ) !== undefined && (  userBalance.get(TOKEN_TYPE.XTZ)!.isLessThan(quantity) ) ));break;
-        case TOKEN_TYPE.CTEZ : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.CTEZ) !== undefined && ( userBalance.get(TOKEN_TYPE.CTEZ)!.isLessThan(quantity) )));break;
-        case TOKEN_TYPE.KUSD : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.KUSD) !== undefined && ( userBalance.get(TOKEN_TYPE.KUSD)!.isLessThan(quantity) )));break;
-        case TOKEN_TYPE.UUSD : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.UUSD) !== undefined && ( userBalance.get(TOKEN_TYPE.UUSD)!.isLessThan(quantity) )));break;
-        case TOKEN_TYPE.EURL : isDisabled= (quantity === 0 || (userBalance.get(TOKEN_TYPE.EURL) !== undefined && ( userBalance.get(TOKEN_TYPE.EURL)!.isLessThan(quantity) )));break;
+        case TOKEN_TYPE.XTZ : isDisabled= (quantity.isZero() || (userBalance.get(TOKEN_TYPE.XTZ) !== undefined && (  userBalance.get(TOKEN_TYPE.XTZ)!.isLessThan(quantity) ) ));break;
+        case TOKEN_TYPE.CTEZ : isDisabled= (quantity.isZero() || (userBalance.get(TOKEN_TYPE.CTEZ) !== undefined && ( userBalance.get(TOKEN_TYPE.CTEZ)!.isLessThan(quantity) )));break;
+        case TOKEN_TYPE.KUSD : isDisabled= (quantity.isZero() || (userBalance.get(TOKEN_TYPE.KUSD) !== undefined && ( userBalance.get(TOKEN_TYPE.KUSD)!.isLessThan(quantity) )));break;
+        case TOKEN_TYPE.UUSD : isDisabled= (quantity.isZero() || (userBalance.get(TOKEN_TYPE.UUSD) !== undefined && ( userBalance.get(TOKEN_TYPE.UUSD)!.isLessThan(quantity) )));break;
+        case TOKEN_TYPE.EURL : isDisabled= (quantity.isZero() || (userBalance.get(TOKEN_TYPE.EURL) !== undefined && ( userBalance.get(TOKEN_TYPE.EURL)!.isLessThan(quantity) )));break;
     }
     return isDisabled;
 }
@@ -394,17 +413,17 @@ const handleDeposit = async (event : MouseEvent) => {
             });
             decimals = Math.pow(10,(await faContract.tzip12().getTokenMetadata(0)).decimals);
             
-            if(allowance === undefined || allowance.toNumber() < quantity*decimals) {
-                enqueueSnackbar("Allowance ("+allowance+") is not enough for requested collateral of "+(quantity*decimals)+", please allow an allowance first", {variant: "warning", autoHideDuration:10000});        
+            if(allowance === undefined || allowance.isLessThan(quantity.multipliedBy(decimals))) {
+                enqueueSnackbar("Allowance ("+allowance+") is not enough for requested collateral of "+(quantity.multipliedBy(decimals))+", please allow an allowance first", {variant: "warning", autoHideDuration:10000});        
                 
                 if(allowance === undefined || allowance.toNumber() == 0){
                     
                     operations.push({
                         kind: OpKind.TRANSACTION,
-                        ...faContract.methods.approve(contractStorage?.treasuryAddress,quantity*decimals).toTransferParams(),
+                        ...faContract.methods.approve(contractStorage?.treasuryAddress,quantity.multipliedBy(decimals)).toTransferParams(),
                     })
                     
-                    enqueueSnackbar("Your allowance of "+quantity*decimals+" has been batched for Treasury "+contractStorage?.treasuryAddress, {variant: "success", autoHideDuration:10000});        
+                    enqueueSnackbar("Your allowance of "+quantity+" "+ tokenType +" has been batched for Treasury (wait 1 or 2 blocks for Treasury to take your collateral)", {variant: "success", autoHideDuration:10000});        
                 }else{//need to reset allowance to zero, then reset allowance back to avoid HACK
                     enqueueSnackbar("As allowance is not null, we need to reset allowance to zero, then reset allowance back to quantity to avoid HACK", {variant: "warning", autoHideDuration:10000});        
                     
@@ -415,14 +434,14 @@ const handleDeposit = async (event : MouseEvent) => {
                     
                     operations.push({
                         kind: OpKind.TRANSACTION,
-                        ...faContract.methods.approve(contractStorage?.treasuryAddress,quantity*decimals).toTransferParams(),
+                        ...faContract.methods.approve(contractStorage?.treasuryAddress,quantity.multipliedBy(decimals)).toTransferParams(),
                     })
                     
-                    enqueueSnackbar("Your allowance of "+quantity*decimals+" has been batched for Treasury "+contractStorage?.treasuryAddress, {variant: "success", autoHideDuration:10000});        
+                    enqueueSnackbar("Your allowance of "+quantity+" "+ tokenType +" has been batched for Treasury (wait 1 or 2 blocks for Treasury to take your collateral)", {variant: "success", autoHideDuration:10000});        
                 }
                 
             }else{
-                console.log("FA1.2 allowance is fine (actual : "+allowance+", requested : "+quantity*decimals+")")
+                console.log("FA1.2 allowance is fine (actual : "+(allowance.dividedBy(decimals).toNumber())+", requested : "+quantity+")")
             }
         }
         
@@ -450,9 +469,9 @@ const handleDeposit = async (event : MouseEvent) => {
                 }
                 
                 let param : ContractParameters = 
-                tokenType === TOKEN_TYPE.XTZ ? new ContractXTZParameters( new BigNumber(quantity*decimals),rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI ,userL2Address,rollupType.address) 
+                tokenType === TOKEN_TYPE.XTZ ? new ContractXTZParameters( quantity.multipliedBy(decimals),rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI ,userL2Address,rollupType.address) 
                 : new ContractFAParameters(
-                    new BigNumber(quantity*decimals),  
+                    quantity.multipliedBy(decimals),  
                     process.env["REACT_APP_"+tokenType+"_CONTRACT"]!,
                     rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI,
                     userL2Address,
@@ -468,7 +487,7 @@ const handleDeposit = async (event : MouseEvent) => {
                     operations.push({
                         kind: OpKind.TRANSACTION,
                         ...c.methods.deposit(...Object.values(param)).toTransferParams(),
-                        amount: tokenType === TOKEN_TYPE.XTZ?quantity:0,
+                        amount: tokenType === TOKEN_TYPE.XTZ?quantity.toNumber():0,
                     });
                     
                     
@@ -617,7 +636,7 @@ const handleDeposit = async (event : MouseEvent) => {
                 {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU ? 
                     <UserWallet 
                     ref={userWalletRef}
-                    direction="From"
+                    isDirectionDeposit={isDirectionDeposit()!}
                     userAddress={userAddress}
                     userBalance={userBalance}
                     activeAccount={activeAccount}
@@ -628,6 +647,7 @@ const handleDeposit = async (event : MouseEvent) => {
                     />    
                     : 
                     <RollupBox 
+                    isDirectionDeposit={isDirectionDeposit()!}
                     ref={rollupBoxRef}
                     Tezos={Tezos}
                     userAddress={userL2Address}
@@ -640,7 +660,6 @@ const handleDeposit = async (event : MouseEvent) => {
                     rollupType={rollupType}
                     rollup={rollup}
                     setRollup={setRollup}
-                    direction="From"
                     dekuClient={dekuClient}
                     tokenType={TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]}
                     />
@@ -649,14 +668,14 @@ const handleDeposit = async (event : MouseEvent) => {
                 <Grid item xs={12} md={3} >
                 
                 
-                {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU?
-                    
+                {isDirectionDeposit()?
                     <div style={{height:0}}>
                     <Button sx={{position:"relative",top:"-90px"}} color="warning" variant="contained" disabled={isDepositButtonDisabled()} onClick={(e)=>handleDeposit(e)}>DEPOSIT</Button>
                     </div>
-                    
-                    :   <Button disabled={rollupType === ROLLUP_TYPE.CHUSAI || rollupType === ROLLUP_TYPE.TORU } variant="contained" onClick={(e)=>handleL2Withdraw(e)}>Withdraw</Button>
-                    
+                    :
+                    <div style={{height:0}}>
+                    <Button disabled={rollupType === ROLLUP_TYPE.CHUSAI || rollupType === ROLLUP_TYPE.TORU } sx={{position:"relative",top:"-90px"}} color="warning" variant="contained"  onClick={(e)=>handleL2Withdraw(e)}>Withdraw</Button>
+                    </div>
                 }
                 
                 
@@ -670,7 +689,7 @@ const handleDeposit = async (event : MouseEvent) => {
                 
                 <Divider
                 orientation= "horizontal" 
-                flexItem
+                sx={{display:"block"}}
                 >                        <ChangeCircle sx={{transform : "scale(3.5)"}} color="primary" onClick={()=>switchActiveAccount()}/> 
                 </Divider>
                 
@@ -694,13 +713,13 @@ const handleDeposit = async (event : MouseEvent) => {
                     rollupType={rollupType}
                     rollup={rollup}
                     setRollup={setRollup}
-                    direction="To"
+                    isDirectionDeposit={isDirectionDeposit()!}
                     dekuClient={dekuClient}
                     tokenType={TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]}
                     />
                     :
                     <UserWallet 
-                    direction="To"
+                    isDirectionDeposit={isDirectionDeposit()!}
                     userAddress={userAddress}
                     userBalance={userBalance} 
                     activeAccount={activeAccount!}

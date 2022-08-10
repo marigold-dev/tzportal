@@ -6,24 +6,27 @@ import React, { Dispatch, forwardRef, Fragment, SetStateAction, useImperativeHan
 import { Badge, InputOutlined } from "@mui/icons-material";
 import { useState } from "react";
 
+BigNumber.config({ EXPONENTIAL_AT : 19});
+
+
 export type UserWalletComponentType = {
     setShouldBounce : (b : boolean) => Promise<void>,
     setChangeTicketColor : (color : string) => Promise<void>
 }
 
 type ButtonProps = {
-    direction : string;
+    isDirectionDeposit : boolean;
     userAddress: string;
     userBalance : Map<TOKEN_TYPE,BigNumber>;
     activeAccount : AccountInfo;
-    quantity : number;
-    setQuantity :Dispatch<SetStateAction<number>>;
+    quantity : BigNumber;
+    setQuantity :Dispatch<SetStateAction<BigNumber>>;
     tokenType : string;
     setTokenType : Dispatch<SetStateAction<string>>;
 };
 
 const UserWallet = ({
-    direction,
+    isDirectionDeposit,
     userAddress,
     userBalance,
     activeAccount,
@@ -59,7 +62,7 @@ const UserWallet = ({
         
         <Grid xs={12} sm={2} item >   
         <Stack margin={1} spacing={1}>
-        <Typography fontWeight="bolder" color="secondary" variant="h6" sx={{backgroundColor:"primary.main"}} >{direction}</Typography>
+        <Typography fontWeight="bolder" color="secondary" variant="h6" sx={{backgroundColor:"primary.main"}} >{isDirectionDeposit?"From":"To"}</Typography>
         <img src="XTZ_white.png" width={80}/>
         </Stack  >
         </Grid>
@@ -88,18 +91,22 @@ const UserWallet = ({
         startAdornment="Available balance"
         value={userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType} />
         
-        {direction === "From"?
+        {isDirectionDeposit?
             <Fragment>
 
             <Input
+            
             fullWidth 
             required 
             type="number"
-            onChange={(e)=>setQuantity(e.target.value?parseFloat(e.target.value):0)}
+            onChange={(e)=>setQuantity(e.target.value?new BigNumber(e.target.value):new BigNumber(0))}
             value={quantity}
             title="Enter amount"
             endAdornment={
                 <Fragment>
+
+                <span style={{color:"var(--tertiary-color)"}} onClick={()=>setQuantity(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!)}>MAX</span>
+
                 <Select 
                 variant="standard"
                 defaultValue={TOKEN_TYPE.XTZ}

@@ -1,6 +1,7 @@
 import { TezosToolkit } from "@taquito/taquito";
 import { b58decode, buf2hex, encodeExpr } from "@taquito/utils";
-import { rejects } from "assert";
+import BigNumber from 'bignumber.js';
+
 
 const stringToHex = (payload: string): string => {
     const input = Buffer.from(payload);
@@ -88,7 +89,7 @@ export interface DEKUOperation {
         }
         
         
-        getBalance = async(userAddress :string, ticketData : string) : Promise<number> => {
+        getBalance = async(userAddress :string, ticketData : string) : Promise<BigNumber> => {
             
             const requestOptions = {
                 method: 'POST',
@@ -99,7 +100,7 @@ export interface DEKUOperation {
             };
             const response : Response = await fetch(this.dekuNodeUrl+"/ticket-balance", requestOptions);
             const responseJson : {amount : number}= await response.json();
-            return responseJson.amount;
+            return new BigNumber(responseJson.amount);
             
         }    
         
