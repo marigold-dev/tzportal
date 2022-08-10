@@ -59,7 +59,7 @@ const DepositWithdrawV2 = ({
     const [userTicketBalance, setUserTicketBalance] = useState<Map<TOKEN_TYPE,BigNumber>>(new Map());
     
     
-    const [quantity, setQuantity]  = useState<BigNumber>(new BigNumber(0)); //in float TEZ
+    const [quantity, setQuantity]  = useState<BigNumber>(new BigNumber(0)); 
     
     let oldTicketBalance = useRef(new BigNumber(0));
     let oldBalance = useRef(new BigNumber(0));
@@ -569,26 +569,8 @@ const handleDeposit = async (event : MouseEvent) => {
                 setTezosLoading(true);
                 
                 try {
-                    // 
-                    
-                    alert(await dekuClient.getBalance(userL2Address,tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!));
-                    
-                    
-                    //alert(await dekuClient.getBlockLevel());
-                    
-                    //alert(await dekuClient.requestNonce());
-                    
-                    
-                    //alert(await dekuClient.getWithdrawProof("b7f65dd6fc72e9e825e894de6c798ed73baa86ffda5a52146e37c00eeb8a917a"));
-                    
-                    
                     const opHash = await dekuClient.withdraw(userL2Address,1,tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
-                    alert(opHash);
-                    console.log("The proof will be available in 10s...Give this opHash to "+userL2Address+".Login to L1 and call withdraw-proof+CLAIM on ophash...");
-                    console.log("opHash",opHash);
-                    enqueueSnackbar("Your L2 Withdraw has been accepted with opHash"+opHash, {variant: "success", autoHideDuration:10000});
-                    await rollupBoxRef!.current!.refreshRollup();
-                    await refreshContract();
+                    enqueueSnackbar("The proof will be available in 10s. Keep this code ( "+opHash+" ) to do a Claim on L1 with user "+userL2Address, {variant: "success", autoHideDuration:10000});
                 } catch (error : any) {
                     console.table(`Error: ${JSON.stringify(error, null, 2)}`);
                     let tibe : TransactionInvalidBeaconError = new TransactionInvalidBeaconError(error);
@@ -662,6 +644,9 @@ const handleDeposit = async (event : MouseEvent) => {
                     setRollup={setRollup}
                     dekuClient={dekuClient}
                     tokenType={TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]}
+                    quantity={quantity}
+                    setQuantity={setQuantity}
+                    setTokenType={setTokenType}
                     />
                 }
                 
@@ -716,6 +701,9 @@ const handleDeposit = async (event : MouseEvent) => {
                     isDirectionDeposit={isDirectionDeposit()!}
                     dekuClient={dekuClient}
                     tokenType={TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]}
+                    quantity={quantity}
+                    setQuantity={setQuantity}
+                    setTokenType={setTokenType}
                     />
                     :
                     <UserWallet 

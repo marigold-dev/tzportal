@@ -1,4 +1,4 @@
-import { Accordion, AccordionDetails, AccordionSummary, Avatar, Badge, Box, Button, Card, CardContent, CardHeader, Chip, Divider, FormControl, Grid, IconButton, InputAdornment, InputLabel, keyframes, MenuItem, OutlinedInput, OutlinedInputProps, Paper, Popover, Select, SelectChangeEvent, Stack, styled, Table, TableBody, TableCell, TableContainer, TableRow, Tooltip, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Avatar, Badge, Box, Button, Card, CardContent, CardHeader, Chip, Divider, FormControl, Grid, IconButton, Input, InputAdornment, InputLabel, keyframes, MenuItem, OutlinedInput, OutlinedInputProps, Paper, Popover, Select, SelectChangeEvent, Stack, styled, Table, TableBody, TableCell, TableContainer, TableRow, Tooltip, Typography } from "@mui/material";
 import { RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
 import { AddShoppingCartOutlined, ArrowDropDown, CameraRoll, UnfoldMoreOutlined } from "@mui/icons-material";
 import React, { Dispatch, forwardRef, Fragment, ReactComponentElement, Ref, SetStateAction, useEffect, useImperativeHandle, useState } from "react";
@@ -31,7 +31,11 @@ type RollupProps = {
     setRollup : Dispatch<SetStateAction<RollupTORU | RollupDEKU | RollupCHUSAI | undefined>>;
     isDirectionDeposit : boolean;
     dekuClient : DEKUClient;
-    tokenType : TOKEN_TYPE
+    tokenType : TOKEN_TYPE;
+    quantity : BigNumber;
+    setQuantity :Dispatch<SetStateAction<BigNumber>>;
+    setTokenType : Dispatch<SetStateAction<string>>;
+    
 };
 
 const RollupBox = ({
@@ -48,7 +52,10 @@ const RollupBox = ({
     setRollup,
     isDirectionDeposit,
     dekuClient,
-    tokenType
+    tokenType,
+    quantity,
+    setQuantity,
+    setTokenType
 }: RollupProps, ref : any): JSX.Element => {
     
     const layer2Tickets = React.createRef<any>();
@@ -91,7 +98,7 @@ const RollupBox = ({
     }));
     
     useImperativeHandle(ref, () =>  ({refreshRollup , setShouldBounce, setChangeTicketColor }));
-
+    
     const myKeyframe = keyframes`
     0 %  { transform: translate(1px, 1px)   rotate(0deg)    },
     10%  { transform: translate(-1px, -2px) rotate(-1deg);  },
@@ -121,9 +128,7 @@ const RollupBox = ({
         </Grid>
         
         <Grid xs={12} sm={10} item>
-        
-        {!isDirectionDeposit ?<div style={{height:"70px"}}>  </div>:""}
-        
+        {isDirectionDeposit ?<div style={{height:"70px"}}></div>:""}
         
         <Stack direction={"column"} spacing={1} >
         { 
@@ -149,180 +154,220 @@ const RollupBox = ({
                 shouldBounce ? {animation : `${myKeyframe} 1s ease`,
                 backgroundColor : changeTicketColor
             } : {animation : "" ,
-        backgroundColor : "#55606A"}
-               }
-            fullWidth
-            inputProps={{
-                style : {
-                    textAlign : "right",
-                    display: 'inline',
-                    width:"70%",
-                }
-            }}
-            endAdornment={<InputAdornment position="end" >
-            <img height="24px" src={tokenType+".png"}/>
-            <img height="24px" src={"ticket.png"}/>                
-            </InputAdornment>}
-            startAdornment="Available balance"
-            value=
+            backgroundColor : "#55606A"}
+        }
+        fullWidth
+        inputProps={{
+            style : {
+                textAlign : "right",
+                display: 'inline',
+                width:"70%",
+            }
+        }}
+        endAdornment={<InputAdornment position="end" >
+        <img height="24px" src={tokenType+".png"}/>
+        <img height="24px" src={"ticket.png"}/>                
+        </InputAdornment>}
+        startAdornment="Available balance"
+        value=
+        
+        {userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString()
+            +" " + tokenType + "-ticket" 
+        } />
+        
+        {!isDirectionDeposit?
+            <Fragment>
             
-            {userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString()
-                +" " + tokenType + "-ticket" 
-            } />
+            <Input
             
-            
-            {contractStorage?.treasuryAddress == userAddress?
+            fullWidth 
+            required 
+            type="number"
+            onChange={(e)=>setQuantity(e.target.value?new BigNumber(e.target.value):new BigNumber(0))}
+            value={quantity}
+            title="Enter amount"
+            endAdornment={
+                <Fragment>
                 
+                <span style={{color:"var(--tertiary-color)"}} onClick={()=>setQuantity(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!)}>MAX</span>
                 
-                <Accordion>
-                <AccordionSummary
-                expandIcon={<UnfoldMoreOutlined />}
-                aria-controls="panel1a-content"
-                id="panel1a-header"
+                <Select 
+                variant="standard"
+                defaultValue={TOKEN_TYPE.XTZ}
+                value={tokenType}
+                label="ticket-token type"
+                sx={{paddingRight: 0}}
+                onChange={(e : SelectChangeEvent)=>{setTokenType(e.target.value)}}
                 >
-                <Typography>Pending operations</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                
-                {handlePendingWithdraw && contractStorage.faPendingWithdrawals?  Array.from(contractStorage.faPendingWithdrawals.entries()).map(( [key,val]: [[string,string],ContractFAStorage]) => 
-                    {
-                        let tokenType : string = tokenBytes.get(TOKEN_TYPE.XTZ) == key[1]? TOKEN_TYPE.XTZ : tokenBytes.get(TOKEN_TYPE.CTEZ) == key[1] ?  TOKEN_TYPE.CTEZ : tokenBytes.get(TOKEN_TYPE.KUSD) == key[1] ?  TOKEN_TYPE.KUSD : tokenBytes.get(TOKEN_TYPE.UUSD) == key[1] ?  TOKEN_TYPE.UUSD : TOKEN_TYPE.EURL ;
-                        
-                        return <div key={key[0]+key[1]+val.type}>  
-                        <Badge  max={999999999999999999}
-                        badgeContent={val.amountToTransfer.toNumber()}         
-                        color="primary">
-                        <Avatar component="span" src={tokenType+".png"} />
-                        <Avatar variant="square" src="ticket.png" />
-                        </Badge>
-                        <span> for {<span className="address"><span className="address1">{key[0].substring(0,key[0].length/2)}</span><span className="address2">{key[0].substring(key[0].length/2)}</span></span>} </span>
-                        <Tooltip title="Redeem collaterized user's tokens from tickets' rollup">
-                        <Button onClick={(e)=>handlePendingWithdraw(e,key[0],val,tokenType)} startIcon={<AddShoppingCartOutlined/>}></Button>
-                        </Tooltip>
-                        </div>
-                    }
-                    ):""}
+                { Object.keys(TOKEN_TYPE).map((key)  => 
+                    <MenuItem key={key} value={key}>
+                    <Chip sx={{border:"none"}} variant="outlined"
+                    avatar={<Fragment><img height="24px" src={key+".png"}/>
+                    <img height="24px" src={"ticket.png"}/> </Fragment>}
+                    label={key}
+                    />
+                    </MenuItem>
+                    ) }</Select>
                     
-                    
-                    {handlePendingDeposit && contractStorage.faPendingDeposits ?Array.from(contractStorage.faPendingDeposits.entries()).map(( [key,val]: [[string,string],ContractFAStorage]) => 
-                        {let l2Address : string = val.l2Type.l2_DEKU?val.l2Type.l2_DEKU : val.l2Type.l2_TORU;
-                            let tokenType : string = tokenBytes.get(TOKEN_TYPE.XTZ) == key[1]? TOKEN_TYPE.XTZ : tokenBytes.get(TOKEN_TYPE.CTEZ) == key[1] ?  TOKEN_TYPE.CTEZ : tokenBytes.get(TOKEN_TYPE.KUSD) == key[1] ?  TOKEN_TYPE.KUSD : tokenBytes.get(TOKEN_TYPE.UUSD) == key[1] ?  TOKEN_TYPE.UUSD : TOKEN_TYPE.EURL ;
-                            
-                            return <div key={key[0]+key[1]+val.type}>   
-                            
-                            <Badge  max={999999999999999999}
-                            badgeContent={val.amountToTransfer.toNumber()}         
-                            color="primary">
-                            <Avatar component="span" src={tokenType+".png"} />
-                            <Avatar variant="square" src="ticket.png" />
-                            </Badge>
-                            <span> for {<span className="address"><span className="address1">{l2Address.substring(0,l2Address.length/2)}</span><span className="address2">{l2Address.substring(l2Address.length/2)}</span></span>} </span>
-                            
-                            
-                            <Tooltip title="Collaterize user's tokens and swap to real tickets for rollup">
-                            <Button onClick={(e)=>handlePendingDeposit(e,key[0],val,tokenType)} startIcon={<AddShoppingCartOutlined/>}></Button>
-                            </Tooltip>
-                            </div>
-                        }
-                        ):""}
-                        
-                        
-                        
-                        </AccordionDetails>
-                        </Accordion>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        :""
-                    }
-                    
-                    
-                    
-                    
+                    </Fragment>}
+                    />
                     </Fragment>
+                    :""
+                }
+                
+                
+                {contractStorage?.treasuryAddress == userAddress?
                     
-                    : rollup instanceof RollupCHUSAI ? 
-                    <Fragment>
+                    
                     <Accordion>
                     <AccordionSummary
                     expandIcon={<UnfoldMoreOutlined />}
                     aria-controls="panel1a-content"
                     id="panel1a-header"
                     >
-                    <Typography>Rollup Details</Typography>
+                    <Typography>Pending operations</Typography>
                     </AccordionSummary>
                     <AccordionDetails>
-                    <TableContainer component={Paper}><Table><TableBody>
-                    <TableRow><TableCell>rollup_level </TableCell><TableCell>{rollup.rollup_level.toNumber()}</TableCell></TableRow >
-                    <TableRow><TableCell>messages </TableCell><TableCell>{rollup.messages.toJSON()}</TableCell></TableRow >
-                    <TableRow><TableCell>fixed_ticket_key.mint_address </TableCell><TableCell>{rollup.fixed_ticket_key.mint_address}</TableCell></TableRow>
-                    <TableRow><TableCell>fixed_ticket_key.payload</TableCell><TableCell>{rollup.fixed_ticket_key.payload}</TableCell></TableRow >
-                    </TableBody></Table></TableContainer> 
                     
-                    </AccordionDetails>
-                    </Accordion>
+                    {handlePendingWithdraw && contractStorage.faPendingWithdrawals?  Array.from(contractStorage.faPendingWithdrawals.entries()).map(( [key,val]: [[string,string],ContractFAStorage]) => 
+                        {
+                            let tokenType : string = tokenBytes.get(TOKEN_TYPE.XTZ) == key[1]? TOKEN_TYPE.XTZ : tokenBytes.get(TOKEN_TYPE.CTEZ) == key[1] ?  TOKEN_TYPE.CTEZ : tokenBytes.get(TOKEN_TYPE.KUSD) == key[1] ?  TOKEN_TYPE.KUSD : tokenBytes.get(TOKEN_TYPE.UUSD) == key[1] ?  TOKEN_TYPE.UUSD : TOKEN_TYPE.EURL ;
+                            
+                            return <div key={key[0]+key[1]+val.type}>  
+                            <Badge  max={999999999999999999}
+                            badgeContent={val.amountToTransfer.toNumber()}         
+                            color="primary">
+                            <Avatar component="span" src={tokenType+".png"} />
+                            <Avatar variant="square" src="ticket.png" />
+                            </Badge>
+                            <span> for {<span className="address"><span className="address1">{key[0].substring(0,key[0].length/2)}</span><span className="address2">{key[0].substring(key[0].length/2)}</span></span>} </span>
+                            <Tooltip title="Redeem collaterized user's tokens from tickets' rollup">
+                            <Button onClick={(e)=>handlePendingWithdraw(e,key[0],val,tokenType)} startIcon={<AddShoppingCartOutlined/>}></Button>
+                            </Tooltip>
+                            </div>
+                        }
+                        ):""}
+                        
+                        
+                        {handlePendingDeposit && contractStorage.faPendingDeposits ?Array.from(contractStorage.faPendingDeposits.entries()).map(( [key,val]: [[string,string],ContractFAStorage]) => 
+                            {let l2Address : string = val.l2Type.l2_DEKU?val.l2Type.l2_DEKU : val.l2Type.l2_TORU;
+                                let tokenType : string = tokenBytes.get(TOKEN_TYPE.XTZ) == key[1]? TOKEN_TYPE.XTZ : tokenBytes.get(TOKEN_TYPE.CTEZ) == key[1] ?  TOKEN_TYPE.CTEZ : tokenBytes.get(TOKEN_TYPE.KUSD) == key[1] ?  TOKEN_TYPE.KUSD : tokenBytes.get(TOKEN_TYPE.UUSD) == key[1] ?  TOKEN_TYPE.UUSD : TOKEN_TYPE.EURL ;
+                                
+                                return <div key={key[0]+key[1]+val.type}>   
+                                
+                                <Badge  max={999999999999999999}
+                                badgeContent={val.amountToTransfer.toNumber()}         
+                                color="primary">
+                                <Avatar component="span" src={tokenType+".png"} />
+                                <Avatar variant="square" src="ticket.png" />
+                                </Badge>
+                                <span> for {<span className="address"><span className="address1">{l2Address.substring(0,l2Address.length/2)}</span><span className="address2">{l2Address.substring(l2Address.length/2)}</span></span>} </span>
+                                
+                                
+                                <Tooltip title="Collaterize user's tokens and swap to real tickets for rollup">
+                                <Button onClick={(e)=>handlePendingDeposit(e,key[0],val,tokenType)} startIcon={<AddShoppingCartOutlined/>}></Button>
+                                </Tooltip>
+                                </div>
+                            }
+                            ):""}
+                            
+                            
+                            
+                            </AccordionDetails>
+                            </Accordion>
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            :""
+                        }
+                        
+                        
+                        
+                        
+                        </Fragment>
+                        
+                        : rollup instanceof RollupCHUSAI ? 
+                        <Fragment>
+                        <Accordion>
+                        <AccordionSummary
+                        expandIcon={<UnfoldMoreOutlined />}
+                        aria-controls="panel1a-content"
+                        id="panel1a-header"
+                        >
+                        <Typography>Rollup Details</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                        <TableContainer component={Paper}><Table><TableBody>
+                        <TableRow><TableCell>rollup_level </TableCell><TableCell>{rollup.rollup_level.toNumber()}</TableCell></TableRow >
+                        <TableRow><TableCell>messages </TableCell><TableCell>{rollup.messages.toJSON()}</TableCell></TableRow >
+                        <TableRow><TableCell>fixed_ticket_key.mint_address </TableCell><TableCell>{rollup.fixed_ticket_key.mint_address}</TableCell></TableRow>
+                        <TableRow><TableCell>fixed_ticket_key.payload</TableCell><TableCell>{rollup.fixed_ticket_key.payload}</TableCell></TableRow >
+                        </TableBody></Table></TableContainer> 
+                        
+                        </AccordionDetails>
+                        </Accordion>
+                        
+                        
+                        
+                        <Accordion defaultExpanded>
+                        <AccordionSummary
+                        expandIcon={<UnfoldMoreOutlined />}
+                        aria-controls="panel1a-content"
+                        id="panel1a-header"
+                        >
+                        <Typography>Vault</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails >
+                        
+                        <FormControl fullWidth>
+                        <InputLabel id="demo-simple-select-label">Select ticket</InputLabel>
+                        <Select
+                        labelId="demo-simple-select-label"
+                        id="demo-simple-select"
+                        defaultValue={TOKEN_TYPE.XTZ}
+                        value={tokenType}
+                        label="token type"
+                        >
+                        
+                        <MenuItem key={TOKEN_TYPE.XTZ} value={TOKEN_TYPE.XTZ}>
+                        <Badge max={999999999999999999}
+                        badgeContent={rollup.ticket?.amount.toNumber()}          
+                        
+                        color="primary">
+                        <Avatar component="span" src={TOKEN_TYPE.XTZ+".png"}></Avatar>
+                        <Avatar variant="square" src="ticket.png" />
+                        </Badge>
+                        </MenuItem>
+                        
+                        
+                        </Select>
+                        
+                        </FormControl>
+                        
+                        </AccordionDetails>
+                        </Accordion>
+                        
+                        </Fragment>
+                        
+                        
+                        : "No rollup info ..." }
+                        </Stack>
+                        
+                        {!isDirectionDeposit ?<div style={{height:"70px"}}></div>:""}
+                        
+                        
+                        </Grid>
+                        
+                        
+                        </Grid>
+                        
+                        
+                        
+                        );
+                    };
                     
-                    
-                    
-                    <Accordion defaultExpanded>
-                    <AccordionSummary
-                    expandIcon={<UnfoldMoreOutlined />}
-                    aria-controls="panel1a-content"
-                    id="panel1a-header"
-                    >
-                    <Typography>Vault</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails >
-                    
-                    <FormControl fullWidth>
-                    <InputLabel id="demo-simple-select-label">Select ticket</InputLabel>
-                    <Select
-                    labelId="demo-simple-select-label"
-                    id="demo-simple-select"
-                    defaultValue={TOKEN_TYPE.XTZ}
-                    value={tokenType}
-                    label="token type"
-                    >
-                    
-                    <MenuItem key={TOKEN_TYPE.XTZ} value={TOKEN_TYPE.XTZ}>
-                    <Badge max={999999999999999999}
-                    badgeContent={rollup.ticket?.amount.toNumber()}          
-                    
-                    color="primary">
-                    <Avatar component="span" src={TOKEN_TYPE.XTZ+".png"}></Avatar>
-                    <Avatar variant="square" src="ticket.png" />
-                    </Badge>
-                    </MenuItem>
-                    
-                    
-                    </Select>
-                    
-                    </FormControl>
-                    
-                    
-                    
-                    
-                    
-                    </AccordionDetails>
-                    </Accordion>
-                    
-                    </Fragment>
-                    
-                    
-                    : "No rollup info ..." }
-                    </Stack>
-                    </Grid>
-                    
-                    
-                    </Grid>
-                    
-                    
-                    
-                    );
-                };
-                
-                export default forwardRef(RollupBox);
+                    export default forwardRef(RollupBox);

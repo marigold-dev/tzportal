@@ -40,12 +40,12 @@ const ConnectButton = ({
     accounts,
     hideAfterConnect
 }: ButtonProps): JSX.Element => {
-
+    
     const setL1AccountAsActive = async() => {
         const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU}); 
         setActiveAccount(l1Account);
     }
-
+    
     const connectWallet = async (): Promise<void> => {
         try {
             await wallet.requestPermissions({
@@ -64,27 +64,28 @@ const ConnectButton = ({
             console.log(error);
         }
     };
-
+    
     return (<Fragment>
         {!userAddress || userAddress === ""?
-          <Stack direction="row" alignContent="center" alignItems="center">
-          <img src="XTZ_white.png" height={24}/>
-            <Button variant="contained" onClick={connectWallet}>
-               Connect Tezos wallet
-            </Button>
-            </Stack>
-            : !hideAfterConnect? <Chip  
-            style={{
-                marginTop: "20px", marginRight: "20px",
-                opacity: (activeAccount?.address == userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU?1:0.38)}}
+        <Stack direction="row" alignContent="center" alignItems="center">
+        <img src="XTZ_white.png" height={24}/>
+        <Button variant="contained" onClick={connectWallet}>
+        Connect Tezos wallet
+        </Button>
+        </Stack>
+        : !hideAfterConnect? <Chip  
+        style={{
+            marginTop: "20px", marginRight: "20px",
+            opacity: (activeAccount?.address == userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU?1:0.38)}}
             onClick={()=>setL1AccountAsActive()}  avatar={<Avatar src="XTZ_white.png" />}
-   color="primary"      onDelete={disconnectWallet}     label={userAddress} deleteIcon={<LogoutOutlined />}/>
-:""
-}
-         </Fragment>
-    );
-};
-
-export default ConnectButton;
-
-
+            color="primary"      onDelete={disconnectWallet}     label={userAddress} deleteIcon={<LogoutOutlined />}/>
+            :""
+        }
+        </Fragment>
+        );
+    };
+    
+    export default ConnectButton;
+    
+    
+    

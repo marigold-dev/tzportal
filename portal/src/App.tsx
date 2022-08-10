@@ -229,6 +229,7 @@ return (
     <TransferL2 />
     :
     ( userAddress && !userL2Address )? 
+    
     <ClaimL1 
     TezosL2={TezosL2}
     rollupType={rollupType}

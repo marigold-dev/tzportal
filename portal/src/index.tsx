@@ -110,6 +110,13 @@ const themeLight = createTheme({
         disableUnderline : true
       }
      
+    },
+    MuiInput : {
+      styleOverrides : {
+        root : {
+          "&:before": {borderBottom : 0}
+        }
+      }
     }
 },
 palette: {
