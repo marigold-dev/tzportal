@@ -202,7 +202,7 @@ return (
   
   </Select>
   
-  <img src="icon_colored.png" height="80px" style={{position: "absolute",left: 0,marginLeft: "50px"}}/>
+  <img src="icon.png" height="80px" style={{position: "absolute",left: 0,marginLeft: "50px"}}/>
   
   </Stack>
   
