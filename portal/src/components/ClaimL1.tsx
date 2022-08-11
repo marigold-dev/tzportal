@@ -1,25 +1,17 @@
-import React, { useState, useEffect, MouseEvent, Fragment, useRef, SetStateAction, Dispatch } from "react";
-import { BigMapAbstraction, compose, Contract, OpKind, TezosToolkit, WalletContract, WalletOperationBatch, WalletParamsWithKind } from "@taquito/taquito";
-import { BeaconWallet } from "@taquito/beacon-wallet";
+import { Backdrop, CircularProgress, Grid, InputAdornment, keyframes, OutlinedInput, Stack, TextField } from "@mui/material";
 import Button from "@mui/material/Button";
-import { Avatar, Backdrop, Badge, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, IconButton, InputAdornment, InputLabel, ListItem, MenuItem, OutlinedInput, Paper, Popover, Select, SelectChangeEvent, Stack, Table, TableBody, TableCell, keyframes,TableContainer, TableRow, TextField, Tooltip, useMediaQuery, useTheme } from "@mui/material";
-import { AccountBalanceWallet, AccountCircle, AddShoppingCartOutlined, ArrowDropDown, CameraRoll, SwapCallsRounded, SwapHorizontalCircleOutlined, SwapHorizOutlined, SwapHorizRounded } from "@mui/icons-material";
-import { useSnackbar } from "notistack";
-import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
-import {  ContractFAParameters, ContractFAStorage, ContractParameters, ContractStorage, ContractXTZParameters } from "./TicketerContractUtils";
-import {  getBytes, getTokenBytes, LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
-import { FA12Contract } from "./fa12Contract";
-import BigNumber from 'bignumber.js';
-import {  styled } from "@mui/system";
-import { OperationContentsAndResultTransaction , OperationResultTransaction} from "@taquito/rpc";
-import UserWallet from "./UserWallet";
-import RollupBox, { RollupBoxComponentType } from "./RollupBox";
-import { TokenMetadata, tzip12, Tzip12ContractAbstraction } from "@taquito/tzip12";
+import { BigMapAbstraction, compose, Contract, TezosToolkit } from "@taquito/taquito";
+import { tzip12 } from "@taquito/tzip12";
 import { tzip16 } from "@taquito/tzip16";
-import { FA2Contract } from "./fa2Contract";
-import { AccountInfo, NetworkType} from "@airgap/beacon-types";
-import { RollupParameters, RollupParametersDEKU, RollupParametersTORU } from "./RollupParameters";
+import BigNumber from 'bignumber.js';
+import { useSnackbar } from "notistack";
+import { MouseEvent, useEffect, useRef, useState } from "react";
 import DEKUClient, { DEKUWithdrawProof } from "./DEKUClient";
+import { FA12Contract } from "./fa12Contract";
+import { FA2Contract } from "./fa2Contract";
+import { RollupParameters, RollupParametersDEKU, RollupParametersTORU } from "./RollupParameters";
+import { getBytes, ROLLUP_TYPE, TOKEN_TYPE } from "./TezosUtils";
+import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 
 
 
@@ -189,7 +181,7 @@ const ClaimL1 = ({
         
         useEffect(() => { (async () => {
             refreshBalance();
-            setInterval(refreshBalance, 8*1000); //refresh async L1 balances 
+            setInterval(refreshBalance, 15*1000); //refresh async L1 balances 
         })();
     }, []);
     
@@ -214,8 +206,6 @@ const ClaimL1 = ({
         width="auto"
         sx={{ margin : "20vh 20vw", padding : "2em"}}
         bgcolor="secondary.main">
-        
-        
         
         <Backdrop
         sx={{ color: '#fff', zIndex: (theme : any) => theme.zIndex.drawer + 1 }}

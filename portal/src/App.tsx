@@ -22,7 +22,7 @@ import { ArchiveOutlined, ArrowDropDown, Badge, CameraRoll, SettingsBackupRestor
 import { Button, CardHeader, Chip, Grid, makeStyles, Paper, Popover, Select, SelectChangeEvent, Stack } from '@mui/material';
 import { AccountInfo, NetworkType} from "@airgap/beacon-types";
 import { Tzip12Module } from "@taquito/tzip12";
-import { LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE } from './components/TezosUtils';
+import { getTokenBytes, LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from './components/TezosUtils';
 import styled from '@emotion/styled';
 import ConnectButtonL2 from './components/ConnectWalletL2';
 import { BeaconWallet } from '@taquito/beacon-wallet';
@@ -59,6 +59,9 @@ function App() {
   
   
   const [activePage, setActivePage] = useState<PAGES>(PAGES.WELCOME);
+  
+  const [tokenBytes,setTokenBytes] = useState<Map<TOKEN_TYPE,string>>(new Map<TOKEN_TYPE,string>());
+  
   
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
@@ -119,11 +122,29 @@ function App() {
   //just needed for the selectRollupPopup selection
   const HoverBox = styled(Box)`&:hover {background-color: #a9a9a9;}`;
   
+  async function refreshRollup() {
+    switch(rollupType){
+      case ROLLUP_TYPE.TORU : setRollup(await TezosUtils.fetchRollupTORU(Tezos.rpc.getRpcUrl(),rollupType.address));break;
+      case ROLLUP_TYPE.DEKU : setRollup(await TezosUtils.fetchRollupDEKU(Tezos,rollupType.address));break;
+      case ROLLUP_TYPE.CHUSAI : {
+        setRollup(await TezosUtils.fetchRollupCHUSAI(Tezos,rollupType.address));break;
+      }
+    }
+  }
   
   React.useEffect(() => { (async () => {
+    const tokenBytes = await getTokenBytes();//need to call this first and wait for init
+    setTokenBytes(tokenBytes); 
     await createWallet();
   })();
 }, []);
+
+
+React.useEffect(() => {
+  refreshRollup();
+}, [rollupType]);
+
+
 
 
 return (
@@ -196,168 +217,175 @@ return (
   variant="outlined"
   />
   </MenuItem>
-  */}
+*/}
+
+
+
+</Select>
+
+<img src="icon.png" height="80px" style={{position: "absolute",left: 0,marginLeft: "50px"}}/>
+
+</Stack>
+
+
+
+{
+  (userAddress && userL2Address)? 
+  <DepositWithdrawV2 
+  Tezos={Tezos}
+  wallet={wallet!}
+  TezosL2={TezosL2}
+  userAddress={userAddress}
+  userL2Address={userL2Address}
+  rollupType={rollupType}
+  setRollupType={setRollupType}
+  rollup={rollup}
+  setRollup={setRollup}
+  activeAccount={activeAccount}
+  setActiveAccount={setActiveAccount}
+  accounts={accounts}
+  tokenBytes={tokenBytes}
+  />
+  :
+  ( !userAddress && userL2Address )? 
+  <TransferL2 
+  TezosL2 = {TezosL2}
+  userL2Address = {userL2Address}
+  tokenBytes = {tokenBytes}
+  rollupType ={rollupType}
+  rollup ={rollup}
+  />
+  :
+  ( userAddress && !userL2Address )? 
+  
+  <ClaimL1 
+  TezosL2={TezosL2}
+  rollupType={rollupType}
+  userAddress={userAddress}
+  />
+  : 
   
   
   
-  </Select>
   
-  <img src="icon.png" height="80px" style={{position: "absolute",left: 0,marginLeft: "50px"}}/>
+  
+  
+  
+  <Grid container  borderRadius={5}
+  spacing={2}
+  color="primary.main" 
+  width="auto"
+  sx={{ margin : "20vh 20vw", padding : "2em"}}
+  bgcolor="secondary.main">
+  
+  <Grid item xs={3}>
+  <Stack height="100%"   divider={<Divider color='white' orientation="horizontal" flexItem />}
+  alignContent="space-between" alignItems="center" spacing={1} >
+  <span style={{fontFamily:"Chilanka", height:"50%", paddingTop:"25%" }}> Claim your L1 Withdraw &rarr; </span>
+  <span style={{fontFamily:"Chilanka", height:"50%", paddingTop:"25%" }}> Do L2 Transfer &rarr;</span>
+  </Stack>
+  
+  </Grid >
+  <Grid item xs={6}>
+  
+  <Stack spacing={2} >
+  <div style={{padding:"1em", backgroundColor:"var(--tertiary-color)"}} >
+  
+  
+  
+  <ConnectButton
+  Tezos={Tezos}
+  setWallet={setWallet}
+  userAddress={userAddress}
+  setUserAddress={setUserAddress}
+  wallet={wallet!}
+  disconnectWallet={disconnectWallet}
+  activeAccount={activeAccount!}
+  setActiveAccount={setActiveAccount}
+  accounts={accounts}
+  hideAfterConnect={true}
+  />
+  
+  </div>
+  
+  
+  <div style={{padding:"1em", backgroundColor:"var(--tertiary-color)"}} >
+  
+  
+  
+  <ConnectButtonL2 
+  userL2Address={userL2Address}
+  setUserL2Address={setUserL2Address}
+  TezosL2={TezosL2!}
+  activeAccount={activeAccount!}
+  setActiveAccount={setActiveAccount}
+  accounts={accounts}
+  disconnectWalletL2={disconnectWalletL2}
+  hideAfterConnect={true}
+  />
+  
+  </div>
+  
+  </Stack>
+  
+  </Grid>
+  <Grid item xs={3}>
+  <Stack direction="row" height="100%" style={{fontFamily:"Chilanka" }}> 
+  
+  <span style={{width: "min-content"}}>
+  <br /><br />&larr;
+  <br /><br /><br /><br /><br /><br /><br/>
+  &larr;
+  </span>
+  <Divider color='white' sx={{borderWidth:"1px"}} orientation="vertical" flexItem />
+  <span style={{paddingTop:"40%",paddingLeft:"1em"}}>
+  Do Deposit or Withdraw
+  </span>
   
   </Stack>
   
   
   
-  {
-    (userAddress && userL2Address)? 
-    <DepositWithdrawV2 
-    Tezos={Tezos}
-    wallet={wallet!}
-    TezosL2={TezosL2}
-    userAddress={userAddress}
-    userL2Address={userL2Address}
-    rollupType={rollupType}
-    setRollupType={setRollupType}
-    rollup={rollup}
-    setRollup={setRollup}
-    activeAccount={activeAccount}
-    setActiveAccount={setActiveAccount}
-    accounts={accounts}
-    />
-    :
-    ( !userAddress && userL2Address )? 
-    <TransferL2 />
-    :
-    ( userAddress && !userL2Address )? 
-    
-    <ClaimL1 
-    TezosL2={TezosL2}
-    rollupType={rollupType}
-    userAddress={userAddress}
-    />
-    : 
-    
-    
-    
-    
-    
-    
-
-<Grid container  borderRadius={5}
-    spacing={2}
-    color="primary.main" 
-    width="auto"
-    sx={{ margin : "20vh 20vw", padding : "2em"}}
-    bgcolor="secondary.main">
-    
-    <Grid item xs={3}>
-    <Stack height="100%"   divider={<Divider color='white' orientation="horizontal" flexItem />}
- alignContent="space-between" alignItems="center" spacing={1} >
-    <span style={{fontFamily:"Chilanka", height:"50%", paddingTop:"25%" }}> Claim your L1 Withdraw &rarr; </span>
-    <span style={{fontFamily:"Chilanka", height:"50%", paddingTop:"25%" }}> Do L2 Transfer &rarr;</span>
-    </Stack>
-   
-    </Grid >
-    <Grid item xs={6}>
-    
-    <Stack spacing={2} >
-    <div style={{padding:"1em", backgroundColor:"var(--tertiary-color)"}} >
-    
-    
-    
-    <ConnectButton
-    Tezos={Tezos}
-    setWallet={setWallet}
-    userAddress={userAddress}
-    setUserAddress={setUserAddress}
-    wallet={wallet!}
-    disconnectWallet={disconnectWallet}
-    activeAccount={activeAccount!}
-    setActiveAccount={setActiveAccount}
-    accounts={accounts}
-    hideAfterConnect={true}
-    />
-    
-    </div>
-    
-    
-    <div style={{padding:"1em", backgroundColor:"var(--tertiary-color)"}} >
-    
-    
-    
-    <ConnectButtonL2 
-    userL2Address={userL2Address}
-    setUserL2Address={setUserL2Address}
-    TezosL2={TezosL2!}
-    activeAccount={activeAccount!}
-    setActiveAccount={setActiveAccount}
-    accounts={accounts}
-    disconnectWalletL2={disconnectWalletL2}
-    hideAfterConnect={true}
-    />
-    
-    </div>
-
-    </Stack>
-
-    </Grid>
-    <Grid item xs={3}>
-    <Stack direction="row" height="100%" style={{fontFamily:"Chilanka" }}> 
-    
-    <span style={{width: "min-content"}}>
-    <br /><br />&larr;
-    <br /><br /><br /><br /><br /><br /><br/>
-    &larr;
-    </span>
-    <Divider color='white' sx={{borderWidth:"1px"}} orientation="vertical" flexItem />
-    <span style={{paddingTop:"40%",paddingLeft:"1em"}}>
-    Do Deposit or Withdraw
-    </span>
-    
-    </Stack>
-
-    
-
-    </Grid>
-    
-    </Grid>
-
-    
-   
-    
-    
-    
-    
-    
-  }
-  
-  <Grid   container
-  direction="row"
-  justifyContent="space-between"
-  alignItems="center" id="footer" style={{backgroundColor:"#0E1E2E", position:"absolute",
-  left:0,bottom:0,right:0, height:"80px" , paddingLeft:"50px" , paddingRight:"50px"}}>
-  
-  <a href="https://www.marigold.dev/project/deku-sidechain" target="_blank"><img src="deku_logo_white.png" height={60}/></a>
-  <a href="https://tezos.gitlab.io/alpha/transaction_rollups.html" target="_blank"><img src="toru.png" height={60}/></a>
-  
-  <Divider orientation='vertical'  color='white' sx={{height:"70%"}}/>
-  <a href="https://tzstamp.io/" target="_blank"><img src="tzstamp.png" height={60}/></a>
-  <a href="https://faucet.marigold.dev/" target="_blank"><img src="faucet.png" height={60}/></a>
-  <a href="https://tzvote.marigold.dev/" target="_blank"><img src="tzvote.png" height={60}/></a>
-  
-  <Divider orientation='vertical'  color='white' sx={{height:"70%"}}/>
-  
-  
-  
-  <a href="https://marigold.dev/" target="_blank" ><Typography variant='h5' color="primary" >Powered by Marigold</Typography></a>
+  </Grid>
   
   </Grid>
   
-  </div>
   
   
   
-  );
+  
+  
+  
+  
+}
+
+<Grid   container
+direction="row"
+justifyContent="space-between"
+alignItems="center" id="footer" style={{backgroundColor:"#0E1E2E", position:"absolute",
+left:0,bottom:0,right:0, height:"80px" , paddingLeft:"50px" , paddingRight:"50px"}}>
+
+<a href="https://www.marigold.dev/project/deku-sidechain" target="_blank"><img src="deku_logo_white.png" height={60}/></a>
+<a href="https://tezos.gitlab.io/alpha/transaction_rollups.html" target="_blank"><img src="toru.png" height={60}/></a>
+
+<Divider orientation='vertical'  color='white' sx={{height:"70%"}}/>
+<a href="https://tzstamp.io/" target="_blank"><img src="tzstamp.png" height={60}/></a>
+<a href="https://faucet.marigold.dev/" target="_blank"><img src="faucet.png" height={60}/></a>
+<a href="https://tzvote.marigold.dev/" target="_blank"><img src="tzvote.png" height={60}/></a>
+
+<Divider orientation='vertical'  color='white' sx={{height:"70%"}}/>
+
+
+
+<a href="https://marigold.dev/" target="_blank" ><Typography variant='h5' color="primary" >Powered by Marigold</Typography></a>
+
+</Grid>
+
+</div>
+
+
+
+);
 }
 
 export default App;

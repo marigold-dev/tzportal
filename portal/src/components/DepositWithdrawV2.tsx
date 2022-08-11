@@ -1,25 +1,23 @@
-import React, { useState, useEffect, MouseEvent, Fragment, useRef, SetStateAction, Dispatch } from "react";
-import { BigMapAbstraction, compose, Contract, OpKind, TezosToolkit, WalletContract, WalletOperationBatch, WalletParamsWithKind } from "@taquito/taquito";
-import { BeaconWallet } from "@taquito/beacon-wallet";
+import { AccountInfo } from "@airgap/beacon-types";
+import { AddShoppingCartOutlined, ChangeCircle, UnfoldMoreOutlined } from "@mui/icons-material";
+import { Accordion, AccordionDetails, AccordionSummary, Avatar, Backdrop, Badge, Box, CircularProgress, Divider, Grid, Stack, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import Button from "@mui/material/Button";
-import { Avatar, Backdrop, Badge, Box, Card, CardContent, CardHeader, Chip, CircularProgress, Divider, Grid, IconButton, InputAdornment, InputLabel, ListItem, MenuItem, Paper, Popover, Select, SelectChangeEvent, Stack, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip, useMediaQuery, useTheme } from "@mui/material";
-import { AccountBalanceWallet, AccountCircle, AddShoppingCartOutlined, ArrowDropDown, CameraRoll, ChangeCircle, ChangeCircleOutlined, SwapCallsRounded, SwapHorizontalCircleOutlined, SwapHorizOutlined, SwapHorizRounded } from "@mui/icons-material";
-import { useSnackbar } from "notistack";
-import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
-import {  ContractFAParameters, ContractFAStorage, ContractParameters, ContractStorage, ContractXTZParameters } from "./TicketerContractUtils";
-import {  getBytes, getTokenBytes, LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
-import { FA12Contract } from "./fa12Contract";
-import BigNumber from 'bignumber.js';
-import {  styled } from "@mui/system";
-import { OperationContentsAndResultTransaction , OperationResultTransaction} from "@taquito/rpc";
-import UserWallet, { UserWalletComponentType } from "./UserWallet";
-import RollupBox, { RollupBoxComponentType } from "./RollupBox";
-import { TokenMetadata, tzip12, Tzip12ContractAbstraction } from "@taquito/tzip12";
+import { BeaconWallet } from "@taquito/beacon-wallet";
+import { OperationContentsAndResultTransaction, OperationResultTransaction } from "@taquito/rpc";
+import { BigMapAbstraction, compose, OpKind, TezosToolkit, WalletContract, WalletOperationBatch, WalletParamsWithKind } from "@taquito/taquito";
+import { tzip12 } from "@taquito/tzip12";
 import { tzip16 } from "@taquito/tzip16";
+import BigNumber from 'bignumber.js';
+import { useSnackbar } from "notistack";
+import { Dispatch, MouseEvent, SetStateAction, useEffect, useRef, useState } from "react";
+import DEKUClient from "./DEKUClient";
+import { FA12Contract } from "./fa12Contract";
 import { FA2Contract } from "./fa2Contract";
-import { AccountInfo, NetworkType} from "@airgap/beacon-types";
-import { RollupParameters, RollupParametersDEKU, RollupParametersTORU } from "./RollupParameters";
-import DEKUClient, { DEKUWithdrawProof } from "./DEKUClient";
+import RollupBox, { RollupBoxComponentType } from "./RollupBox";
+import { LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TOKEN_TYPE } from "./TezosUtils";
+import { ContractFAParameters, ContractFAStorage, ContractParameters, ContractStorage, ContractXTZParameters } from "./TicketerContractUtils";
+import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
+import UserWallet, { UserWalletComponentType } from "./UserWallet";
 
 
 
@@ -36,6 +34,8 @@ type DepositWithdrawV2Props = {
     activeAccount : AccountInfo|undefined;
     setActiveAccount : Dispatch<SetStateAction<AccountInfo|undefined>>;
     accounts : AccountInfo[];
+    tokenBytes : Map<TOKEN_TYPE,string>;
+    
 };
 
 const DepositWithdrawV2 = ({
@@ -50,7 +50,9 @@ const DepositWithdrawV2 = ({
     setRollup,
     activeAccount,
     setActiveAccount,
-    accounts
+    accounts,
+    tokenBytes 
+    
 }: DepositWithdrawV2Props): JSX.Element => {
     
     const dekuClient = new DEKUClient(process.env["REACT_APP_DEKU_NODE"]!,process.env["REACT_APP_CONTRACT"]!,TezosL2);
@@ -74,8 +76,6 @@ const DepositWithdrawV2 = ({
     const [contractStorage, setContractStorage] = useState<ContractStorage>();
     const [contract, setContract] =  useState<WalletContract>();
     
-    const [tokenBytes,setTokenBytes] = useState<Map<TOKEN_TYPE,string>>(new Map<TOKEN_TYPE,string>());
-    
     //TEZOS OPERATIONS
     const [tezosLoading, setTezosLoading]  = useState(false);
     
@@ -88,7 +88,7 @@ const DepositWithdrawV2 = ({
     const isDirectionDeposit = () => { 
         return activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU
     }
-
+    
     const switchActiveAccount = async()=> {
         const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU}); 
         const l2Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU}); 
@@ -153,7 +153,7 @@ const DepositWithdrawV2 = ({
         console.log("All balances initialized",balance);
         
         userWalletRef?.current?.setShouldBounce(false);        
-                
+        
         if(!oldBalance.current){ //first time, we just record the value
             oldBalance.current = newCurrentBalance;
         }
@@ -172,10 +172,6 @@ const DepositWithdrawV2 = ({
     const refreshTicketBalance = async() => {
         
         //Note : tokenTypeRef.current is this ref instead of tokenType to get last current value to track
-        
-        
-        const tokenBytes = await getTokenBytes();//need to call this first and wait for init
-        setTokenBytes(tokenBytes); 
         
         let newCurrentBalance  : BigNumber = new BigNumber(0) ;
         
@@ -212,7 +208,7 @@ const DepositWithdrawV2 = ({
             case TOKEN_TYPE.UUSD : newCurrentBalance=balance.get(TOKEN_TYPE.UUSD)!;break;
             case TOKEN_TYPE.EURL : newCurrentBalance=balance.get(TOKEN_TYPE.EURL)!;break;
         }
-
+        
         setUserTicketBalance(balance);
         console.log("All ticket balances initialized",balance);
         
@@ -247,13 +243,11 @@ const DepositWithdrawV2 = ({
     }
     
     useEffect(() => { (async () => {
-        const tokenBytes = await getTokenBytes();//need to call this first and wait for init
-        setTokenBytes(tokenBytes); 
         refreshContract();
         refreshBalance();
         refreshTicketBalance();
-        setInterval(refreshBalance, 8*1000); //refresh async L1 balances 
-        setInterval(refreshTicketBalance, 8*1000); //refresh async L2 balances 
+        setInterval(refreshBalance, 15*1000); //refresh async L1 balances 
+        setInterval(refreshTicketBalance, 15*1000); //refresh async L2 balances 
     })();
 }, []);
 
@@ -366,7 +360,6 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
         const br = await batchOp.confirmation(1);
         
         await refreshContract();
-        await rollupBoxRef!.current!.refreshRollup();
         enqueueSnackbar("Pending deposit from "+from+" has been successfully processed", {variant: "success", autoHideDuration:10000});
         
     }catch (error : any) {
@@ -382,21 +375,135 @@ const handlePendingDeposit = async (event : MouseEvent<HTMLButtonElement>,from :
     setTezosLoading(false);
 }
 
+const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : string,contractFAStorage : ContractFAStorage, ticketTokenType :string) => {
+    event.preventDefault();
+    
+    const operations : WalletParamsWithKind[]= [];
+    
+    try{
+        setTezosLoading(true);
+        
+        //1. Treasury call pending withdraw to destroy tickets
+        
+        let l2Type : LAYER2Type = contractFAStorage.l2Type.l2_TORU && contractFAStorage.l2Type.l2_TORU !== "" ?  
+        LAYER2Type.L2_TORU: contractFAStorage.l2Type.l2_DEKU && contractFAStorage.l2Type.l2_DEKU !== "" ? LAYER2Type.L2_DEKU :LAYER2Type.L2_CHUSAI ;
+        
+        const param = l2Type == LAYER2Type.L2_TORU?
+        {
+            "address": to,
+            "amountToTransfer": contractFAStorage.amountToTransfer.toNumber(),
+            "rollupAddress": contractFAStorage.rollupAddress,
+            "l2Type": l2Type,
+            "l2_TORU": contractFAStorage.l2Type.l2_TORU,
+            "faAddress": contractFAStorage.faAddress
+        }: l2Type == LAYER2Type.L2_DEKU?
+        {
+            "address": to,
+            "amountToTransfer": contractFAStorage.amountToTransfer.toNumber(),
+            "rollupAddress": contractFAStorage.rollupAddress,
+            "l2Type": l2Type,
+            "l2_DEKU": contractFAStorage.l2Type.l2_DEKU,
+            "faAddress": contractFAStorage.faAddress
+        }:
+        {
+            "address": to,
+            "amountToTransfer": contractFAStorage.amountToTransfer.toNumber(),
+            "rollupAddress": contractFAStorage.rollupAddress,
+            "l2Type": l2Type,
+            "l2_CHUSAI": contractFAStorage.l2Type.l2_CHUSAI,
+            "faAddress": contractFAStorage.faAddress
+        }
+        
+        //console.log("param",param);
+        
+        operations.push({
+            kind: OpKind.TRANSACTION,
+            ...contract!.methods.withdrawPendingDEKU(...Object.values(param)).toTransferParams()
+        })
+        
+        enqueueSnackbar("Pending withdraw for "+to+" has been successfully batched", {variant: "success", autoHideDuration:10000});
+        
+    }catch (error : any) {
+        console.table(`Error: ${JSON.stringify(error, null, 2)}`);
+        let tibe : TransactionInvalidBeaconError = new TransactionInvalidBeaconError(error);
+        enqueueSnackbar(tibe.data_message, { variant:"error" , autoHideDuration:10000});
+        return;
+    }
+    
+    
+    try{
+        setTezosLoading(true);
+        
+        //2. Treasury give back tokens
 
+        //2.a for FA1.2
+        if(ticketTokenType === TOKEN_TYPE.CTEZ || ticketTokenType === TOKEN_TYPE.KUSD){
+            let fa12Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+        
+        console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
+        
+        operations.push({
+            kind: OpKind.TRANSACTION,
+            ...fa12Contract.methods.transfer(contractStorage?.treasuryAddress,to,contractFAStorage.amountToTransfer.toNumber()).toTransferParams()
+        });
+
+        enqueueSnackbar("Treasury enqueing  "+contractFAStorage.amountToTransfer.toNumber()+" FA1.2 tokens for "+to, {variant: "success", autoHideDuration:10000});        
+
+    }
+
+        //2.b for FA2
+        console.log("ticketTokenType",ticketTokenType)
+        if(ticketTokenType === TOKEN_TYPE.UUSD || ticketTokenType === TOKEN_TYPE.EURL){
+        let fa2Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+        
+        console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
+
+        operations.push({
+            kind: OpKind.TRANSACTION,
+            ...fa2Contract.methods.transfer([
+                {
+                    "from_" : contractStorage?.treasuryAddress,
+                    "tx" : [
+                        {
+                            to_ : to,
+                            token_id : 0,
+                            quantity : contractFAStorage.amountToTransfer.toNumber()
+                        }
+                    ]
+                }
+                ,
+            ]).toTransferParams()
+        });
+        enqueueSnackbar("Treasury enqueing  "+contractFAStorage.amountToTransfer.toNumber()+" FA2 tokens for "+to, {variant: "success", autoHideDuration:10000});        
+
+    }
+
+        const batch : WalletOperationBatch = await Tezos.wallet.batch(operations);
+        const batchOp = await batch.send();
+        const br = await batchOp.confirmation(1);
+        
+        enqueueSnackbar("Treasury gave back  "+contractFAStorage.amountToTransfer.toNumber()+" tokens to "+to, {variant: "success", autoHideDuration:10000});        
+        setTezosLoading(false);
+    }catch (error : any) {
+        console.table(`Error: ${JSON.stringify(error, null, 2)}`);
+        let tibe : TransactionInvalidBeaconError = new TransactionInvalidBeaconError(error);
+        enqueueSnackbar(tibe.data_message, { variant:"error" , autoHideDuration:10000});
+        setTezosLoading(false);
+        return;
+    }finally{
+        setTezosLoading(false);
+    }  
+    
+    
+    setTezosLoading(false);
+}
 
 const handleDeposit = async (event : MouseEvent) => {
     
     event.preventDefault();
     setTezosLoading(true);
     
-    console.log("Tezos",Tezos);
-    console.log("Tezos.wallet",Tezos.wallet);
-    
-    
-    let c : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_CONTRACT"]!);
-    
-    console.log("C",c);
-    
+    let c : WalletContract = await Tezos.wallet.at(process.env["REACT_APP_CONTRACT"]!);   
     
     const operations : WalletParamsWithKind[]= [];
     
@@ -544,7 +651,6 @@ const handleDeposit = async (event : MouseEvent) => {
                         enqueueSnackbar("Store your ticket hash somewhere, you will need it later : "+ticketHash, {variant: "success", autoHideDuration:10000});
                     }
                     
-                    await rollupBoxRef!.current!.refreshRollup();
                     await refreshContract();
                 } catch (error : any) {
                     console.table(`Error: ${JSON.stringify(error, null, 2)}`);
@@ -575,7 +681,7 @@ const handleDeposit = async (event : MouseEvent) => {
                 setTezosLoading(true);
                 
                 try {
-                    const opHash = await dekuClient.withdraw(userL2Address,1,tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
+                    const opHash = await dekuClient.withdraw(userL2Address,quantity.toNumber(),tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
                     enqueueSnackbar("The proof will be available in 10s. Keep this code ( "+opHash+" ) to do a Claim on L1 with user "+userL2Address, {variant: "success", autoHideDuration:10000});
                 } catch (error : any) {
                     console.table(`Error: ${JSON.stringify(error, null, 2)}`);
@@ -639,15 +745,14 @@ const handleDeposit = async (event : MouseEvent) => {
                     ref={rollupBoxRef}
                     Tezos={Tezos}
                     userAddress={userL2Address}
+                    setUserAddress={undefined}
                     userBalance={userTicketBalance}
                     tokenBytes={tokenBytes}
                     handlePendingWithdraw={undefined}
                     handlePendingDeposit={handlePendingDeposit}
-                    contractStorage={contractStorage}
-                    setRollupType={setRollupType}
+                    handleL2Transfer={undefined}
                     rollupType={rollupType}
                     rollup={rollup}
-                    setRollup={setRollup}
                     dekuClient={dekuClient}
                     tokenType={TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]}
                     quantity={quantity}
@@ -669,68 +774,136 @@ const handleDeposit = async (event : MouseEvent) => {
                     </div>
                 }
                 
-                
-                
-                </Grid>
-                
-                <Grid item xs={12} md={1} >
-                
-                
-                
-                
-                <Divider
-                orientation= "horizontal" 
-                sx={{display:"block"}}
-                >                        <ChangeCircle sx={{transform : "scale(3.5)"}} color="primary" onClick={()=>switchActiveAccount()}/> 
-                </Divider>
-                
-                
-                
-                
-                
-                </Grid>
-                
-                {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU? 
-                    <RollupBox 
-                    ref={rollupBoxRef}
-                    Tezos={Tezos}
-                    userAddress={userL2Address}
-                    userBalance={userTicketBalance}
-                    tokenBytes={tokenBytes}
-                    handlePendingWithdraw={undefined}
-                    handlePendingDeposit={handlePendingDeposit}
-                    contractStorage={contractStorage}
-                    setRollupType={setRollupType}
-                    rollupType={rollupType}
-                    rollup={rollup}
-                    setRollup={setRollup}
-                    isDirectionDeposit={isDirectionDeposit()!}
-                    dekuClient={dekuClient}
-                    tokenType={TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]}
-                    quantity={quantity}
-                    setQuantity={setQuantity}
-                    setTokenType={setTokenType}
-                    />
-                    :
-                    <UserWallet 
-                    isDirectionDeposit={isDirectionDeposit()!}
-                    userAddress={userAddress}
-                    userBalance={userBalance} 
-                    activeAccount={activeAccount!}
-                    quantity={quantity}
-                    setQuantity={setQuantity}
-                    tokenType={tokenType}
-                    setTokenType={setTokenType}
-                    />    
-                }
-                
-                </Stack>
-                
-                </Box>
-                );
-            };
-            
-            export default DepositWithdrawV2;
-            
-            
-            
+                {contractStorage?.treasuryAddress == userAddress?
+                    
+                    
+                    <Accordion>
+                    <AccordionSummary
+                    expandIcon={<UnfoldMoreOutlined />}
+                    aria-controls="panel1a-content"
+                    id="panel1a-header"
+                    >
+                    <Typography>Pending operations</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                    
+                    {!isDirectionDeposit() && contractStorage.faPendingWithdrawals?  Array.from(contractStorage.faPendingWithdrawals.entries()).map(( [key,val]: [[string,string],ContractFAStorage]) => 
+                        {
+                            let tokenType : string = tokenBytes.get(TOKEN_TYPE.XTZ) == key[1]? TOKEN_TYPE.XTZ : tokenBytes.get(TOKEN_TYPE.CTEZ) == key[1] ?  TOKEN_TYPE.CTEZ : tokenBytes.get(TOKEN_TYPE.KUSD) == key[1] ?  TOKEN_TYPE.KUSD : tokenBytes.get(TOKEN_TYPE.UUSD) == key[1] ?  TOKEN_TYPE.UUSD : TOKEN_TYPE.EURL ;
+                            
+                            return <div key={key[0]+key[1]+val.type}>  
+                            <Badge  max={999999999999999999}
+                            badgeContent={val.amountToTransfer.toNumber()}         
+                            color="primary">
+                            <Avatar component="span" src={tokenType+".png"} />
+                            <Avatar variant="square" src="ticket.png" />
+                            </Badge>
+                            <span> for {<span className="address"><span className="address1">{key[0].substring(0,key[0].length/2)}</span><span className="address2">{key[0].substring(key[0].length/2)}</span></span>} </span>
+                            <Tooltip title="Redeem collaterized user's tokens from tickets' rollup">
+                            <Button onClick={(e)=>handlePendingWithdraw(e,key[0],val,tokenType)} startIcon={<AddShoppingCartOutlined/>}></Button>
+                            </Tooltip>
+                            </div>
+                        }
+                        ):""}
+                        
+                        
+                        {isDirectionDeposit() && contractStorage.faPendingDeposits ?Array.from(contractStorage.faPendingDeposits.entries()).map(( [key,val]: [[string,string],ContractFAStorage]) => 
+                            {let l2Address : string = val.l2Type.l2_DEKU?val.l2Type.l2_DEKU : val.l2Type.l2_TORU;
+                                let tokenType : string = tokenBytes.get(TOKEN_TYPE.XTZ) == key[1]? TOKEN_TYPE.XTZ : tokenBytes.get(TOKEN_TYPE.CTEZ) == key[1] ?  TOKEN_TYPE.CTEZ : tokenBytes.get(TOKEN_TYPE.KUSD) == key[1] ?  TOKEN_TYPE.KUSD : tokenBytes.get(TOKEN_TYPE.UUSD) == key[1] ?  TOKEN_TYPE.UUSD : TOKEN_TYPE.EURL ;
+                                
+                                return <div key={key[0]+key[1]+val.type}>   
+                                
+                                <Badge  max={999999999999999999}
+                                badgeContent={val.amountToTransfer.toNumber()}         
+                                color="primary">
+                                <Avatar component="span" src={tokenType+".png"} />
+                                <Avatar variant="square" src="ticket.png" />
+                                </Badge>
+                                <span> for {<span className="address"><span className="address1">{l2Address.substring(0,l2Address.length/2)}</span><span className="address2">{l2Address.substring(l2Address.length/2)}</span></span>} </span>
+                                
+                                
+                                <Tooltip title="Collaterize user's tokens and swap to real tickets for rollup">
+                                <Button onClick={(e)=>handlePendingDeposit(e,key[0],val,tokenType)} startIcon={<AddShoppingCartOutlined/>}></Button>
+                                </Tooltip>
+                                </div>
+                            }
+                            ):""}
+                            
+                            
+                            
+                            </AccordionDetails>
+                            </Accordion>
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            :""
+                        }
+                        
+                        
+                        
+                        </Grid>
+                        
+                        <Grid item xs={12} md={1} >
+                        
+                        
+                        
+                        
+                        <Divider
+                        orientation= "horizontal" 
+                        sx={{display:"block"}}
+                        >                        <ChangeCircle sx={{transform : "scale(3.5)"}} color="primary" onClick={()=>switchActiveAccount()}/> 
+                        </Divider>
+                        
+                        
+                        
+                        
+                        
+                        </Grid>
+                        
+                        {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier!==LAYER2Type.L2_DEKU? 
+                            <RollupBox 
+                            ref={rollupBoxRef}
+                            Tezos={Tezos}
+                            userAddress={userL2Address}
+                            setUserAddress={undefined}
+                            userBalance={userTicketBalance}
+                            tokenBytes={tokenBytes}
+                            handlePendingWithdraw={undefined}
+                            handlePendingDeposit={handlePendingDeposit}
+                            handleL2Transfer={undefined}
+                            rollupType={rollupType}
+                            rollup={rollup}
+                            isDirectionDeposit={isDirectionDeposit()!}
+                            dekuClient={dekuClient}
+                            tokenType={TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]}
+                            quantity={quantity}
+                            setQuantity={setQuantity}
+                            setTokenType={setTokenType}
+                            />
+                            :
+                            <UserWallet 
+                            isDirectionDeposit={isDirectionDeposit()!}
+                            userAddress={userAddress}
+                            userBalance={userBalance} 
+                            activeAccount={activeAccount!}
+                            quantity={quantity}
+                            setQuantity={setQuantity}
+                            tokenType={tokenType}
+                            setTokenType={setTokenType}
+                            />    
+                        }
+                        
+                        </Stack>
+                        
+                        </Box>
+                        );
+                    };
+                    
+                    export default DepositWithdrawV2;
+                    
+                    
+                    

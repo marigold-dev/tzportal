@@ -1,18 +1,16 @@
-import { Accordion, AccordionDetails, AccordionSummary, Avatar, Badge, Box, Button, Card, CardContent, CardHeader, Chip, Divider, FormControl, Grid, IconButton, Input, InputAdornment, InputLabel, keyframes, MenuItem, OutlinedInput, OutlinedInputProps, Paper, Popover, Select, SelectChangeEvent, Stack, styled, Table, TableBody, TableCell, TableContainer, TableRow, Tooltip, Typography } from "@mui/material";
-import { RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
-import { AddShoppingCartOutlined, ArrowDropDown, CameraRoll, UnfoldMoreOutlined } from "@mui/icons-material";
-import React, { Dispatch, forwardRef, Fragment, ReactComponentElement, Ref, SetStateAction, useEffect, useImperativeHandle, useState } from "react";
-import { ContractFAStorage, ContractStorage } from "./TicketerContractUtils";
+import { AddShoppingCartOutlined, UnfoldMoreOutlined } from "@mui/icons-material";
+import { Accordion, AccordionDetails, AccordionSummary, Avatar, Badge, Box, Button, Chip, FormControl, Grid, Input, InputAdornment, InputLabel, keyframes, MenuItem, OutlinedInput, Paper, Select, SelectChangeEvent, Stack, styled, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip, Typography } from "@mui/material";
 import { TezosToolkit } from "@taquito/taquito";
-import DEKUClient from "./DEKUClient";
 import BigNumber from 'bignumber.js';
-import ReactCSSTransitionGroup, { CSSTransition } from 'react-transition-group'; // ES6
+import React, { Dispatch, forwardRef, Fragment, SetStateAction, useEffect, useImperativeHandle, useState } from "react";
+import DEKUClient from "./DEKUClient";
+import { RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
+import { ContractFAStorage, ContractStorage } from "./TicketerContractUtils";
 
 BigNumber.config({ EXPONENTIAL_AT : 19});
 
 
 export type RollupBoxComponentType = {
-    refreshRollup : () => Promise<void>,
     setShouldBounce : (b : boolean) => Promise<void>,
     setChangeTicketColor : (color : string) => Promise<void>
 }
@@ -20,15 +18,14 @@ export type RollupBoxComponentType = {
 type RollupProps = {
     Tezos : TezosToolkit;
     userAddress: string;
+    setUserAddress : Dispatch<SetStateAction<string>>|undefined;
     userBalance: Map<TOKEN_TYPE,BigNumber>;
     tokenBytes:Map<TOKEN_TYPE,string>;
     handlePendingWithdraw : ((event: React.MouseEvent<HTMLButtonElement, MouseEvent>, to: string, contractFAStorage: ContractFAStorage,ticketTokenType : string) => Promise<void>) | undefined;
     handlePendingDeposit : ((event : React.MouseEvent<HTMLButtonElement>,from : string,contractFAStorage : ContractFAStorage,ticketTokenType : string) => Promise<void>) | undefined;
-    contractStorage : ContractStorage | undefined;
-    setRollupType : Dispatch<SetStateAction<ROLLUP_TYPE>>;
+    handleL2Transfer : ((event : React.MouseEvent<HTMLButtonElement>) => Promise<void>) | undefined;
     rollupType : ROLLUP_TYPE;
     rollup : RollupTORU | RollupDEKU | RollupCHUSAI | undefined;
-    setRollup : Dispatch<SetStateAction<RollupTORU | RollupDEKU | RollupCHUSAI | undefined>>;
     isDirectionDeposit : boolean;
     dekuClient : DEKUClient;
     tokenType : TOKEN_TYPE;
@@ -41,15 +38,14 @@ type RollupProps = {
 const RollupBox = ({
     Tezos,
     userAddress,
+    setUserAddress,
     userBalance,
     tokenBytes,
     handlePendingWithdraw,
     handlePendingDeposit,
-    contractStorage,
-    setRollupType,
+    handleL2Transfer,
     rollupType,
     rollup,
-    setRollup,
     isDirectionDeposit,
     dekuClient,
     tokenType,
@@ -61,22 +57,6 @@ const RollupBox = ({
     const layer2Tickets = React.createRef<any>();
     const [shouldBounce,setShouldBounce] = useState(true);
     const [changeTicketColor,setChangeTicketColor] = useState("#55606A");
-    
-    
-    async function refreshRollup() {
-        switch(rollupType){
-            case ROLLUP_TYPE.TORU : setRollup(await TezosUtils.fetchRollupTORU(Tezos.rpc.getRpcUrl(),rollupType.address));break;
-            case ROLLUP_TYPE.DEKU : setRollup(await TezosUtils.fetchRollupDEKU(Tezos,rollupType.address));break;
-            case ROLLUP_TYPE.CHUSAI : {
-                setRollup(await TezosUtils.fetchRollupCHUSAI(Tezos,rollupType.address));break;
-            }
-        }
-    }
-    
-    
-    useEffect(() => {
-        refreshRollup();
-    }, [rollupType]);
     
     //POPUP
     const [selectRollupPopupAnchorEl, setSelectRollupPopupAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -97,7 +77,7 @@ const RollupBox = ({
         border: `2px solid ${theme.palette.background.paper}`,
     }));
     
-    useImperativeHandle(ref, () =>  ({refreshRollup , setShouldBounce, setChangeTicketColor }));
+    useImperativeHandle(ref, () =>  ({setShouldBounce, setChangeTicketColor }));
     
     const myKeyframe = keyframes`
     0 %  { transform: translate(1px, 1px)   rotate(0deg)    },
@@ -112,6 +92,7 @@ const RollupBox = ({
     90%  { transform: translate(1px, 2px)   rotate(0deg);   },
     100% { transform: translate(1px, -2px)  rotate(-1deg);  }
     `;
+
     return (
         
         <Grid bgcolor="var(--tertiary-color)" padding="1em" container spacing={1}>
@@ -128,8 +109,19 @@ const RollupBox = ({
         </Grid>
         
         <Grid xs={12} sm={10} item>
-        {isDirectionDeposit ?<div style={{height:"70px"}}></div>:""}
         
+
+        {isDirectionDeposit && !handleL2Transfer?<div style={{height:"70px"}}></div>
+                :isDirectionDeposit && handleL2Transfer?
+                <TextField 
+                sx={{paddingBottom:"1em"}}
+                fullWidth
+                value={userAddress} 
+                placeholder="Enter your L2 destination address here" 
+                onChange={(e)=>setUserAddress!(e.target.value?e.target.value.trim():"")}/>
+                :""}
+
+
         <Stack direction={"column"} spacing={1} >
         { 
             rollup instanceof RollupTORU?
@@ -170,7 +162,6 @@ const RollupBox = ({
         </InputAdornment>}
         startAdornment="Available balance"
         value=
-        
         {userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString()
             +" " + tokenType + "-ticket" 
         } />
@@ -216,158 +207,92 @@ const RollupBox = ({
                 }
                 
                 
-                {contractStorage?.treasuryAddress == userAddress?
-                    
-                    
-                    <Accordion>
-                    <AccordionSummary
-                    expandIcon={<UnfoldMoreOutlined />}
-                    aria-controls="panel1a-content"
-                    id="panel1a-header"
-                    >
-                    <Typography>Pending operations</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                    
-                    {handlePendingWithdraw && contractStorage.faPendingWithdrawals?  Array.from(contractStorage.faPendingWithdrawals.entries()).map(( [key,val]: [[string,string],ContractFAStorage]) => 
-                        {
-                            let tokenType : string = tokenBytes.get(TOKEN_TYPE.XTZ) == key[1]? TOKEN_TYPE.XTZ : tokenBytes.get(TOKEN_TYPE.CTEZ) == key[1] ?  TOKEN_TYPE.CTEZ : tokenBytes.get(TOKEN_TYPE.KUSD) == key[1] ?  TOKEN_TYPE.KUSD : tokenBytes.get(TOKEN_TYPE.UUSD) == key[1] ?  TOKEN_TYPE.UUSD : TOKEN_TYPE.EURL ;
-                            
-                            return <div key={key[0]+key[1]+val.type}>  
-                            <Badge  max={999999999999999999}
-                            badgeContent={val.amountToTransfer.toNumber()}         
-                            color="primary">
-                            <Avatar component="span" src={tokenType+".png"} />
-                            <Avatar variant="square" src="ticket.png" />
-                            </Badge>
-                            <span> for {<span className="address"><span className="address1">{key[0].substring(0,key[0].length/2)}</span><span className="address2">{key[0].substring(key[0].length/2)}</span></span>} </span>
-                            <Tooltip title="Redeem collaterized user's tokens from tickets' rollup">
-                            <Button onClick={(e)=>handlePendingWithdraw(e,key[0],val,tokenType)} startIcon={<AddShoppingCartOutlined/>}></Button>
-                            </Tooltip>
-                            </div>
-                        }
-                        ):""}
-                        
-                        
-                        {handlePendingDeposit && contractStorage.faPendingDeposits ?Array.from(contractStorage.faPendingDeposits.entries()).map(( [key,val]: [[string,string],ContractFAStorage]) => 
-                            {let l2Address : string = val.l2Type.l2_DEKU?val.l2Type.l2_DEKU : val.l2Type.l2_TORU;
-                                let tokenType : string = tokenBytes.get(TOKEN_TYPE.XTZ) == key[1]? TOKEN_TYPE.XTZ : tokenBytes.get(TOKEN_TYPE.CTEZ) == key[1] ?  TOKEN_TYPE.CTEZ : tokenBytes.get(TOKEN_TYPE.KUSD) == key[1] ?  TOKEN_TYPE.KUSD : tokenBytes.get(TOKEN_TYPE.UUSD) == key[1] ?  TOKEN_TYPE.UUSD : TOKEN_TYPE.EURL ;
-                                
-                                return <div key={key[0]+key[1]+val.type}>   
-                                
-                                <Badge  max={999999999999999999}
-                                badgeContent={val.amountToTransfer.toNumber()}         
-                                color="primary">
-                                <Avatar component="span" src={tokenType+".png"} />
-                                <Avatar variant="square" src="ticket.png" />
-                                </Badge>
-                                <span> for {<span className="address"><span className="address1">{l2Address.substring(0,l2Address.length/2)}</span><span className="address2">{l2Address.substring(l2Address.length/2)}</span></span>} </span>
-                                
-                                
-                                <Tooltip title="Collaterize user's tokens and swap to real tickets for rollup">
-                                <Button onClick={(e)=>handlePendingDeposit(e,key[0],val,tokenType)} startIcon={<AddShoppingCartOutlined/>}></Button>
-                                </Tooltip>
-                                </div>
-                            }
-                            ):""}
-                            
-                            
-                            
-                            </AccordionDetails>
-                            </Accordion>
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            :""
-                        }
-                        
-                        
-                        
-                        
-                        </Fragment>
-                        
-                        : rollup instanceof RollupCHUSAI ? 
-                        <Fragment>
-                        <Accordion>
-                        <AccordionSummary
-                        expandIcon={<UnfoldMoreOutlined />}
-                        aria-controls="panel1a-content"
-                        id="panel1a-header"
-                        >
-                        <Typography>Rollup Details</Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                        <TableContainer component={Paper}><Table><TableBody>
-                        <TableRow><TableCell>rollup_level </TableCell><TableCell>{rollup.rollup_level.toNumber()}</TableCell></TableRow >
-                        <TableRow><TableCell>messages </TableCell><TableCell>{rollup.messages.toJSON()}</TableCell></TableRow >
-                        <TableRow><TableCell>fixed_ticket_key.mint_address </TableCell><TableCell>{rollup.fixed_ticket_key.mint_address}</TableCell></TableRow>
-                        <TableRow><TableCell>fixed_ticket_key.payload</TableCell><TableCell>{rollup.fixed_ticket_key.payload}</TableCell></TableRow >
-                        </TableBody></Table></TableContainer> 
-                        
-                        </AccordionDetails>
-                        </Accordion>
-                        
-                        
-                        
-                        <Accordion defaultExpanded>
-                        <AccordionSummary
-                        expandIcon={<UnfoldMoreOutlined />}
-                        aria-controls="panel1a-content"
-                        id="panel1a-header"
-                        >
-                        <Typography>Vault</Typography>
-                        </AccordionSummary>
-                        <AccordionDetails >
-                        
-                        <FormControl fullWidth>
-                        <InputLabel id="demo-simple-select-label">Select ticket</InputLabel>
-                        <Select
-                        labelId="demo-simple-select-label"
-                        id="demo-simple-select"
-                        defaultValue={TOKEN_TYPE.XTZ}
-                        value={tokenType}
-                        label="token type"
-                        >
-                        
-                        <MenuItem key={TOKEN_TYPE.XTZ} value={TOKEN_TYPE.XTZ}>
-                        <Badge max={999999999999999999}
-                        badgeContent={rollup.ticket?.amount.toNumber()}          
-                        
-                        color="primary">
-                        <Avatar component="span" src={TOKEN_TYPE.XTZ+".png"}></Avatar>
-                        <Avatar variant="square" src="ticket.png" />
-                        </Badge>
-                        </MenuItem>
-                        
-                        
-                        </Select>
-                        
-                        </FormControl>
-                        
-                        </AccordionDetails>
-                        </Accordion>
-                        
-                        </Fragment>
-                        
-                        
-                        : "No rollup info ..." }
-                        </Stack>
-                        
-                        {!isDirectionDeposit ?<div style={{height:"70px"}}></div>:""}
-                        
-                        
-                        </Grid>
-                        
-                        
-                        </Grid>
-                        
-                        
-                        
-                        );
-                    };
-                    
-                    export default forwardRef(RollupBox);
+                
+                
+                
+                
+                
+                </Fragment>
+                
+                : rollup instanceof RollupCHUSAI ? 
+                <Fragment>
+                <Accordion>
+                <AccordionSummary
+                expandIcon={<UnfoldMoreOutlined />}
+                aria-controls="panel1a-content"
+                id="panel1a-header"
+                >
+                <Typography>Rollup Details</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                <TableContainer component={Paper}><Table><TableBody>
+                <TableRow><TableCell>rollup_level </TableCell><TableCell>{rollup.rollup_level.toNumber()}</TableCell></TableRow >
+                <TableRow><TableCell>messages </TableCell><TableCell>{rollup.messages.toJSON()}</TableCell></TableRow >
+                <TableRow><TableCell>fixed_ticket_key.mint_address </TableCell><TableCell>{rollup.fixed_ticket_key.mint_address}</TableCell></TableRow>
+                <TableRow><TableCell>fixed_ticket_key.payload</TableCell><TableCell>{rollup.fixed_ticket_key.payload}</TableCell></TableRow >
+                </TableBody></Table></TableContainer> 
+                
+                </AccordionDetails>
+                </Accordion>
+                
+                
+                
+                <Accordion defaultExpanded>
+                <AccordionSummary
+                expandIcon={<UnfoldMoreOutlined />}
+                aria-controls="panel1a-content"
+                id="panel1a-header"
+                >
+                <Typography>Vault</Typography>
+                </AccordionSummary>
+                <AccordionDetails >
+                
+                <FormControl fullWidth>
+                <InputLabel id="demo-simple-select-label">Select ticket</InputLabel>
+                <Select
+                labelId="demo-simple-select-label"
+                id="demo-simple-select"
+                defaultValue={TOKEN_TYPE.XTZ}
+                value={tokenType}
+                label="token type"
+                >
+                
+                <MenuItem key={TOKEN_TYPE.XTZ} value={TOKEN_TYPE.XTZ}>
+                <Badge max={999999999999999999}
+                badgeContent={rollup.ticket?.amount.toNumber()}          
+                
+                color="primary">
+                <Avatar component="span" src={TOKEN_TYPE.XTZ+".png"}></Avatar>
+                <Avatar variant="square" src="ticket.png" />
+                </Badge>
+                </MenuItem>
+                
+                
+                </Select>
+                
+                </FormControl>
+                
+                </AccordionDetails>
+                </Accordion>
+                
+                </Fragment>
+                
+                
+                : "No rollup info ..." }
+                </Stack>
+                
+                {!isDirectionDeposit ?<div style={{height:"70px"}}></div>
+                :""}
+                
+                
+                </Grid>
+                
+                
+                </Grid>
+                
+                
+                
+                );
+            };
+            
+            export default forwardRef(RollupBox);

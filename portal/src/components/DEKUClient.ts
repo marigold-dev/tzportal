@@ -203,6 +203,7 @@ export interface DEKUOperation {
             }
             
             createTransaction = async (receiver : string, amount : number, ticketData : string) : Promise<string> => {
+                
                 const initialOperation : DEKUInitialOperation = [DEKUInitialOperationType.Transaction, {
                     destination : receiver,
                     amount : amount,
