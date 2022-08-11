@@ -40,12 +40,12 @@ const ClaimL1 = ({
     
     const [userBalance, setUserBalance] = useState<Map<TOKEN_TYPE,BigNumber>>(new Map());
     
-    let oldBalance = useRef(new BigNumber(0));
+    let oldBalance = useRef<BigNumber>();
     const [tokenType, setTokenType]  = useState<string>(TOKEN_TYPE.XTZ);
     const tokenTypeRef = useRef(tokenType); //TRICK : to track current value on async timeout functions
     tokenTypeRef.current = tokenType;
     useEffect(() => { 
-        oldBalance.current = userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!;
+        if(oldBalance)oldBalance!.current = userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!;
     }, [tokenType]); //required to refresh to current when changing token type
     
     // MESSAGES
@@ -140,9 +140,12 @@ const ClaimL1 = ({
         
         setShouldBounce(false);        
         
-        if(!newCurrentBalance.isEqualTo(oldBalance.current)){
+        if(!oldBalance.current){ //first time, we just record the value
+            oldBalance.current = newCurrentBalance;
+        }
+        else if(!newCurrentBalance.isEqualTo(oldBalance.current)){
             setTimeout(() => {
-                setChangeTicketColor(newCurrentBalance.isGreaterThan(oldBalance.current)?"green":"red");
+                setChangeTicketColor(newCurrentBalance.isGreaterThan(oldBalance.current!)?"green":"red");
                 setShouldBounce(true)
                 setTimeout(() => {
                     setChangeTicketColor("");
@@ -155,11 +158,11 @@ const ClaimL1 = ({
     const handleWithdraw = async (withdrawProof : DEKUWithdrawProof) : Promise<number>=> {
         
         alert(JSON.stringify(withdrawProof))
-
+        
         console.log("handleWithdraw");
         let rollupContract : Contract = await TezosL2.contract.at(rollupType === ROLLUP_TYPE.DEKU ?process.env["REACT_APP_ROLLUP_CONTRACT_DEKU"]!:process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
         console.log("rollupContract",rollupContract);
-
+        
         
         let param : RollupParameters = 
         rollupType === ROLLUP_TYPE.DEKU ? 
@@ -178,7 +181,7 @@ const ClaimL1 = ({
             
             const op = await rollupContract.methods.withdraw(...Object.values(param)).send();
             console.log("sent");
-
+            
             return op.confirmation();
             
         };

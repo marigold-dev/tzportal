@@ -61,8 +61,8 @@ const DepositWithdrawV2 = ({
     
     const [quantity, setQuantity]  = useState<BigNumber>(new BigNumber(0)); 
     
-    let oldTicketBalance = useRef(new BigNumber(0));
-    let oldBalance = useRef(new BigNumber(0));
+    let oldTicketBalance = useRef<BigNumber>();
+    let oldBalance = useRef<BigNumber>();
     const [tokenType, setTokenType]  = useState<string>(TOKEN_TYPE.XTZ);
     const tokenTypeRef = useRef(tokenType); //TRICK : to track current value on async timeout functions
     tokenTypeRef.current = tokenType;
@@ -154,9 +154,12 @@ const DepositWithdrawV2 = ({
         
         userWalletRef?.current?.setShouldBounce(false);        
                 
-        if(!newCurrentBalance.isEqualTo(oldBalance.current)){
+        if(!oldBalance.current){ //first time, we just record the value
+            oldBalance.current = newCurrentBalance;
+        }
+        if(!newCurrentBalance.isEqualTo(oldBalance.current!)){
             setTimeout(() => {
-                userWalletRef?.current?.setChangeTicketColor(newCurrentBalance.isGreaterThan(oldBalance.current)?"green":"red");
+                userWalletRef?.current?.setChangeTicketColor(newCurrentBalance.isGreaterThan(oldBalance.current!)?"green":"red");
                 userWalletRef?.current?.setShouldBounce(true)
                 setTimeout(() => {
                     userWalletRef?.current?.setChangeTicketColor("");
@@ -215,9 +218,12 @@ const DepositWithdrawV2 = ({
         
         rollupBoxRef?.current?.setShouldBounce(false);
         
-        if(!newCurrentBalance.isEqualTo(oldTicketBalance.current)){
+        if(!oldTicketBalance.current){ //first time, we just record the value
+            oldTicketBalance.current = newCurrentBalance;
+        }
+        else if(!newCurrentBalance.isEqualTo(oldTicketBalance.current)){
             setTimeout(() => {
-                rollupBoxRef?.current?.setChangeTicketColor(newCurrentBalance.isGreaterThan(oldTicketBalance.current)?"green":"red");
+                rollupBoxRef?.current?.setChangeTicketColor(newCurrentBalance.isGreaterThan(oldTicketBalance.current!)?"green":"red");
                 rollupBoxRef?.current?.setShouldBounce(true)
                 setTimeout(() => {
                     rollupBoxRef?.current?.setChangeTicketColor("");
