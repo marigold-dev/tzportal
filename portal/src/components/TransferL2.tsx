@@ -208,9 +208,10 @@ return (
     color="primary.main" 
     alignContent={"space-between"} 
     textAlign={"center"} 
+    borderRadius={5}
     bgcolor="secondary.main"
     width={!isDesktop?"100%":"700px"}
-    sx={{ margin : "5vh 20vw", padding : "2em"}}
+    sx={{ marginTop : "5vh", padding : "2em"}}
     >
     
     <Backdrop

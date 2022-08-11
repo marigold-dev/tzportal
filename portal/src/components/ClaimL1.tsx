@@ -204,7 +204,7 @@ const ClaimL1 = ({
         spacing={2}
         color="primary.main" 
         width="auto"
-        sx={{ margin : "20vh 20vw", padding : "2em"}}
+        sx={{ margin : "5vh 20vw", padding : "2em"}}
         bgcolor="secondary.main">
         
         <Backdrop

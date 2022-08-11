@@ -251,7 +251,7 @@ function App() {
   spacing={2}
   color="primary.main" 
   width="auto"
-  sx={{ margin : "20vh 20vw", padding : "2em"}}
+  sx={{ margin : "5vh 20vw", padding : "2em"}}
   bgcolor="secondary.main">
   
   <Grid item xs={3}>
@@ -337,7 +337,7 @@ function App() {
   userAddress={userAddress}
   />
   </TabPanel>
-  <TabPanel value={""+PAGES.DEPOSIT} >
+  <TabPanel style={{ paddingLeft: "calc(50% - 350px)"}} value={""+PAGES.DEPOSIT} >
   <DepositWithdrawV2 
   Tezos={Tezos}
   wallet={wallet!}
@@ -355,7 +355,7 @@ function App() {
   setPageIndex={setPageIndex}
   />
   </TabPanel>
-  <TabPanel value={""+PAGES.WITHDRAW} >
+  <TabPanel style={{ paddingLeft: "calc(50% - 350px)"}} value={""+PAGES.WITHDRAW} >
   <DepositWithdrawV2 
   Tezos={Tezos}
   wallet={wallet!}
@@ -373,7 +373,7 @@ function App() {
   setPageIndex={setPageIndex}
   />
   </TabPanel>
-  <TabPanel value={""+PAGES.L2TRANSFER} >
+  <TabPanel style={{ paddingLeft: "calc(50% - 350px)"}} value={""+PAGES.L2TRANSFER} >
   <TransferL2 
   TezosL2 = {TezosL2}
   userL2Address = {userL2Address}

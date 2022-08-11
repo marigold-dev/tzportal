@@ -48,7 +48,7 @@ const ConnectButton = ({
     const setL1AccountAsActive = async() => {
         const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU}); 
         setActiveAccount(l1Account);
-        
+
         if(userL2Address=="")setPageIndex(""+PAGES.L1CLAIM)
         else setPageIndex(""+PAGES.DEPOSIT) ;
     }
@@ -79,7 +79,7 @@ const ConnectButton = ({
     return (<Fragment>
         {!userAddress || userAddress === ""?
         <Stack direction="row" alignContent="center" alignItems="center">
-        <img src="XTZ_white.png" height={24}/>
+        <img src="XTZ_white.png" height={24} width={24}/>
         <Button variant="contained" onClick={connectWallet}>
         Connect Tezos wallet
         </Button>
