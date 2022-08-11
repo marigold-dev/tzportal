@@ -12,11 +12,13 @@ import {  LogoutOutlined } from "@mui/icons-material";
 import { InMemorySigner } from "@taquito/signer";
 import { LAYER2Type } from "./TezosUtils";
 import { DEKUWallet } from "./DEKUClient";
+import { PAGES } from "../App";
 
 
 
 
 type ButtonProps = {
+    userAddress:string;
     userL2Address:string;
     setUserL2Address: Dispatch<SetStateAction<string>>;
     TezosL2: TezosToolkit;
@@ -25,11 +27,13 @@ type ButtonProps = {
     accounts : AccountInfo[];
     disconnectWalletL2:any;
     hideAfterConnect:boolean;
+    setPageIndex:Dispatch<SetStateAction<string>>;
 };
 
 
 
 const ConnectButtonL2 = ({
+    userAddress,
     userL2Address,
     setUserL2Address,
     TezosL2,
@@ -37,12 +41,17 @@ const ConnectButtonL2 = ({
     setActiveAccount,
     accounts,
     disconnectWalletL2,
-    hideAfterConnect
+    hideAfterConnect,
+    setPageIndex
 }: ButtonProps): JSX.Element => {
     
     const setL2AccountAsActive = async() => {
         const l2Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU}); 
         setActiveAccount(l2Account);
+
+        if(userAddress=="")setPageIndex(""+PAGES.L2TRANSFER)
+        else setPageIndex(""+PAGES.WITHDRAW) ;
+
     }
     
     const connectWallet = (e: ChangeEvent<HTMLInputElement>) => {
@@ -78,6 +87,10 @@ const ConnectButtonL2 = ({
             accounts.push(accountInfo);
             TezosL2.setProvider({ signer: await InMemorySigner.fromSecretKey(l2Wallet.priv_key) });
             
+
+            if(userAddress=="")setPageIndex(""+PAGES.L2TRANSFER)
+            else setPageIndex(""+PAGES.DEPOSIT) ;
+
             console.log("Connected to Layer 2");
             
         };

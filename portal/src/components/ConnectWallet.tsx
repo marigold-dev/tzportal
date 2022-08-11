@@ -19,6 +19,7 @@ type ButtonProps = {
     Tezos: TezosToolkit;
     setWallet: Dispatch<SetStateAction<any>>;
     userAddress:string;
+    userL2Address:string;
     setUserAddress: Dispatch<SetStateAction<string>>;
     wallet: BeaconWallet;
     disconnectWallet:any;
@@ -26,24 +27,30 @@ type ButtonProps = {
     setActiveAccount :  Dispatch<SetStateAction<AccountInfo|undefined>>;
     accounts : AccountInfo[];
     hideAfterConnect : boolean;
+    setPageIndex : Dispatch<SetStateAction<string>>;
 };
 
 const ConnectButton = ({
     Tezos,
     setWallet,
     userAddress,
+    userL2Address,
     setUserAddress,
     wallet,
     disconnectWallet,
     activeAccount,
     setActiveAccount,
     accounts,
-    hideAfterConnect
+    hideAfterConnect,
+    setPageIndex
 }: ButtonProps): JSX.Element => {
     
     const setL1AccountAsActive = async() => {
         const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU}); 
         setActiveAccount(l1Account);
+        
+        if(userL2Address=="")setPageIndex(""+PAGES.L1CLAIM)
+        else setPageIndex(""+PAGES.DEPOSIT) ;
     }
     
     const connectWallet = async (): Promise<void> => {
@@ -60,6 +67,10 @@ const ConnectButton = ({
             console.log("Connected to Layer 1");
             setActiveAccount(activeAccount);
             accounts.push(activeAccount);
+            
+            if(userL2Address=="")setPageIndex(""+PAGES.L1CLAIM)
+            else setPageIndex(""+PAGES.DEPOSIT) ;
+
         } catch (error) {
             console.log(error);
         }

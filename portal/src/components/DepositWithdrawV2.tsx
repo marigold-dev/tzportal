@@ -1,5 +1,5 @@
 import { AccountInfo } from "@airgap/beacon-types";
-import { AddShoppingCartOutlined, ChangeCircle, UnfoldMoreOutlined } from "@mui/icons-material";
+import { AddShoppingCartOutlined, ChangeCircle, SwapVert, SwapVerticalCircle, SwapVerticalCircleOutlined, SwapVertOutlined, SwapVertRounded, UnfoldMoreOutlined } from "@mui/icons-material";
 import { Accordion, AccordionDetails, AccordionSummary, Avatar, Backdrop, Badge, Box, CircularProgress, Divider, Grid, Stack, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import Button from "@mui/material/Button";
 import { BeaconWallet } from "@taquito/beacon-wallet";
@@ -10,6 +10,7 @@ import { tzip16 } from "@taquito/tzip16";
 import BigNumber from 'bignumber.js';
 import { useSnackbar } from "notistack";
 import { Dispatch, MouseEvent, SetStateAction, useEffect, useRef, useState } from "react";
+import { PAGES } from "../App";
 import DEKUClient from "./DEKUClient";
 import { FA12Contract } from "./fa12Contract";
 import { FA2Contract } from "./fa2Contract";
@@ -35,7 +36,7 @@ type DepositWithdrawV2Props = {
     setActiveAccount : Dispatch<SetStateAction<AccountInfo|undefined>>;
     accounts : AccountInfo[];
     tokenBytes : Map<TOKEN_TYPE,string>;
-    
+    setPageIndex : Dispatch<SetStateAction<string>>;
 };
 
 const DepositWithdrawV2 = ({
@@ -51,8 +52,8 @@ const DepositWithdrawV2 = ({
     activeAccount,
     setActiveAccount,
     accounts,
-    tokenBytes 
-    
+    tokenBytes, 
+    setPageIndex
 }: DepositWithdrawV2Props): JSX.Element => {
     
     const dekuClient = new DEKUClient(process.env["REACT_APP_DEKU_NODE"]!,process.env["REACT_APP_CONTRACT"]!,TezosL2);
@@ -92,7 +93,14 @@ const DepositWithdrawV2 = ({
     const switchActiveAccount = async()=> {
         const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU}); 
         const l2Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU}); 
-        setActiveAccount(activeAccount?.address === l1Account?.address && activeAccount?.accountIdentifier!==LAYER2Type.L2_DEKU ? l2Account : l1Account);
+        if(activeAccount?.address === l1Account?.address && activeAccount?.accountIdentifier!==LAYER2Type.L2_DEKU){
+            setActiveAccount( l2Account );
+            setPageIndex(""+PAGES.WITHDRAW);
+        }else{
+            setActiveAccount(  l1Account);
+            setPageIndex(""+PAGES.DEPOSIT);
+        }
+        
     }
     
     const refreshBalance = async() => {
@@ -855,7 +863,7 @@ const handleDeposit = async (event : MouseEvent) => {
                         <Divider
                         orientation= "horizontal" 
                         sx={{display:"block"}}
-                        >                        <ChangeCircle sx={{transform : "scale(3.5)"}} color="primary" onClick={()=>switchActiveAccount()}/> 
+                        >                        <SwapVert sx={{transform : "scale(3.5)"}} color="primary" onClick={()=>switchActiveAccount()}/> 
                         </Divider>
                         
                         

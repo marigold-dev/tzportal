@@ -117,6 +117,14 @@ const themeLight = createTheme({
           "&:before": {borderBottom : 0}
         }
       }
+    },
+    MuiTab : {
+      styleOverrides : {
+        fullWidth : true,
+        labelIcon : {
+          color : "#ffffff"
+        }
+      }
     }
 },
 palette: {
