@@ -443,49 +443,49 @@ const handlePendingWithdraw = async (event : MouseEvent<HTMLButtonElement>,to : 
         setTezosLoading(true);
         
         //2. Treasury give back tokens
-
+        
         //2.a for FA1.2
         if(ticketTokenType === TOKEN_TYPE.CTEZ || ticketTokenType === TOKEN_TYPE.KUSD){
             let fa12Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+            
+            console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
+            
+            operations.push({
+                kind: OpKind.TRANSACTION,
+                ...fa12Contract.methods.transfer(contractStorage?.treasuryAddress,to,contractFAStorage.amountToTransfer.toNumber()).toTransferParams()
+            });
+            
+            enqueueSnackbar("Treasury enqueing  "+contractFAStorage.amountToTransfer.toNumber()+" FA1.2 tokens for "+to, {variant: "success", autoHideDuration:10000});        
+            
+        }
         
-        console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
-        
-        operations.push({
-            kind: OpKind.TRANSACTION,
-            ...fa12Contract.methods.transfer(contractStorage?.treasuryAddress,to,contractFAStorage.amountToTransfer.toNumber()).toTransferParams()
-        });
-
-        enqueueSnackbar("Treasury enqueing  "+contractFAStorage.amountToTransfer.toNumber()+" FA1.2 tokens for "+to, {variant: "success", autoHideDuration:10000});        
-
-    }
-
         //2.b for FA2
         console.log("ticketTokenType",ticketTokenType)
         if(ticketTokenType === TOKEN_TYPE.UUSD || ticketTokenType === TOKEN_TYPE.EURL){
-        let fa2Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+            let fa2Contract : WalletContract = await Tezos.wallet.at(contractFAStorage.faAddress);
+            
+            console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
+            
+            operations.push({
+                kind: OpKind.TRANSACTION,
+                ...fa2Contract.methods.transfer([
+                    {
+                        "from_" : contractStorage?.treasuryAddress,
+                        "tx" : [
+                            {
+                                to_ : to,
+                                token_id : 0,
+                                quantity : contractFAStorage.amountToTransfer.toNumber()
+                            }
+                        ]
+                    }
+                    ,
+                ]).toTransferParams()
+            });
+            enqueueSnackbar("Treasury enqueing  "+contractFAStorage.amountToTransfer.toNumber()+" FA2 tokens for "+to, {variant: "success", autoHideDuration:10000});        
+            
+        }
         
-        console.log("contractFAStorage.faAddress",contractFAStorage.faAddress);
-
-        operations.push({
-            kind: OpKind.TRANSACTION,
-            ...fa2Contract.methods.transfer([
-                {
-                    "from_" : contractStorage?.treasuryAddress,
-                    "tx" : [
-                        {
-                            to_ : to,
-                            token_id : 0,
-                            quantity : contractFAStorage.amountToTransfer.toNumber()
-                        }
-                    ]
-                }
-                ,
-            ]).toTransferParams()
-        });
-        enqueueSnackbar("Treasury enqueing  "+contractFAStorage.amountToTransfer.toNumber()+" FA2 tokens for "+to, {variant: "success", autoHideDuration:10000});        
-
-    }
-
         const batch : WalletOperationBatch = await Tezos.wallet.batch(operations);
         const batchOp = await batch.send();
         const br = await batchOp.confirmation(1);
@@ -689,7 +689,12 @@ const handleDeposit = async (event : MouseEvent) => {
                 setTezosLoading(true);
                 
                 try {
-                    const opHash = await dekuClient.withdraw(userL2Address,quantity.toNumber(),tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
+                    let decimals = Math.pow(10,6);
+                    if(tokenType !== TOKEN_TYPE.XTZ){
+                        let faContract = await TezosL2.wallet.at( tokenType === TOKEN_TYPE.CTEZ?process.env["REACT_APP_CTEZ_CONTRACT"]! : tokenType === TOKEN_TYPE.KUSD ? process.env["REACT_APP_KUSD_CONTRACT"]! : tokenType === TOKEN_TYPE.UUSD?process.env["REACT_APP_UUSD_CONTRACT"]! : process.env["REACT_APP_EURL_CONTRACT"]! , tzip12  );
+                        decimals = Math.pow(10,(await faContract.tzip12().getTokenMetadata(0)).decimals);
+                    }
+                    const opHash = await dekuClient.withdraw(userL2Address,quantity.multipliedBy(decimals),tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
                     enqueueSnackbar("The proof will be available in 10s. Keep this code ( "+opHash+" ) to do a Claim on L1 with user "+userL2Address, {variant: "success", autoHideDuration:10000});
                 } catch (error : any) {
                     console.table(`Error: ${JSON.stringify(error, null, 2)}`);

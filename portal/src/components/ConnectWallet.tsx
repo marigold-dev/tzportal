@@ -49,7 +49,7 @@ const ConnectButton = ({
         const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU}); 
         setActiveAccount(l1Account);
 
-        if(userL2Address=="")setPageIndex(""+PAGES.L1CLAIM)
+        if(userL2Address==="")setPageIndex(""+PAGES.WELCOME)
         else setPageIndex(""+PAGES.DEPOSIT) ;
     }
     
@@ -68,8 +68,7 @@ const ConnectButton = ({
             setActiveAccount(activeAccount);
             accounts.push(activeAccount);
             
-            if(userL2Address=="")setPageIndex(""+PAGES.L1CLAIM)
-            else setPageIndex(""+PAGES.DEPOSIT) ;
+            if(userL2Address!=="")setPageIndex(""+PAGES.DEPOSIT) ;
 
         } catch (error) {
             console.log(error);

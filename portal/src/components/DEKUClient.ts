@@ -185,6 +185,11 @@ export interface DEKUOperation {
                         data
                     }
                     
+                    console.log("fullPayload",fullPayload);
+                    console.log("operation",operation);
+                    console.log("dekuNodeUrl",this.dekuNodeUrl);
+                    console.log("signer publicKeyHash",await this.TezosL2.signer.publicKeyHash());
+
                     const res : Response = await fetch(this.dekuNodeUrl! + "/user-operation-gossip",
                     {
                         method: "POST",
@@ -202,20 +207,20 @@ export interface DEKUOperation {
                 }
             }
             
-            createTransaction = async (receiver : string, amount : number, ticketData : string) : Promise<string> => {
-                
+            createTransaction = async (receiver : string, amount : BigNumber, ticketData : string) : Promise<string> => {
                 const initialOperation : DEKUInitialOperation = [DEKUInitialOperationType.Transaction, {
                     destination : receiver,
-                    amount : amount,
+                    amount : amount.toNumber(),
                     ticket : "(Pair \""+this.ticketer+"\" 0x"+ticketData+")"
                 }];
+
                 return this.userOperation(initialOperation);
             }
             
-            withdraw = async (tezos_address : string, amount : number, ticketData : string) : Promise<string> => {
+            withdraw = async (tezos_address : string, amount : BigNumber, ticketData : string) : Promise<string> => {
                 const initialOperation : DEKUInitialOperation = [DEKUInitialOperationType.Tezos_withdraw, {
                     owner : tezos_address,
-                    amount : amount,
+                    amount : amount.toNumber(),
                     ticket : "(Pair \""+this.ticketer+"\" 0x"+ticketData+")"
                 }];
                 return this.userOperation(initialOperation);
