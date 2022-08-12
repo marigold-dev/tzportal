@@ -4,7 +4,7 @@ import { tzip12 } from "@taquito/tzip12";
 import { tzip16 } from "@taquito/tzip16";
 import BigNumber from 'bignumber.js';
 import { useSnackbar } from "notistack";
-import { MouseEvent, useEffect, useRef, useState } from "react";
+import { MouseEvent, useCallback, useEffect, useRef, useState } from "react";
 import DEKUClient from "./DEKUClient";
 import RollupBox, { RollupBoxComponentType } from "./RollupBox";
 import { RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TOKEN_TYPE } from "./TezosUtils";
@@ -103,7 +103,7 @@ const TransferL2 = ({
         }
         
         destinationL2Address?setUserTicketDestinationBalance(balance):setUserTicketBalance(balance);
-        console.log("All ticket balances initialized for "+userL2,balance);
+        console.log("[TransferL2] All ticket balances initialized for "+userL2,balance);
         
         destinationL2Address? rollupDestinationBoxRef?.current?.setShouldBounce(false) : rollupBoxRef?.current?.setShouldBounce(false);
         
@@ -149,133 +149,140 @@ const TransferL2 = ({
         oldTicketBalance.current = userTicketBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!;
     }, [tokenType]); //required to refresh to current when changing token type
     
-    useEffect(() => { (async () => {
-        await refreshTicketBalance();
-        await refreshTicketBalance(userL2DestinationAddressRef.current);
-        setInterval(refreshTicketBalance, 8*1000); //refresh async L2 balances 
-        setInterval(()=>refreshTicketBalance(userL2DestinationAddressRef.current), 8*1000); //refresh async L2 destination balances 
-    })();
-}, []);
-
-const myKeyframe = keyframes`
-0 %  { transform: translate(1px, 1px)   rotate(0deg)    },
-10%  { transform: translate(-1px, -2px) rotate(-1deg);  },
-20%  { transform: translate(-3px, 0px)  rotate(1deg);   },
-30%  { transform: translate(3px, 2px)   rotate(0deg);   },
-40%  { transform: translate(1px, -1px)  rotate(1deg);   },
-50%  { transform: translate(-1px, 2px)  rotate(-1deg);  },
-60%  { transform: translate(-3px, 1px)  rotate(0deg);   },
-70%  { transform: translate(3px, 1px)   rotate(-1deg);  },
-80%  { transform: translate(-1px, -1px) rotate(1deg);   },
-90%  { transform: translate(1px, 2px)   rotate(0deg);   },
-100% { transform: translate(1px, -2px)  rotate(-1deg);  }
-`;
-
-const isDesktop = useMediaQuery('(min-width:600px)');
-
-
-
-const handleL2Transfer = async (event : MouseEvent<HTMLButtonElement>) => {
-    
-    event.preventDefault();
-    setTezosLoading(true);
-    
-    try {
-        let decimals = Math.pow(10,6);
-        if(tokenType !== TOKEN_TYPE.XTZ){
-            let faContract = await TezosL2.wallet.at( tokenType === TOKEN_TYPE.CTEZ?process.env["REACT_APP_CTEZ_CONTRACT"]! : tokenType === TOKEN_TYPE.KUSD ? process.env["REACT_APP_KUSD_CONTRACT"]! : tokenType === TOKEN_TYPE.UUSD?process.env["REACT_APP_UUSD_CONTRACT"]! : process.env["REACT_APP_EURL_CONTRACT"]! , tzip12  );
-            decimals = Math.pow(10,(await faContract.tzip12().getTokenMetadata(0)).decimals);
-        }
-        const opHash = await dekuClient.createTransaction(userL2DestinationAddress,quantity.multipliedBy(decimals),tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
-        enqueueSnackbar("Transaction to "+userL2DestinationAddress+" was successful", {variant: "success", autoHideDuration:10000});
-    } catch (error : any) {
-        console.table(`Error: ${JSON.stringify(error, null, 2)}`);
-        let tibe : TransactionInvalidBeaconError = new TransactionInvalidBeaconError(error);
-        enqueueSnackbar(tibe.data_message, { variant:"error" , autoHideDuration:10000});
+    useEffect(() => { 
         
-    } finally {
+        (async () => {
+            await refreshTicketBalance();
+            await refreshTicketBalance(userL2DestinationAddressRef.current);
+        })();
+        
+        const intervalId = setInterval(refreshTicketBalance, 15*1000); //refresh async L2 balances 
+        const intervalId2 = setInterval(()=>refreshTicketBalance(userL2DestinationAddressRef.current), 15*1000); //refresh async L2 destination balances 
+        
+        return () => {clearInterval(intervalId);clearInterval(intervalId2)};  
+        
+    }, []);
+    
+    const myKeyframe = keyframes`
+    0 %  { transform: translate(1px, 1px)   rotate(0deg)    },
+    10%  { transform: translate(-1px, -2px) rotate(-1deg);  },
+    20%  { transform: translate(-3px, 0px)  rotate(1deg);   },
+    30%  { transform: translate(3px, 2px)   rotate(0deg);   },
+    40%  { transform: translate(1px, -1px)  rotate(1deg);   },
+    50%  { transform: translate(-1px, 2px)  rotate(-1deg);  },
+    60%  { transform: translate(-3px, 1px)  rotate(0deg);   },
+    70%  { transform: translate(3px, 1px)   rotate(-1deg);  },
+    80%  { transform: translate(-1px, -1px) rotate(1deg);   },
+    90%  { transform: translate(1px, 2px)   rotate(0deg);   },
+    100% { transform: translate(1px, -2px)  rotate(-1deg);  }
+    `;
+    
+    const isDesktop = useMediaQuery('(min-width:600px)');
+    
+    
+    
+    const handleL2Transfer = async (event : MouseEvent<HTMLButtonElement>) => {
+        
+        event.preventDefault();
+        setTezosLoading(true);
+        
+        try {
+            let decimals = Math.pow(10,6);
+            if(tokenType !== TOKEN_TYPE.XTZ){
+                let faContract = await TezosL2.wallet.at( tokenType === TOKEN_TYPE.CTEZ?process.env["REACT_APP_CTEZ_CONTRACT"]! : tokenType === TOKEN_TYPE.KUSD ? process.env["REACT_APP_KUSD_CONTRACT"]! : tokenType === TOKEN_TYPE.UUSD?process.env["REACT_APP_UUSD_CONTRACT"]! : process.env["REACT_APP_EURL_CONTRACT"]! , tzip12  );
+                decimals = Math.pow(10,(await faContract.tzip12().getTokenMetadata(0)).decimals);
+            }
+            const opHash = await dekuClient.createTransaction(userL2DestinationAddress,quantity.multipliedBy(decimals),tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
+            enqueueSnackbar("Transaction to "+userL2DestinationAddress+" was successful", {variant: "success", autoHideDuration:10000});
+        } catch (error : any) {
+            console.table(`Error: ${JSON.stringify(error, null, 2)}`);
+            let tibe : TransactionInvalidBeaconError = new TransactionInvalidBeaconError(error);
+            enqueueSnackbar(tibe.data_message, { variant:"error" , autoHideDuration:10000});
+            
+        } finally {
+            setTezosLoading(false);
+        }
+        
         setTezosLoading(false);
-    }
-    
-    setTezosLoading(false);
-};
-
-
-return (
-    <Box display="flex"
-    justifyContent="center"
-    alignItems="center" 
-    color="primary.main" 
-    alignContent={"space-between"} 
-    textAlign={"center"} 
-    borderRadius={5}
-    bgcolor="secondary.main"
-    width={!isDesktop?"100%":"700px"}
-    sx={{ marginTop : "5vh", padding : "2em"}}
-    >
-    
-    <Backdrop
-    sx={{ color: '#fff', zIndex: (theme : any) => theme.zIndex.drawer + 1 }}
-    open={tezosLoading}
-    >
-    <CircularProgress color="inherit" />
-    </Backdrop>
+    };
     
     
-    <Stack sx={{width:"inherit"}} direction="column" spacing={2}>
+    return (
+        <Box display="flex"
+        justifyContent="center"
+        alignItems="center" 
+        color="primary.main" 
+        alignContent={"space-between"} 
+        textAlign={"center"} 
+        borderRadius={5}
+        bgcolor="secondary.main"
+        width={!isDesktop?"100%":"700px"}
+        sx={{ marginTop : "5vh", padding : "2em"}}
+        >
+        
+        <Backdrop
+        sx={{ color: '#fff', zIndex: (theme : any) => theme.zIndex.drawer + 1 }}
+        open={tezosLoading}
+        >
+        <CircularProgress color="inherit" />
+        </Backdrop>
+        
+        
+        <Stack sx={{width:"inherit"}} direction="column" spacing={2}>
+        
+        <RollupBox 
+        isDirectionDeposit={false}
+        ref={rollupBoxRef}
+        Tezos={TezosL2}
+        userAddress={userL2Address}
+        setUserAddress={undefined}
+        userBalance={userTicketBalance}
+        tokenBytes={tokenBytes}
+        handlePendingWithdraw={undefined}
+        handlePendingDeposit={undefined}
+        handleL2Transfer={handleL2Transfer}
+        rollupType={rollupType}
+        rollup={rollup}
+        dekuClient={dekuClient}
+        tokenType={TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]}
+        quantity={quantity}
+        setQuantity={setQuantity}
+        setTokenType={setTokenType}
+        />
+        
+        <div style={{height:0}}>
+        <Button sx={{position:"relative",top:"-90px"}} color="warning" variant="contained" onClick={(e)=>handleL2Transfer(e)}>Transfer</Button>
+        </div>
+        
+        <RollupBox 
+        isDirectionDeposit={true}
+        ref={rollupDestinationBoxRef}
+        Tezos={TezosL2}
+        userAddress={userL2DestinationAddress}
+        setUserAddress={setUserL2DestinationAddress}
+        userBalance={userTicketDestinationBalance}
+        tokenBytes={tokenBytes}
+        handlePendingWithdraw={undefined}
+        handlePendingDeposit={undefined}
+        handleL2Transfer={handleL2Transfer}
+        rollupType={rollupType}
+        rollup={rollup}
+        dekuClient={dekuClient}
+        tokenType={TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]}
+        quantity={quantity}
+        setQuantity={setQuantity}
+        setTokenType={setTokenType}
+        />
+        
+        
+        </Stack>
+        
+        
+        </Box>
+        );
+    };
     
-    <RollupBox 
-    isDirectionDeposit={false}
-    ref={rollupBoxRef}
-    Tezos={TezosL2}
-    userAddress={userL2Address}
-    setUserAddress={undefined}
-    userBalance={userTicketBalance}
-    tokenBytes={tokenBytes}
-    handlePendingWithdraw={undefined}
-    handlePendingDeposit={undefined}
-    handleL2Transfer={handleL2Transfer}
-    rollupType={rollupType}
-    rollup={rollup}
-    dekuClient={dekuClient}
-    tokenType={TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]}
-    quantity={quantity}
-    setQuantity={setQuantity}
-    setTokenType={setTokenType}
-    />
-    
-    <div style={{height:0}}>
-    <Button sx={{position:"relative",top:"-90px"}} color="warning" variant="contained" onClick={(e)=>handleL2Transfer(e)}>Transfer</Button>
-    </div>
-    
-    <RollupBox 
-    isDirectionDeposit={true}
-    ref={rollupDestinationBoxRef}
-    Tezos={TezosL2}
-    userAddress={userL2DestinationAddress}
-    setUserAddress={setUserL2DestinationAddress}
-    userBalance={userTicketDestinationBalance}
-    tokenBytes={tokenBytes}
-    handlePendingWithdraw={undefined}
-    handlePendingDeposit={undefined}
-    handleL2Transfer={handleL2Transfer}
-    rollupType={rollupType}
-    rollup={rollup}
-    dekuClient={dekuClient}
-    tokenType={TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]}
-    quantity={quantity}
-    setQuantity={setQuantity}
-    setTokenType={setTokenType}
-    />
+    export default TransferL2;
     
     
-    </Stack>
     
-    
-    </Box>
-    );
-};
-
-export default TransferL2;
-
-
