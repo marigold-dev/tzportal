@@ -186,7 +186,7 @@ const handleL2Transfer = async (event : MouseEvent<HTMLButtonElement>) => {
             let faContract = await TezosL2.wallet.at( tokenType === TOKEN_TYPE.CTEZ?process.env["REACT_APP_CTEZ_CONTRACT"]! : tokenType === TOKEN_TYPE.KUSD ? process.env["REACT_APP_KUSD_CONTRACT"]! : tokenType === TOKEN_TYPE.UUSD?process.env["REACT_APP_UUSD_CONTRACT"]! : process.env["REACT_APP_EURL_CONTRACT"]! , tzip12  );
             decimals = Math.pow(10,(await faContract.tzip12().getTokenMetadata(0)).decimals);
         }
-        const opHash = await dekuClient.createTransaction(userL2DestinationAddress,(quantity.multipliedBy(decimals)).toNumber(),tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
+        const opHash = await dekuClient.createTransaction(userL2DestinationAddress,quantity.multipliedBy(decimals),tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
         enqueueSnackbar("Transaction to "+userL2DestinationAddress+" was successful", {variant: "success", autoHideDuration:10000});
     } catch (error : any) {
         console.table(`Error: ${JSON.stringify(error, null, 2)}`);

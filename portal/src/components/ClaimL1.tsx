@@ -16,12 +16,14 @@ import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 
 
 type ClaimL1Props = {
+    Tezos : TezosToolkit;
     TezosL2 : TezosToolkit;
     rollupType : ROLLUP_TYPE;
     userAddress : string;
 };
 
 const ClaimL1 = ({
+    Tezos,
     TezosL2,
     rollupType,
     userAddress
@@ -80,30 +82,30 @@ const ClaimL1 = ({
         let newCurrentBalance  : BigNumber = new BigNumber(0) ;
         
         //XTZ
-        const XTZbalance = await TezosL2.tz.getBalance(userAddress);
+        const XTZbalance = await Tezos.tz.getBalance(userAddress);
         
         //FA1.2 LOOP
         
         //kUSD
-        let kUSDContract = await TezosL2.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!,compose(tzip12, tzip16));
+        let kUSDContract = await Tezos.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!,compose(tzip12, tzip16));
         const kUSDtokenMap : BigMapAbstraction = (await kUSDContract.storage() as FA12Contract).tokens;
         let kUSDBalance : BigNumber|undefined = await kUSDtokenMap.get<BigNumber>(userAddress);
         
         
         //CTEZ
-        let ctezContract = await TezosL2.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!,compose(tzip12, tzip16));
+        let ctezContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!,compose(tzip12, tzip16));
         const ctezContractStorage : FA12Contract = (await ctezContract.storage() as FA12Contract)
         const cteztokenMap : BigMapAbstraction = ctezContractStorage.tokens;
         let ctezBalance : BigNumber|undefined = await cteztokenMap.get<BigNumber>(userAddress);
         
         //UUSD
-        let uusdContract = await TezosL2.wallet.at(process.env["REACT_APP_UUSD_CONTRACT"]!,tzip12);
+        let uusdContract = await Tezos.wallet.at(process.env["REACT_APP_UUSD_CONTRACT"]!,tzip12);
         const uusdContractStorage : FA2Contract = (await uusdContract.storage() as FA2Contract)
         const uusdtokenMap : BigMapAbstraction = uusdContractStorage.ledger;
         let uusdBalance : BigNumber|undefined = await uusdtokenMap.get<BigNumber>([userAddress,0]);
         
         //EURL
-        let eurlContract = await TezosL2.wallet.at(process.env["REACT_APP_EURL_CONTRACT"]!,tzip12);
+        let eurlContract = await Tezos.wallet.at(process.env["REACT_APP_EURL_CONTRACT"]!,tzip12);
         const eurlContractStorage : FA2Contract = (await eurlContract.storage() as FA2Contract)
         const eurltokenMap : BigMapAbstraction = eurlContractStorage.ledger;
         let eurlBalance : BigNumber|undefined = await eurltokenMap.get<BigNumber>([userAddress,0]);
@@ -148,11 +150,9 @@ const ClaimL1 = ({
     }
     
     const handleWithdraw = async (withdrawProof : DEKUWithdrawProof) : Promise<number>=> {
-        
-        alert(JSON.stringify(withdrawProof))
-        
+                
         console.log("handleWithdraw");
-        let rollupContract : Contract = await TezosL2.contract.at(rollupType === ROLLUP_TYPE.DEKU ?process.env["REACT_APP_ROLLUP_CONTRACT_DEKU"]!:process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
+        let rollupContract : Contract = await Tezos.contract.at(rollupType === ROLLUP_TYPE.DEKU ?process.env["REACT_APP_ROLLUP_CONTRACT_DEKU"]!:process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
         console.log("rollupContract",rollupContract);
         
         

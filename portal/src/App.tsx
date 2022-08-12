@@ -238,7 +238,7 @@ function App() {
   } 
   >
   <Tab icon={<Home  />} sx={{display:"none"}} label="HOME" disabled={true}  value={""+PAGES.WELCOME}/>
-  <Tab icon={<Hail  />} label="L1 Claim" disabled={userAddress==""}  value={""+PAGES.L1CLAIM}/>
+  <Tab icon={<Hail  />} label="L1 Claim" disabled={userL2Address=="" || userAddress==""}  value={""+PAGES.L1CLAIM}/>
   <Tab icon={<Archive />} label="Deposit" disabled={userL2Address=="" || userAddress==""} value={""+PAGES.DEPOSIT}/>
   <Tab icon={<Unarchive />} label="Withdraw" disabled={userL2Address=="" || userAddress==""} value={""+PAGES.WITHDRAW}/>
   <Tab icon={<Send />} label="L2 Transfer" disabled={userL2Address==""} value={""+PAGES.L2TRANSFER}/>
@@ -255,19 +255,36 @@ function App() {
   bgcolor="secondary.main">
   
   <Grid item xs={3}>
-  <Stack height="100%"   divider={<Divider color='white' orientation="horizontal" flexItem />}
-  alignContent="space-between" alignItems="center" spacing={1} >
-  <span style={{fontFamily:"Chilanka", height:"50%", paddingTop:"25%" }}> Claim your L1 Withdraw &rarr; </span>
-  <span style={{fontFamily:"Chilanka", height:"50%", paddingTop:"25%" }}> Do L2 Transfer &rarr;</span>
+  <Stack  direction="row" height="100%" style={{fontFamily:"Chilanka" }}>
+
+
+
+
+<span style={{paddingTop:"25%",paddingRight:"1em"}}>
+  Do Deposit / Withdraw<br /><br />or<br /><br/>Claim your L1 Withdraw
+  </span>
+
+
+  <Divider color='white' sx={{borderWidth:"1px"}} orientation="vertical" flexItem />
+
+  <span style={{width: "min-content"}}>
+  <br /><br />&rarr;
+  <br /><br /><br /><br /><br /><br /><br/>
+  &rarr;
+  </span>
+
+
+
+
   </Stack>
   
   </Grid >
   <Grid item xs={6}>
   
   <Stack spacing={2} >
-  <div style={{padding:"1em", backgroundColor:"var(--tertiary-color)"}} >
   
-  
+  {userAddress===""?
+  <div  style={{padding:"1em", backgroundColor:"var(--tertiary-color)"}} >
   
   <ConnectButton
   Tezos={Tezos}
@@ -285,7 +302,7 @@ function App() {
   />
   
   </div>
-  
+  :<div  style={{height:"100px"}}>&nbsp;</div>}
   
   <div style={{padding:"1em", backgroundColor:"var(--tertiary-color)"}} >
   
@@ -310,17 +327,18 @@ function App() {
   
   </Grid>
   <Grid item xs={3}>
-  <Stack direction="row" height="100%" style={{fontFamily:"Chilanka" }}> 
+  <Stack 
+  height="100%"   
+  alignContent="space-between" alignItems="center" spacing={1}
+  > 
   
-  <span style={{width: "min-content"}}>
-  <br /><br />&larr;
-  <br /><br /><br /><br /><br /><br /><br/>
-  &larr;
-  </span>
-  <Divider color='white' sx={{borderWidth:"1px"}} orientation="vertical" flexItem />
-  <span style={{paddingTop:"40%",paddingLeft:"1em"}}>
-  Do Deposit or Withdraw
-  </span>
+  
+
+
+  <span style={{fontFamily:"Chilanka", height:"50%", paddingTop:"25%" }}>  </span>
+  <span style={{fontFamily:"Chilanka", height:"50%", paddingTop:"25%" }}> &larr; Do L2 Transfer </span>
+
+
   
   </Stack>
   
@@ -332,6 +350,7 @@ function App() {
   </TabPanel>
   <TabPanel value={""+PAGES.L1CLAIM}>
   <ClaimL1 
+  Tezos={Tezos}
   TezosL2={TezosL2}
   rollupType={rollupType}
   userAddress={userAddress}
