@@ -185,6 +185,11 @@ export interface DEKUOperation {
                         data
                     }
                     
+                    console.log("fullPayload",fullPayload);
+                    console.log("operation",operation);
+                    console.log("dekuNodeUrl",this.dekuNodeUrl);
+                    console.log("signer publicKeyHash",await this.TezosL2.signer.publicKeyHash());
+
                     const res : Response = await fetch(this.dekuNodeUrl! + "/user-operation-gossip",
                     {
                         method: "POST",
@@ -208,10 +213,6 @@ export interface DEKUOperation {
                     amount : amount.toNumber(),
                     ticket : "(Pair \""+this.ticketer+"\" 0x"+ticketData+")"
                 }];
-
-
-                console.log("initialOperation",JSON.stringify(initialOperation));
-
 
                 return this.userOperation(initialOperation);
             }
