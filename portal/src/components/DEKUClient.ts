@@ -165,7 +165,7 @@ export interface DEKUOperation {
                         initial_operation: initialOperation,
                     }
                     
-                    let nonce = Math.floor(Math.random() * 2000000);//2147483647);
+                    let nonce = Math.floor(Math.random() * 2147483647);
                     
                     const fullPayload = JSON.stringify([ 
                         nonce,
