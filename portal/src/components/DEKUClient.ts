@@ -165,7 +165,7 @@ export interface DEKUOperation {
                         initial_operation: initialOperation,
                     }
                     
-                    let nonce = Math.floor(Math.random() * 2147483647);
+                    let nonce = Math.floor(Math.random() * 2000000);//2147483647);
                     
                     const fullPayload = JSON.stringify([ 
                         nonce,
@@ -185,11 +185,6 @@ export interface DEKUOperation {
                         data
                     }
                     
-                    console.log("fullPayload",fullPayload);
-                    console.log("operation",operation);
-                    console.log("dekuNodeUrl",this.dekuNodeUrl);
-                    console.log("signer publicKeyHash",await this.TezosL2.signer.publicKeyHash());
-
                     const res : Response = await fetch(this.dekuNodeUrl! + "/user-operation-gossip",
                     {
                         method: "POST",

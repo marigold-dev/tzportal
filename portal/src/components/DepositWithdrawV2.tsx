@@ -158,7 +158,7 @@ const DepositWithdrawV2 = ({
         }
         
         setUserBalance(balance);
-        console.log("All balances initialized",balance);
+        console.log("[DepositWithdraw] All balances initialized",balance);
         
         userWalletRef?.current?.setShouldBounce(false);        
         
@@ -218,7 +218,7 @@ const DepositWithdrawV2 = ({
         }
         
         setUserTicketBalance(balance);
-        console.log("All ticket balances initialized",balance);
+        console.log("[DepositWithdraw] All ticket balances initialized",balance);
         
         rollupBoxRef?.current?.setShouldBounce(false);
         
@@ -254,9 +254,11 @@ const DepositWithdrawV2 = ({
         refreshContract();
         refreshBalance();
         refreshTicketBalance();
-        setInterval(refreshBalance, 15*1000); //refresh async L1 balances 
-        setInterval(refreshTicketBalance, 15*1000); //refresh async L2 balances 
     })();
+
+    const intervalId = setInterval(refreshBalance, 15*1000); //refresh async L1 balances 
+    const intervalId2 = setInterval(refreshTicketBalance, 15*1000); //refresh async L2 balances 
+    return () => {clearInterval(intervalId);clearInterval(intervalId2);}
 }, []);
 
 
@@ -675,14 +677,7 @@ const handleDeposit = async (event : MouseEvent) => {
             
             // ************************************* WITHDRAW *********************************
             
-            const [handleId , setHandleId] = useState<number>(0);
-            const [proof, setProof]  = useState<string>(""); 
-            const [proofList, setProofList] = useState<Array<[string,string]>>([]);
-            const [inputProof1,setInputProof1] = useState<string>("");
-            const [inputProof2,setInputProof2] = useState<string>("");
-            
-            
-            
+
             const handleL2Withdraw = async (event : MouseEvent<HTMLButtonElement>) => {
                 
                 event.preventDefault();

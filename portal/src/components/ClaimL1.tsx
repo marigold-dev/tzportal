@@ -130,7 +130,7 @@ const ClaimL1 = ({
         }
         
         setUserBalance(balance);
-        console.log("All balances initialized",balance);
+        console.log("[ClaimL1] All balances initialized",balance);
         
         setShouldBounce(false);        
         
@@ -150,7 +150,7 @@ const ClaimL1 = ({
     }
     
     const handleWithdraw = async (withdrawProof : DEKUWithdrawProof) : Promise<number>=> {
-                
+        
         console.log("handleWithdraw");
         let rollupContract : Contract = await Tezos.contract.at(rollupType === ROLLUP_TYPE.DEKU ?process.env["REACT_APP_ROLLUP_CONTRACT_DEKU"]!:process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
         console.log("rollupContract",rollupContract);
@@ -181,8 +181,11 @@ const ClaimL1 = ({
         
         useEffect(() => { (async () => {
             refreshBalance();
-            setInterval(refreshBalance, 15*1000); //refresh async L1 balances 
         })();
+        
+        const intervalId = setInterval(refreshBalance, 15*1000); //refresh async L1 balances 
+        return () => clearInterval(intervalId);
+        
     }, []);
     
     const myKeyframe = keyframes`
