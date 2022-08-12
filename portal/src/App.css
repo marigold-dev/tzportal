@@ -1,3 +1,4 @@
+
 #root,html,body {
   height: 100%;
 }
@@ -7,7 +8,12 @@
   --endFixedChars       : 10;    
   --startWidth :  1em * 1 * var(--startFixedChars) ;
   --endWidth   :  1em * 1 * (var(--endFixedChars ));
+  --tertiary-color: #22313F;
+  --quaternary-color: #D38700;
 }
+
+a:link { text-decoration: none; }
+
 
 body {
   margin: 0px;
@@ -24,6 +30,17 @@ body {
   pointer-events: none;
 }
 
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
 
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
@@ -50,7 +67,6 @@ body {
 
 .App-header {
   background-color: #282c34;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -110,5 +126,7 @@ body {
   direction: rtl;
 }
 
+
+/** animations **/
 
 

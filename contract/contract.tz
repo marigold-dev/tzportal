@@ -4,21 +4,21 @@
               (nat %amountToTransfer)
               (address %rollupAddress)
               (or %l2Type
-                 (or (unit %l2_CHUSAI) (address %l2_DEKU))
+                 (or (unit %l2_CHUSAI) (key_hash %l2_DEKU))
                  (tx_rollup_l2_address %l2_TORU))
               (address %faAddress))
            (pair %xTZ_OP
               (nat %amountToTransfer)
               (address %rollupAddress)
               (or %l2Type
-                 (or (unit %l2_CHUSAI) (address %l2_DEKU))
+                 (or (unit %l2_CHUSAI) (key_hash %l2_DEKU))
                  (tx_rollup_l2_address %l2_TORU))))
         (or (pair %pendingDeposit
                address
                (pair (nat %amountToTransfer)
                      (address %rollupAddress)
                      (or %l2Type
-                        (or (unit %l2_CHUSAI) (address %l2_DEKU))
+                        (or (unit %l2_CHUSAI) (key_hash %l2_DEKU))
                         (tx_rollup_l2_address %l2_TORU))
                      (address %faAddress)))
             (or (ticket %withdrawTORU bytes)
@@ -28,7 +28,7 @@
                        (pair (nat %amountToTransfer)
                              (address %rollupAddress)
                              (or %l2Type
-                                (or (unit %l2_CHUSAI) (address %l2_DEKU))
+                                (or (unit %l2_CHUSAI) (key_hash %l2_DEKU))
                                 (tx_rollup_l2_address %l2_TORU))
                              (address %faAddress))))))) ;
   storage
@@ -37,7 +37,7 @@
                    (pair (nat %amountToTransfer)
                          (address %rollupAddress)
                          (or %l2Type
-                            (or (unit %l2_CHUSAI) (address %l2_DEKU))
+                            (or (unit %l2_CHUSAI) (key_hash %l2_DEKU))
                             (tx_rollup_l2_address %l2_TORU))
                          (address %faAddress)))
                 (map %faPendingWithdrawals
@@ -45,14 +45,14 @@
                    (pair (nat %amountToTransfer)
                          (address %rollupAddress)
                          (or %l2Type
-                            (or (unit %l2_CHUSAI) (address %l2_DEKU))
+                            (or (unit %l2_CHUSAI) (key_hash %l2_DEKU))
                             (tx_rollup_l2_address %l2_TORU))
                          (address %faAddress))))
           (address %treasuryAddress)) ;
   code { LAMBDA
            address
-           (contract (pair address (ticket bytes)))
-           { CONTRACT %deposit (pair address (ticket bytes)) ;
+           (contract (pair key_hash (ticket bytes)))
+           { CONTRACT %deposit (pair key_hash (ticket bytes)) ;
              IF_NONE { PUSH string "11" ; FAILWITH } {} } ;
          LAMBDA
            address
@@ -184,7 +184,7 @@
                       DUP 3 ;
                       CAR ;
                       CAR ;
-                      NONE (pair nat address (or (or unit address) tx_rollup_l2_address) address) ;
+                      NONE (pair nat address (or (or unit key_hash) tx_rollup_l2_address) address) ;
                       DUP 3 ;
                       DIG 4 ;
                       CAR ;
@@ -299,7 +299,8 @@
                                           CAR ;
                                           CDR ;
                                           DIG 2 ;
-                                          SENDER ;
+                                          PUSH key "edpktz4xg6csJnJ5vcmMb2H37sWXyBDcoAp3XrBvjRaTSQ1zmZTeRQ" ;
+                                          HASH_KEY ;
                                           RIGHT unit ;
                                           LEFT tx_rollup_l2_address ;
                                           SENDER ;
@@ -358,7 +359,7 @@
                               DUP 3 ;
                               CAR ;
                               CDR ;
-                              NONE (pair nat address (or (or unit address) tx_rollup_l2_address) address) ;
+                              NONE (pair nat address (or (or unit key_hash) tx_rollup_l2_address) address) ;
                               DIG 2 ;
                               DIG 3 ;
                               CAR ;

@@ -219,6 +219,7 @@ export class RollupTORU {
                 });
               }
               
+              
               static async fetchRollupDEKU(Tezos : TezosToolkit, rollupAddress : string) : Promise<RollupDEKU|undefined> {
                 let dekucontract : Contract = await Tezos.contract.at(rollupAddress);
                 let rollup : RollupDEKU = await dekucontract.storage();
@@ -242,6 +243,10 @@ export class RollupTORU {
                     new DEKUHeader(rollup.root_hash.current_block_hash,rollup.root_hash.current_block_height,rollup.root_hash.current_handles_hash,rollup.root_hash.current_state_hash,rollup.root_hash.current_validators),
                     new DEKUVault(rollup.vault.known_handles_hash,rollup.vault.used_handles,rollup.vault.vault,ticketMap))); });
                   }
+                  
+
+
+                  
                   
                   
                   static async fetchRollupCHUSAI(Tezos : TezosToolkit, rollupAddress : string) : Promise<RollupCHUSAI|undefined> {
