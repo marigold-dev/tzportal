@@ -206,7 +206,8 @@ export interface DEKUOperation {
                 const initialOperation : DEKUInitialOperation = [DEKUInitialOperationType.Transaction, {
                     destination : receiver,
                     amount : amount.toNumber(),
-                    ticket : "(Pair \""+this.ticketer+"\" 0x"+ticketData+")"
+                    //FIXME ticket : "(Pair \""+this.ticketer+"\" 0x"+ticketData+")"
+                    ticket : "(Pair \""+this.ticketer+"\"\n      0x"+ticketData+")"
                 }];
 
                 return this.userOperation(initialOperation);
@@ -216,7 +217,8 @@ export interface DEKUOperation {
                 const initialOperation : DEKUInitialOperation = [DEKUInitialOperationType.Tezos_withdraw, {
                     owner : tezos_address,
                     amount : amount.toNumber(),
-                    ticket : "(Pair \""+this.ticketer+"\" 0x"+ticketData+")"
+                    //FIXME ticket : "(Pair \""+this.ticketer+"\" 0x"+ticketData+")"
+                    ticket : "(Pair \""+this.ticketer+"\"\n      0x"+ticketData+")"
                 }];
                 return this.userOperation(initialOperation);
             }
