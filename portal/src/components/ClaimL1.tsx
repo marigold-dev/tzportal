@@ -153,7 +153,7 @@ const ClaimL1 = ({
         
         console.log("handleWithdraw");
         let rollupContract : Contract = await Tezos.contract.at(rollupType === ROLLUP_TYPE.DEKU ?process.env["REACT_APP_ROLLUP_CONTRACT_DEKU"]!:process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
-        console.log("rollupContract",rollupContract);
+        console.log("Tezos signer",Tezos.signer);
         
         
         let param : RollupParameters = 
