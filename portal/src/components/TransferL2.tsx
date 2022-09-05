@@ -217,7 +217,7 @@ const TransferL2 = ({
         borderRadius={5}
         bgcolor="secondary.main"
         width={!isDesktop?"100%":"700px"}
-        sx={{ marginTop : "5vh", padding : "2em"}}
+        sx={isDesktop?{ marginTop : "5vh", padding : "2em"}:{ marginTop : 0, padding : 0}}
         >
         
         <Backdrop

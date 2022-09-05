@@ -18,7 +18,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import MenuIcon from '@mui/icons-material/Menu';
 import { Archive, ArchiveOutlined, ArrowDropDown, Badge, CameraRoll, Hail, Home, Send, SettingsBackupRestoreOutlined, Unarchive } from '@mui/icons-material';
-import { Button, CardHeader, Chip, Grid, Icon, makeStyles, Paper, Popover, Select, SelectChangeEvent, Stack, Tab, Tabs, Theme } from '@mui/material';
+import { Button, CardHeader, Chip, Grid, Icon, makeStyles, Paper, Popover, Select, SelectChangeEvent, Stack, Tab, Tabs, Theme, useMediaQuery } from '@mui/material';
 import { AccountInfo, NetworkType} from "@airgap/beacon-types";
 import { Tzip12Module } from "@taquito/tzip12";
 import { getTokenBytes, LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from './components/TezosUtils';
@@ -157,7 +157,8 @@ function App() {
   
   
   
-  
+  const isDesktop = useMediaQuery('(min-width:600px)');
+
   return (
     <div
       style={{
@@ -286,24 +287,21 @@ function App() {
               "aria-labelledby": "basic-button"
             }}
           >
-              <MenuItem style={{
-            backgroundColor: "#405b70"}}
+              <MenuItem 
               onClick={() => {
                 window.location.href = "https://tzstamp.io/";
               }}
             >
               Tz Stamp
             </MenuItem>
-            <MenuItem style={{
-            backgroundColor: "#405b70"}}
+            <MenuItem 
               onClick={() => {
                 window.location.href = "https://tzvote.marigold.dev/";
               }}
             >
               Tz Vote
             </MenuItem>
-            <MenuItem style={{
-            backgroundColor: "#405b70"}}
+            <MenuItem 
               onClick={() => {
                 window.location.href = "https://faucet.marigold.dev/";
               }}
@@ -331,8 +329,7 @@ function App() {
               "aria-labelledby": "basic-button",
             }}
           >
-              <MenuItem style={{
-            backgroundColor: "#405b70"}}>
+              <MenuItem>
               <Select
                 variant="standard"
                 id="layer2-select"
@@ -370,8 +367,7 @@ function App() {
                 </MenuItem>
               </Select>
             </MenuItem>
-            <MenuItem style={{
-            backgroundColor: "#405b70"}}>
+            <MenuItem >
               <ConnectButton
                 Tezos={Tezos}
                 setWallet={setWallet}
@@ -387,8 +383,7 @@ function App() {
                 setPageIndex={setPageIndex}
               />
             </MenuItem>
-            <MenuItem style={{
-            backgroundColor: "#405b70"}}>
+            <MenuItem >
               <ConnectButtonL2
                 userAddress={userAddress}
                 userL2Address={userL2Address}
@@ -417,9 +412,9 @@ function App() {
       <TabContext value={pageIndex}>
         <Box display={{ xs: "none", md: "grid" }}>
           <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-            <Tabs
+            <Tabs 
               value={pageIndex}
-              centered
+              centered 
               onChange={(e, newValue: string) => {
                 !newValue
                   ? setPageIndex(PAGES.WELCOME.toString())
@@ -431,7 +426,7 @@ function App() {
                 sx={{ display: "none" }}
                 label="HOME"
                 disabled={true}
-                value={"" + PAGES.WELCOME}
+                value={ "" + PAGES.WELCOME}
               />
               <Tab
                 icon={<Hail />}
@@ -667,45 +662,44 @@ function App() {
               <Tab
                 icon={<Home />}
                 sx={{ display: "none" }}
-                label="HOME"
                 disabled={true}
                 value={"" + PAGES.WELCOME}
               />
               <Tab
                 icon={<Hail />}
-                label="L1 Claim"
+                label=" "
                 disabled={userL2Address == "" || userAddress == ""}
                 value={"" + PAGES.L1CLAIM}
               />
               <Tab
                 icon={<Archive />}
-                label="Deposit"
+                label=" "
                 disabled={userL2Address == "" || userAddress == ""}
                 value={"" + PAGES.DEPOSIT}
               />
               <Tab
                 icon={<Unarchive />}
-                label="Withdraw"
+                label=" "
                 disabled={userL2Address == "" || userAddress == ""}
                 value={"" + PAGES.WITHDRAW}
               />
               <Tab
                 icon={<Send />}
-                label="L2 Transfer"
+                label=" "
                 disabled={userL2Address == ""}
                 value={"" + PAGES.L2TRANSFER}
               />
             </Tabs>
           </Box>
 
-          <TabPanel value={"" + PAGES.WELCOME}>
+          <TabPanel sx={{margin:0 , padding :0}} value={"" + PAGES.WELCOME}>
             <Grid
               container
               borderRadius={5}
               spacing={3}
               color="primary.main"
               width="auto"
-              sx={{  padding: "2em" }}
+              sx={{  padding: "1.8em" }}
               bgcolor="secondary.main"
             >
               <Grid item xs={6}>
@@ -812,7 +806,7 @@ function App() {
             />
           </TabPanel>
           <TabPanel
-            style={{ paddingLeft: "calc(50% - 350px)" }}
+            style={isDesktop?{paddingLeft: "calc(50% - 350px)" }:{padding:0}}
             value={"" + PAGES.L2TRANSFER}
           >
             <TransferL2
