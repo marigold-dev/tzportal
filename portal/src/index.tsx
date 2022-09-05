@@ -11,6 +11,15 @@ const root = createRoot(container!); // createRoot(container!) if you use TypeSc
 
 
 const themeLight = createTheme({
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 900,
+      lg: 1200,
+      xl: 1536,
+    },
+  },
   typography: {
     fontFamily: [
       'Chilanka',
@@ -144,6 +153,16 @@ palette: {
 }
 });
 
+interface Props {
+  children: React.ReactNode;
+  breakpoint: string;
+}
+function displayBox( {children , breakpoint} : Props ){
+  const display = {
+
+  }
+ return {}
+}
 root.render(
   <React.StrictMode>
   <SnackbarProvider maxSnack={3}>
