@@ -308,6 +308,20 @@ function App() {
             >
               Faucet App
             </MenuItem>
+            <MenuItem 
+              onClick={() => {
+                window.location.href = "https://tezos.gitlab.io/alpha/transaction_rollups.html";
+              }}
+            >
+              Toru
+            </MenuItem>
+            <MenuItem 
+              onClick={() => {
+                window.location.href = "https://www.marigold.dev/project/deku-sidechain";
+              }}
+            >
+              Deku
+            </MenuItem>
           </Menu>
         </div>
         <div style={{ left: 0, marginLeft: "60vW", position: "absolute" }}>
@@ -591,7 +605,7 @@ function App() {
             />
           </TabPanel>
           <TabPanel
-            style={{ paddingLeft: "calc(50% - 350px)" }}
+            style={isDesktop?{paddingLeft: "calc(50% - 350px)" }:{padding:0}}
             value={"" + PAGES.DEPOSIT}
           >
             <DepositWithdrawV2
@@ -612,7 +626,7 @@ function App() {
             />
           </TabPanel>
           <TabPanel
-            style={{ paddingLeft: "calc(50% - 350px)" }}
+            style={isDesktop?{paddingLeft: "calc(50% - 350px)" }:{padding:0}}
             value={"" + PAGES.WITHDRAW}
           >
             <DepositWithdrawV2
@@ -633,7 +647,7 @@ function App() {
             />
           </TabPanel>
           <TabPanel
-            style={{ paddingLeft: "calc(50% - 350px)" }}
+            style={isDesktop?{paddingLeft: "calc(50% - 350px)" }:{padding:0}}
             value={"" + PAGES.L2TRANSFER}
           >
             <TransferL2
@@ -648,7 +662,7 @@ function App() {
       </TabContext>
       <TabContext value={pageIndex}>
         <Box display={{ xs: "grid", md: "none" }}>
-          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Box sx={{ borderBottom: 1, borderColor: "divider"  }}>
             <Tabs
             
               value={pageIndex}
@@ -699,17 +713,19 @@ function App() {
               spacing={3}
               color="primary.main"
               width="auto"
-              sx={{  padding: "1.8em" }}
+              sx={{  padding: "2em" }}
               bgcolor="secondary.main"
+              style={{justifyContent:"center", paddingLeft:"20px"}}
             >
-              <Grid item xs={6}>
+              <Grid item xs={6} style={{maxWidth:"100%"}}>
                 <Stack spacing={2}>
                   {userAddress === "" ? (
                     <div
                       style={{
                         padding: "1em",
                         backgroundColor: "var(--tertiary-color)",
-                        width: "max-content"
+                        width: "250px"
+
                       }}
                     >
                       <ConnectButton
@@ -764,7 +780,7 @@ function App() {
             />
           </TabPanel>
           <TabPanel
-            style={{ paddingLeft: "calc(50% - 350px)" }}
+            style={isDesktop?{paddingLeft: "calc(50% - 350px)" }:{padding:0}}
             value={"" + PAGES.DEPOSIT}
           >
             <DepositWithdrawV2
@@ -785,7 +801,7 @@ function App() {
             />
           </TabPanel>
           <TabPanel
-            style={{ paddingLeft: "calc(50% - 350px)" }}
+            style={isDesktop?{paddingLeft: "calc(50% - 350px)" }:{padding:0}}
             value={"" + PAGES.WITHDRAW}
           >
             <DepositWithdrawV2
@@ -884,23 +900,9 @@ function App() {
           bottom: 0,
           right: 0,
           height: "80px",
-          paddingLeft: "50px",
-          paddingRight: "50px",
+          justifyContent: "center"
         }}
       >
-        <a
-          href="https://www.marigold.dev/project/deku-sidechain"
-          target="_blank"
-        >
-          <img src="deku_logo_white.png" height={36} />
-        </a>
-        <a
-          href="https://tezos.gitlab.io/alpha/transaction_rollups.html"
-          target="_blank"
-        >
-          <img src="toru.png" height={36} />
-        </a>
-
         <a href="https://marigold.dev/" target="_blank">
           <Typography variant="h6" color="primary">
             Powered by Marigold

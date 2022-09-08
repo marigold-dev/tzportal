@@ -1,4 +1,4 @@
-import { Backdrop, CircularProgress, Grid, InputAdornment, keyframes, OutlinedInput, Stack, TextField } from "@mui/material";
+import { Backdrop, CircularProgress, Grid, InputAdornment, keyframes, OutlinedInput, Stack, TextField, useMediaQuery } from "@mui/material";
 import Button from "@mui/material/Button";
 import { BigMapAbstraction, compose, Contract, TezosToolkit } from "@taquito/taquito";
 import { tzip12 } from "@taquito/tzip12";
@@ -202,12 +202,15 @@ const ClaimL1 = ({
     100% { transform: translate(1px, -2px)  rotate(-1deg);  }
     `;
     
+    const isDesktop = useMediaQuery('(min-width:600px)');
+    
     return (
         <Grid container  borderRadius={5}
         spacing={2}
         color="primary.main" 
         width="auto"
         sx={{ margin : "5vh 20vw", padding : "2em"}}
+        style={isDesktop?{ margin : "5vh 20vw", padding : "2em" }:{margin : "0"}}
         bgcolor="secondary.main">
         
         <Backdrop

@@ -73,7 +73,7 @@ const UserWallet = ({
         {!isDirectionDeposit ?<div style={{height:"70px"}}></div>:""}
 
 
-            <Stack direction={"column"} spacing={1} >
+            <Stack  direction={"column"} spacing={1} >
         
         <OutlinedInput 
         fullWidth
