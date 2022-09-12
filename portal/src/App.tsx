@@ -17,7 +17,7 @@ import Tooltip from '@mui/material/Tooltip';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import MenuIcon from '@mui/icons-material/Menu';
-import { Archive, ArchiveOutlined, ArrowDropDown, Badge, CameraRoll, Hail, Home, Send, SettingsBackupRestoreOutlined, Unarchive } from '@mui/icons-material';
+import { Archive, ArchiveOutlined, ArrowDropDown, Badge, CameraRoll, Hail, Home, Send, SettingsBackupRestoreOutlined, TextRotationDown, Unarchive } from '@mui/icons-material';
 import { Button, CardHeader, Chip, Grid, Icon, makeStyles, Paper, Popover, Select, SelectChangeEvent, Stack, Tab, Tabs, Theme, useMediaQuery } from '@mui/material';
 import { AccountInfo, NetworkType} from "@airgap/beacon-types";
 import { Tzip12Module } from "@taquito/tzip12";
@@ -287,6 +287,12 @@ function App() {
               "aria-labelledby": "basic-button"
             }}
           >
+              <label style={{
+               padding:"1em",
+               color:"#b5b5b5",
+              }}>
+                Marigold apps
+              </label>
               <MenuItem 
               onClick={() => {
                 window.location.href = "https://tzstamp.io/";
@@ -308,6 +314,12 @@ function App() {
             >
               Faucet App
             </MenuItem>
+            <label style={{
+               padding:"1em",
+               color:"#b5b5b5",
+              }}>
+              Documentation
+            </label>
             <MenuItem 
               onClick={() => {
                 window.location.href = "https://tezos.gitlab.io/alpha/transaction_rollups.html";
@@ -709,7 +721,6 @@ function App() {
           <TabPanel sx={{margin:0 , padding :0}} value={"" + PAGES.WELCOME}>
             <Grid
               container
-              borderRadius={5}
               spacing={3}
               color="primary.main"
               width="auto"
