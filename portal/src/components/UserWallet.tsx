@@ -1,4 +1,4 @@
-import { Avatar, Card, CardContent, CardHeader, Chip, Divider, Grid, Input, InputAdornment, keyframes, MenuItem, OutlinedInput, Paper, Select, SelectChangeEvent, Stack, TextField, Typography } from "@mui/material";
+import { Avatar, Card, CardContent, CardHeader, Chip, Divider, Grid, Input, InputAdornment, keyframes, MenuItem, OutlinedInput, Paper, Select, SelectChangeEvent, Stack, TextField, Typography, useMediaQuery } from "@mui/material";
 import { LAYER2Type, TOKEN_TYPE } from "./TezosUtils";
 import BigNumber from 'bignumber.js';
 import { AccountInfo } from "@airgap/beacon-types";
@@ -55,15 +55,14 @@ const UserWallet = ({
     90%  { transform: translate(1px, 2px)   rotate(0deg);   },
     100% { transform: translate(1px, -2px)  rotate(-1deg);  }
     `;
-
+    const isDesktop = useMediaQuery('(min-width:600px)');
     return (
         
         <Grid bgcolor="var(--tertiary-color)" padding="1em" container spacing={1}>
-        
         <Grid xs={12} sm={2} item >   
         <Stack margin={1} spacing={1}>
-        <Typography fontWeight="bolder" color="secondary" variant="h6" sx={{backgroundColor:"primary.main"}} >{isDirectionDeposit?"From":"To"}</Typography>
-        <img src="XTZ_white.png" width={80}/>
+        {isDesktop?( <><Typography fontWeight="bolder" color="secondary" variant="h6" sx={{ backgroundColor: "primary.main" }}>{isDirectionDeposit ? "From" : "To"}</Typography><img src="XTZ_white.png" width={80} /></>):( <><img src="XTZ_white.png" width={30} /><Typography fontWeight="bolder" color="secondary" variant="h6" sx={{ backgroundColor: "primary.main" }}>{isDirectionDeposit ? "From" : "To"}</Typography></>)}  
+
         </Stack  >
         </Grid>
         

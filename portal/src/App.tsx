@@ -782,7 +782,7 @@ function App() {
               </Grid>
             </Grid>
           </TabPanel>
-          <TabPanel value={"" + PAGES.L1CLAIM}>
+          <TabPanel  style={isDesktop?{padding:"20px" }:{padding:0}} value={"" + PAGES.L1CLAIM}>
             <ClaimL1
               Tezos={Tezos}
               TezosL2={TezosL2}
