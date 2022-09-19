@@ -61,7 +61,7 @@ const UserWallet = ({
         <Grid bgcolor="var(--tertiary-color)" padding="1em" container spacing={1}>
         <Grid xs={12} sm={2} item >   
         <Stack margin={1} spacing={1}>
-        {isDesktop?( <><Typography fontWeight="bolder" color="secondary" variant="h6" sx={{ backgroundColor: "primary.main" }}>{isDirectionDeposit ? "From" : "To"}</Typography><img src="XTZ_white.png" width={80} /></>):( <><img src="XTZ_white.png" width={30} /><Typography fontWeight="bolder" color="secondary" variant="h6" sx={{ backgroundColor: "primary.main" }}>{isDirectionDeposit ? "From" : "To"}</Typography></>)}  
+        {isDesktop?( <><Typography fontWeight="bolder" color="secondary" variant="h6" sx={{ backgroundColor: "primary.main" }}>{isDirectionDeposit ? "From" : "To"}</Typography><img src="XTZ_white.png" width={80} /></>):( <div style={{display:"flex", flexDirection:"row"}}><img style={{padding:"10px"}} src="XTZ_white.png" width={22} /><Typography fontWeight="bolder" color="secondary" variant="h6" lineHeight={2.2} sx={{ backgroundColor: "primary.main" , width:"-webkit-fill-available"}}>{isDirectionDeposit ? "From" : "To"}</Typography></div>)}  
 
         </Stack  >
         </Grid>
@@ -69,7 +69,7 @@ const UserWallet = ({
         <Grid xs={12} sm={10} item>
 
 
-        {!isDirectionDeposit ?<div style={{height:"70px"}}></div>:""}
+        {!isDirectionDeposit ?<div style={isDesktop?{height:"70px"}:{height:"0"}}></div>:""}
 
 
             <Stack  direction={"column"} spacing={1} >

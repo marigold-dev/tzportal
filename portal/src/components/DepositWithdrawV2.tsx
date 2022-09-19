@@ -721,7 +721,7 @@ const handleDeposit = async (event : MouseEvent) => {
                 borderRadius={5}
                 bgcolor="secondary.main"
                 width={!isDesktop?"100%":"700px"}
-                sx={{ marginTop : "5vh"}}
+                sx={{ marginTop : "2vh"}}
                 style={isDesktop?{padding: "2em" }:{padding:0}}
                 >
                 

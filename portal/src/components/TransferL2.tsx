@@ -217,7 +217,7 @@ const TransferL2 = ({
         borderRadius={5}
         bgcolor="secondary.main"
         width={!isDesktop?"100%":"700px"}
-        sx={isDesktop?{ marginTop : "5vh", padding : "2em"}:{ marginTop : 0, padding : 0}}
+        sx={isDesktop?{ marginTop : "2vh", padding : "2em"}:{ marginTop : 0, padding : 0, borderRadius:"0"}}
         >
         
         <Backdrop
@@ -228,7 +228,7 @@ const TransferL2 = ({
         </Backdrop>
         
         
-        <Stack sx={{width:"inherit"}} direction="column" spacing={2}>
+        <Stack sx={isDesktop?{width:"inherit"}:{padding:"30px"}} direction="column" spacing={2}>
         
         <RollupBox 
         isDirectionDeposit={false}

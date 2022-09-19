@@ -1,5 +1,5 @@
 import { AddShoppingCartOutlined, UnfoldMoreOutlined } from "@mui/icons-material";
-import { Accordion, AccordionDetails, AccordionSummary, Avatar, Badge, Box, Button, Chip, FormControl, Grid, Input, InputAdornment, InputLabel, keyframes, MenuItem, OutlinedInput, Paper, Select, SelectChangeEvent, Stack, styled, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Avatar, backdropClasses, Badge, Box, Button, Chip, FormControl, Grid, Input, InputAdornment, InputLabel, keyframes, MenuItem, OutlinedInput, Paper, Select, SelectChangeEvent, Stack, styled, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import { TezosToolkit } from "@taquito/taquito";
 import BigNumber from 'bignumber.js';
 import React, { Dispatch, forwardRef, Fragment, SetStateAction, useEffect, useImperativeHandle, useState } from "react";
@@ -105,9 +105,9 @@ const RollupBox = ({
         <Stack margin={1} spacing={1}>
         {isDesktop?( <><Typography fontWeight="bolder" color="secondary" variant="h6" sx={{ backgroundColor: "primary.main" }}>{isDirectionDeposit ? "To" : "From"}</Typography><Tooltip title={rollupType.address}>
                         <img src="deku_white.png" width={80} />
-                    </Tooltip></>):( <><Tooltip title={rollupType.address}>
-                        <img src="deku_white.png" width={30} />
-                    </Tooltip><Typography fontWeight="bolder" color="secondary" variant="h6" sx={{ backgroundColor: "primary.main" }}>{isDirectionDeposit ? "To" : "From"}</Typography></>)}  
+                    </Tooltip></>):( <div style={{display:"flex", flexDirection:"row"}}><Tooltip title={rollupType.address}>
+                        <img src="deku_white.png" width={30} style={{padding:"10px"}} />
+                    </Tooltip><Typography lineHeight={2} fontWeight="bolder" color="secondary" variant="h6" sx={{ backgroundColor: "primary.main", width:"-webkit-fill-available" }}>{isDirectionDeposit ? "To" : "From"}</Typography></div>)}  
 
         </Stack  >
         </Grid>
@@ -115,7 +115,7 @@ const RollupBox = ({
         <Grid xs={12} sm={10} item>
         
 
-        {isDirectionDeposit && !handleL2Transfer?<div style={{height:"70px"}}></div>
+        {isDirectionDeposit && !handleL2Transfer?<div style={isDesktop?{height:"70px"}:{height:"0"}}></div>
                 :isDirectionDeposit && handleL2Transfer?
                 <TextField 
                 sx={{paddingBottom:"1em"}}

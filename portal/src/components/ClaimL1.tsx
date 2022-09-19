@@ -210,7 +210,7 @@ const ClaimL1 = ({
         color="primary.main" 
         width="auto"
         sx={{ margin : "5vh 20vw", padding : "2em"}}
-        style={isDesktop?{ margin : "5vh 20vw", padding : "2em" }:{margin : "0"}}
+        style={isDesktop?{ margin : "2vh 20vw", padding : "2em" }:{margin : "0", borderRadius:0}}
         bgcolor="secondary.main">
         
         <Backdrop

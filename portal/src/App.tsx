@@ -791,7 +791,7 @@ function App() {
             />
           </TabPanel>
           <TabPanel
-            style={isDesktop?{paddingLeft: "calc(50% - 350px)" }:{padding:0}}
+            style={isDesktop?{paddingLeft: "calc(50% - 350px)" }:{padding:"30px", background:"#0e1e2e"}}
             value={"" + PAGES.DEPOSIT}
           >
             <DepositWithdrawV2
@@ -812,7 +812,7 @@ function App() {
             />
           </TabPanel>
           <TabPanel
-            style={isDesktop?{paddingLeft: "calc(50% - 350px)" }:{padding:0}}
+            style={isDesktop?{paddingLeft: "calc(50% - 350px)" }:{padding:"30px", background:"#0e1e2e"}}
             value={"" + PAGES.WITHDRAW}
           >
             <DepositWithdrawV2
@@ -892,7 +892,7 @@ function App() {
         <Divider orientation="vertical" color="white" sx={{ height: "70%" }} />
 
         <a href="https://marigold.dev/" target="_blank">
-          <Typography variant="h5" color="primary">
+          <Typography variant="h4" color="primary">
             Powered by Marigold
           </Typography>
         </a>
@@ -910,7 +910,7 @@ function App() {
           left: 0,
           bottom: 0,
           right: 0,
-          height: "80px",
+          height: "50px",
           justifyContent: "center"
         }}
       >
