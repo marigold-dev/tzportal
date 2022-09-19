@@ -293,26 +293,14 @@ function App() {
               }}>
                 Marigold apps
               </label>
-              <MenuItem 
-              onClick={() => {
-                window.location.href = "https://tzstamp.io/";
-              }}
-            >
-              Tz Stamp
+              <MenuItem>
+             <a href='https://tzstamp.io/' target="_blank">Tz Stamp</a>
             </MenuItem>
-            <MenuItem 
-              onClick={() => {
-                window.location.href = "https://tzvote.marigold.dev/";
-              }}
-            >
-              Tz Vote
+            <MenuItem>
+              <a href='https://tzvote.marigold.dev/' target="_blank">Tz Vote</a>
             </MenuItem>
-            <MenuItem 
-              onClick={() => {
-                window.location.href = "https://faucet.marigold.dev/";
-              }}
-            >
-              Faucet App
+            <MenuItem>
+              <a href='https://faucet.marigold.dev/' target="_blank">Faucet App</a>
             </MenuItem>
             <label style={{
                padding:"1em",
@@ -320,19 +308,11 @@ function App() {
               }}>
               Documentation
             </label>
-            <MenuItem 
-              onClick={() => {
-                window.location.href = "https://tezos.gitlab.io/alpha/transaction_rollups.html";
-              }}
-            >
-              Toru
+            <MenuItem>
+             <a href='https://tezos.gitlab.io/alpha/transaction_rollups.html' target="_blank">Toru</a>
             </MenuItem>
-            <MenuItem 
-              onClick={() => {
-                window.location.href = "https://www.marigold.dev/project/deku-sidechain";
-              }}
-            >
-              Deku
+            <MenuItem>
+               <a href='https://www.marigold.dev/project/deku-sidechain' target="_blank">Deku</a>
             </MenuItem>
           </Menu>
         </div>
