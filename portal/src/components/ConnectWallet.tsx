@@ -17,6 +17,7 @@ import './../App.css';
 
 type ButtonProps = {
     Tezos: TezosToolkit;
+    setTezos : Dispatch<SetStateAction<TezosToolkit>>;
     setWallet: Dispatch<SetStateAction<any>>;
     userAddress:string;
     userL2Address:string;
@@ -32,6 +33,7 @@ type ButtonProps = {
 
 const ConnectButton = ({
     Tezos,
+    setTezos,
     setWallet,
     userAddress,
     userL2Address,
@@ -68,6 +70,9 @@ const ConnectButton = ({
             setActiveAccount(activeAccount);
             accounts.push(activeAccount);
             
+            Tezos.setWalletProvider(wallet);
+            setTezos(Tezos);
+
             if(userL2Address!=="")setPageIndex(""+PAGES.DEPOSIT) ;
 
         } catch (error) {

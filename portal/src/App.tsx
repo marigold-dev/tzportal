@@ -52,9 +52,13 @@ function App() {
       const l2Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU}); 
       setActiveAccount(l2Account);
     }
-    if(newValue === ""+PAGES.DEPOSIT || newValue === ""+PAGES.L1CLAIM){
+    if(newValue === ""+PAGES.DEPOSIT){
       const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU}); 
       setActiveAccount(l1Account);
+    }
+    if(newValue === ""+PAGES.L1CLAIM){ //we will need both wallet for signature on both networks. we start with L2, then L1
+      const l2Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU}); 
+      setActiveAccount(l2Account);
     }
     setPageIndex(newValue)}
     
@@ -86,6 +90,7 @@ function App() {
         preferredNetwork: process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType]  : NetworkType.JAKARTANET,
       });
       Tezos.setWalletProvider(wallet);
+      setTezos(Tezos);
       setWallet(wallet);  
     }
     
@@ -173,6 +178,7 @@ function App() {
     
     <ConnectButton
     Tezos={Tezos}
+    setTezos={setTezos}
     setWallet={setWallet}
     userAddress={userAddress}
     userL2Address={userL2Address}
@@ -288,6 +294,7 @@ function App() {
   
   <ConnectButton
   Tezos={Tezos}
+  setTezos={setTezos}
   setWallet={setWallet}
   userAddress={userAddress}
   userL2Address={userL2Address}
@@ -354,6 +361,8 @@ function App() {
   TezosL2={TezosL2}
   rollupType={rollupType}
   userAddress={userAddress}
+  accounts={accounts}
+  setActiveAccount={setActiveAccount}
   />
   </TabPanel>
   <TabPanel style={{ paddingLeft: "calc(50% - 350px)"}} value={""+PAGES.DEPOSIT} >
