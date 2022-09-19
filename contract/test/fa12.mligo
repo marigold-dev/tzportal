@@ -78,10 +78,10 @@ let transfer (param : transfer) (storage : storage) : result =
   let allowances = storage.allowances in
   let tokens = storage.tokens in
   let allowances =
-    if Tezos.sender = param.address_from
+    if Tezos.get_sender () = param.address_from
     then allowances
     else
-      let allowance_key = { owner = param.address_from ; spender = Tezos.sender } in
+      let allowance_key = { owner = param.address_from ; spender = Tezos.get_sender () } in
       let authorized_value =
         match Big_map.find_opt allowance_key allowances with
         | Some value -> value
@@ -112,7 +112,7 @@ let transfer (param : transfer) (storage : storage) : result =
 
 let approve (param : approve) (storage : storage) : result =
   let allowances = storage.allowances in
-  let allowance_key = { owner = Tezos.sender ; spender = param.spender } in
+  let allowance_key = { owner = Tezos.get_sender () ; spender = param.spender } in
   let previous_value =
     match Big_map.find_opt allowance_key allowances with
     | Some value -> value
@@ -127,7 +127,7 @@ let approve (param : approve) (storage : storage) : result =
 
 let mintOrBurn (param : mintOrBurn) (storage : storage) : result =
   begin
-    if Tezos.sender <> storage.admin
+    if Tezos.get_sender () <> storage.admin
     then failwith "OnlyAdmin"
     else ();
     let tokens = storage.tokens in
@@ -164,7 +164,7 @@ let getTotalSupply (param : getTotalSupply) (storage : storage) : operation list
 
 let main (param, storage : parameter * storage) : result =
   begin
-    if Tezos.amount <> 0mutez
+    if Tezos.get_amount () <> 0mutez
     then failwith "DontSendTez"
     else ();
     match param with
