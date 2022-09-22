@@ -126,7 +126,7 @@ const RollupBox = ({
                 :""}
 
 
-        <Stack direction={"column"} spacing={1} >
+        <Stack direction={"column"} spacing={1} style={isDesktop?{textAlign:"initial"}:{textAlign:"center"}} >
         { 
             rollup instanceof RollupTORU?
             <TableContainer component={Paper}><Table><TableBody>

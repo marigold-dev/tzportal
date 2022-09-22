@@ -1,4 +1,4 @@
-import { Backdrop, CircularProgress, Grid, InputAdornment, keyframes, OutlinedInput, Stack, TextField, useMediaQuery } from "@mui/material";
+import { Backdrop, CircularProgress, Grid, InputAdornment, keyframes, OutlinedInput, Skeleton, Stack, TextField, Typography, useMediaQuery } from "@mui/material";
 import Button from "@mui/material/Button";
 import { BigMapAbstraction, compose, Contract, TezosToolkit } from "@taquito/taquito";
 import { tzip12 } from "@taquito/tzip12";
@@ -208,9 +208,9 @@ const ClaimL1 = ({
         <Grid container  borderRadius={5}
         spacing={2}
         color="primary.main" 
-        width="auto"
+        width={isDesktop?("700px"):("auto")}
         sx={{ margin : "5vh 20vw", padding : "2em"}}
-        style={isDesktop?{ margin : "2vh 20vw", padding : "2em" }:{margin : "0", borderRadius:0}}
+        style={isDesktop?{ margin : "2vh 25vw", padding : "2em" }:{margin : "0", borderRadius:0}}
         bgcolor="secondary.main">
         
         <Backdrop
@@ -238,9 +238,11 @@ const ClaimL1 = ({
             width:"70%"
         }
     }}
-    endAdornment={<InputAdornment position="end" ><img height="24px" src={tokenType+".png"}/></InputAdornment>}
+    endAdornment={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)=='undefined XTZ')?(<Typography variant="h1">{<Skeleton style={{background:"#d6d6d6", width:"100px", height:"20px"}} />}</Typography>
+    ):(<InputAdornment position="end" ><img height="24px" src={tokenType+".png"}/></InputAdornment>)}
     startAdornment="Available balance"
-    value={userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType} />
+    value={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)=='undefined XTZ')?(""
+    ):(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)} />
     
     
     <TextField value={opHash} placeholder="Enter your operation hash here" onChange={(e)=>setOpHash(e.target.value?e.target.value.trim():"")}/>

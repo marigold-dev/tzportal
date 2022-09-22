@@ -373,6 +373,12 @@ function App() {
                 </MenuItem>
               </Select>
             </MenuItem>
+            <label style={{
+               padding:"1em",
+               color:"#b5b5b5",
+              }}>
+                L2 network
+              </label>
             <MenuItem >
               <ConnectButton
                 Tezos={Tezos}
@@ -389,6 +395,12 @@ function App() {
                 setPageIndex={setPageIndex}
               />
             </MenuItem>
+            <label style={{
+               padding:"1em",
+               color:"#b5b5b5",
+              }}>
+                L1 account & L2 account
+              </label>
             <MenuItem >
               <ConnectButtonL2
                 userAddress={userAddress}
