@@ -1,4 +1,4 @@
-import { Avatar, Card, CardContent, CardHeader, Chip, Divider, Grid, Input, InputAdornment, keyframes, MenuItem, OutlinedInput, Paper, Select, SelectChangeEvent, Stack, TextField, Typography, useMediaQuery } from "@mui/material";
+import { Avatar, Card, CardContent, CardHeader, Chip, Divider, Grid, Input, InputAdornment, keyframes, MenuItem, OutlinedInput, Paper, Select, SelectChangeEvent, Skeleton, Stack, TextField, Typography, useMediaQuery } from "@mui/material";
 import { LAYER2Type, TOKEN_TYPE } from "./TezosUtils";
 import BigNumber from 'bignumber.js';
 import { AccountInfo } from "@airgap/beacon-types";
@@ -90,9 +90,10 @@ const UserWallet = ({
                 width:"70%"
             }
         }}
-        endAdornment={<InputAdornment position="end" ><img height="24px" src={tokenType+".png"}/></InputAdornment>}
+        endAdornment={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)==='undefined XTZ')?(<Typography variant="h1">{<Skeleton style={{background:"#d6d6d6", width:"100px", height:"20px"}} />}</Typography>
+        ):(<InputAdornment position="end" ><img height="24px" src={tokenType+".png"}/></InputAdornment>)}
         startAdornment="Available balance"
-        value={userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType} />
+        value={(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)==='undefined XTZ'?(""):(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)} />
         
         {isDirectionDeposit?
             <Fragment>

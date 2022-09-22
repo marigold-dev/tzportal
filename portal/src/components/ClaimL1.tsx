@@ -238,10 +238,10 @@ const ClaimL1 = ({
             width:"70%"
         }
     }}
-    endAdornment={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)=='undefined XTZ')?(<Typography variant="h1">{<Skeleton style={{background:"#d6d6d6", width:"100px", height:"20px"}} />}</Typography>
+    endAdornment={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)==='undefined XTZ')?(<Typography variant="h1">{<Skeleton style={{background:"#d6d6d6", width:"100px", height:"20px"}} />}</Typography>
     ):(<InputAdornment position="end" ><img height="24px" src={tokenType+".png"}/></InputAdornment>)}
     startAdornment="Available balance"
-    value={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)=='undefined XTZ')?(""
+    value={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)==='undefined XTZ')?(""
     ):(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)} />
     
     

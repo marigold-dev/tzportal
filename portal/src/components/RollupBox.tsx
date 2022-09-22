@@ -1,5 +1,5 @@
 import { AddShoppingCartOutlined, UnfoldMoreOutlined } from "@mui/icons-material";
-import { Accordion, AccordionDetails, AccordionSummary, Avatar, backdropClasses, Badge, Box, Button, Chip, FormControl, Grid, Input, InputAdornment, InputLabel, keyframes, MenuItem, OutlinedInput, Paper, Select, SelectChangeEvent, Stack, styled, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Avatar, backdropClasses, Badge, Box, Button, Chip, FormControl, Grid, Input, InputAdornment, InputLabel, keyframes, MenuItem, OutlinedInput, Paper, Select, SelectChangeEvent, Skeleton, Stack, styled, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import { TezosToolkit } from "@taquito/taquito";
 import BigNumber from 'bignumber.js';
 import React, { Dispatch, forwardRef, Fragment, SetStateAction, useEffect, useImperativeHandle, useState } from "react";
@@ -160,14 +160,16 @@ const RollupBox = ({
                 width:"70%",
             }
         }}
-        endAdornment={<InputAdornment position="end" >
+        endAdornment={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)==='undefined XTZ')?(<Typography variant="h1">{<Skeleton style={{background:"#d6d6d6", width:"100px", height:"20px"}} />}</Typography>
+        ):(<InputAdornment position="end" >
         <img height="24px" src={tokenType+".png"}/>
         <img height="24px" src={"ticket.png"}/>                
-        </InputAdornment>}
+        </InputAdornment>)}
         startAdornment="Available balance"
         value=
-        {userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString()
-            +" " + tokenType + "-ticket" 
+        {(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString()
+            +" " + tokenType + "-ticket")==='undefined XTZ-ticket'?(""):((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString()
+            +" " + tokenType + "-ticket"))
         } />
         
         {!isDirectionDeposit?
