@@ -335,6 +335,12 @@ function App() {
               "aria-labelledby": "basic-button",
             }}
           >
+             <label style={{
+               padding:"1em",
+               color:"#b5b5b5",
+              }}>
+                L2 network
+              </label>
               <MenuItem>
               <Select
                 variant="standard"
@@ -377,7 +383,7 @@ function App() {
                padding:"1em",
                color:"#b5b5b5",
               }}>
-                L2 network
+                L1 account & L2 account
               </label>
             <MenuItem >
               <ConnectButton
@@ -395,12 +401,6 @@ function App() {
                 setPageIndex={setPageIndex}
               />
             </MenuItem>
-            <label style={{
-               padding:"1em",
-               color:"#b5b5b5",
-              }}>
-                L1 account & L2 account
-              </label>
             <MenuItem >
               <ConnectButtonL2
                 userAddress={userAddress}
