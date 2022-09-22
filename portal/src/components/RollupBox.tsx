@@ -3,7 +3,8 @@ import { Accordion, AccordionDetails, AccordionSummary, Avatar, Badge, Box, Butt
 import { TezosToolkit } from "@taquito/taquito";
 import BigNumber from 'bignumber.js';
 import React, { Dispatch, forwardRef, Fragment, SetStateAction, useEffect, useImperativeHandle, useState } from "react";
-import DEKUClient from "./DEKUClient";
+import { DekuToolkit} from "../deku_client";
+import {fromMemorySigner} from "../deku_client/utils/signers";
 import { RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
 import { ContractFAStorage, ContractStorage } from "./TicketerContractUtils";
 
@@ -27,7 +28,7 @@ type RollupProps = {
     rollupType : ROLLUP_TYPE;
     rollup : RollupTORU | RollupDEKU | RollupCHUSAI | undefined;
     isDirectionDeposit : boolean;
-    dekuClient : DEKUClient;
+    dekuClient : DekuToolkit;
     tokenType : TOKEN_TYPE;
     quantity : BigNumber;
     setQuantity :Dispatch<SetStateAction<BigNumber>>;

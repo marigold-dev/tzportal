@@ -16,6 +16,7 @@ tezos-client originate contract tzportalKathmandu transferring 0 from myFirstKey
 
 - Jakarta : KT1WknoW9XN6ZpvsnMmsuPZ6tvTkF4FqYCQ6
 - Ghostnet : KT1QvZPUoXwz5zQL6zDpFyyPp5iChbHfnXC1
+- Kathmandunet : KT1E8QEK4tkm1P3FRrm66hzX8zpDshBth5Lu
 
 ## Run tests 
 
@@ -44,7 +45,7 @@ ligo compile contract ./test/fa12.mligo --entry-point main --output-file ./test/
 
 ligo compile storage ./test/fa12.mligo "$(cat ./test/fa12_ctez_storage.mligo)" --entry-point main  --output-file ./test/fa12_ctez_storage.tz --protocol kathmandu
 
-tezos-client originate contract fa12CTEZGhostnet transferring 0 from alice running ./test/fa12.tz --init "$(cat ./test/fa12_ctez_storage.tz)"   --burn-cap 1
+tezos-client originate contract fa12CTEZKathmandunet transferring 0 from alice running ./test/fa12.tz --init "$(cat ./test/fa12_ctez_storage.tz)"   --burn-cap 1
 
 ## kusd
 
@@ -52,7 +53,7 @@ ligo compile contract ./test/fa12.mligo --entry-point main --output-file ./test/
 
 ligo compile storage ./test/fa12.mligo "$(cat ./test/fa12_kusd_storage.mligo)" --entry-point main  --output-file ./test/fa12_kusd_storage.tz --protocol kathmandu
 
-tezos-client originate contract fa12KUSDGhostnet transferring 0 from alice running ./test/fa12.tz --init "$(cat ./test/fa12_kusd_storage.tz)"   --burn-cap 1
+tezos-client originate contract fa12KUSDKathmandunet transferring 0 from alice running ./test/fa12.tz --init "$(cat ./test/fa12_kusd_storage.tz)"   --burn-cap 1
 
 # FA2 Contract
 
@@ -62,11 +63,11 @@ ligo compile contract ./test/fa2.jsligo --entry-point main --output-file ./test/
 
 ligo compile storage ./test/fa2.jsligo "$(cat ./test/fa2_uUSD_storage.jsligo)" --entry-point main  --output-file ./test/fa2_uUSD_storage.tz --protocol kathmandu
 
-ligo compile parameter ./test/fa2.jsligo 'Transfer(list([{    from_ :  "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,  tx    : list([ {    to_      : "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb" as address,    token_id : 0 as nat,    quantity : 10000 as nat  }  ]) as list<atomic_trans>  }]))' --output-file fa2Parameter.tz --protocol kathmandu
+ligo compile parameter ./test/fa2.jsligo 'Transfer(list([{    from_ :  "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,  tx    : list([ {    to_      : "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb" as address,    token_id : 0 as nat,    quantity : 10000000000 as nat  }  ]) as list<atomic_trans>  }]))' --output-file ./test/fa2Parameter.tz --protocol kathmandu
 
-tezos-client originate contract fa2uUSDGhostnet transferring 0 from alice running ./test/fa2.tz --init "$(cat ./test/fa2_uUSD_storage.tz)"   --burn-cap 1
+tezos-client originate contract fa2uUSDKathmandunet transferring 0 from alice running ./test/fa2.tz --init "$(cat ./test/fa2_uUSD_storage.tz)"   --burn-cap 1
 
-tezos-client transfer 0 from myFirstKey to fa2uUSDGhostnet --arg "$(cat ./test/fa2Parameter.tz)" --burn-cap 1
+tezos-client transfer 0 from myFirstKey to fa2uUSDKathmandunet --arg "$(cat ./test/fa2Parameter.tz)" --burn-cap 1
 
 
 ## EURL
@@ -75,12 +76,12 @@ ligo compile contract ./test/fa2.jsligo --entry-point main --output-file ./test/
 
 ligo compile storage ./test/fa2.jsligo "$(cat ./test/fa2_EURL_storage.jsligo)" --entry-point main  --output-file ./test/fa2_EURL_storage.tz --protocol kathmandu
 
-ligo compile parameter ./test/fa2.jsligo 'Transfer(list([{    from_ :  "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,  tx    : list([ {    to_      : "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb" as address,    token_id : 0 as nat,    quantity : 10000 as nat  }  ]) as list<atomic_trans>  }]))' --output-file fa2Parameter.tz --protocol kathmandu
+ligo compile parameter ./test/fa2.jsligo 'Transfer(list([{    from_ :  "tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address,  tx    : list([ {    to_      : "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb" as address,    token_id : 0 as nat,    quantity : 10000000000 as nat  }  ]) as list<atomic_trans>  }]))' --output-file ./test/fa2Parameter.tz --protocol kathmandu
 
-tezos-client originate contract fa2EURLGhostnet transferring 0 from alice running ./test/fa2.tz --init "$(cat ./test/fa2_EURL_storage.tz)"   --burn-cap 1
+tezos-client originate contract fa2EURLKathmandunet transferring 0 from alice running ./test/fa2.tz --init "$(cat ./test/fa2_EURL_storage.tz)"   --burn-cap 1
 
 
-tezos-client transfer 0 from myFirstKey to fa2EURLGhostnet --arg "$(cat ./test/fa2Parameter.tz)" --burn-cap 1
+tezos-client transfer 0 from myFirstKey to fa2EURLKathmandunet --arg "$(cat ./test/fa2Parameter.tz)" --burn-cap 1
 
 # Mocked rollup Contract
 

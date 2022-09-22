@@ -11,10 +11,9 @@ import { Avatar, Chip, Stack } from "@mui/material";
 import {  LogoutOutlined } from "@mui/icons-material";
 import { InMemorySigner } from "@taquito/signer";
 import { LAYER2Type } from "./TezosUtils";
-import { DEKUWallet } from "./DEKUClient";
+import { DekuToolkit} from "../deku_client";
+import {fromMemorySigner} from "../deku_client/utils/signers";
 import { PAGES } from "../App";
-
-
 
 
 type ButtonProps = {
@@ -66,7 +65,10 @@ const ConnectButtonL2 = ({
             if (!e?.target?.result) {
                 return;
             }
-            const l2Wallet : DEKUWallet = JSON.parse(e.target.result as string);
+            const l2Wallet : {
+                address: string,
+                priv_key: string    
+            } = JSON.parse(e.target.result as string);
             setUserL2Address(l2Wallet.address);
             
             const accountInfo : AccountInfo = { address: l2Wallet.address,

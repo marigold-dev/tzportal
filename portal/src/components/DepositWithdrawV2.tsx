@@ -11,7 +11,8 @@ import BigNumber from 'bignumber.js';
 import { useSnackbar } from "notistack";
 import { Dispatch, MouseEvent, SetStateAction, useEffect, useRef, useState } from "react";
 import { PAGES } from "../App";
-import DEKUClient from "./DEKUClient";
+import { DekuToolkit} from "../deku_client";
+import {fromMemorySigner} from "../deku_client/utils/signers";
 import { FA12Contract } from "./fa12Contract";
 import { FA2Contract } from "./fa2Contract";
 import RollupBox, { RollupBoxComponentType } from "./RollupBox";
@@ -56,7 +57,12 @@ const DepositWithdrawV2 = ({
     setPageIndex
 }: DepositWithdrawV2Props): JSX.Element => {
     
-    const dekuClient = new DEKUClient(process.env["REACT_APP_DEKU_NODE"]!,process.env["REACT_APP_CONTRACT"]!,TezosL2);
+    const dekuClient = new DekuToolkit({ dekuRpc: process.env["REACT_APP_DEKU_NODE"]!, dekuSigner : fromMemorySigner(TezosL2.signer) })
+    .setTezosRpc(process.env["REACT_APP_TEZOS_NODE"]!)
+    .onBlock(block => {
+      console.log("The client received a block");
+      console.log(block);
+    });
     
     const [userBalance, setUserBalance] = useState<Map<TOKEN_TYPE,BigNumber>>(new Map());
     const [userTicketBalance, setUserTicketBalance] = useState<Map<TOKEN_TYPE,BigNumber>>(new Map());
@@ -183,24 +189,27 @@ const DepositWithdrawV2 = ({
         
         let newCurrentBalance  : BigNumber = new BigNumber(0) ;
         
+        //FIXME change to bigdecimal later all below
+
+
         //XTZ
-        const XTZbalance = await dekuClient.getBalance(userL2Address,tokenBytes.get(TOKEN_TYPE.XTZ)!);
+        const XTZbalance = new BigNumber(await dekuClient.getBalance(userL2Address,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.XTZ)!}));
         
         //kUSD
         let kUSDContract = await Tezos.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!,compose(tzip12, tzip16));
-        let kUSDBalance = await dekuClient.getBalance(userL2Address,tokenBytes.get(TOKEN_TYPE.KUSD)!);
+        let kUSDBalance = new BigNumber(await dekuClient.getBalance(userL2Address,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.KUSD)!}));
         
         //CTEZ
         let ctezContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!,compose(tzip12, tzip16));
-        let ctezBalance =await dekuClient.getBalance(userL2Address,tokenBytes.get(TOKEN_TYPE.CTEZ)!);
+        let ctezBalance = new BigNumber(await dekuClient.getBalance(userL2Address,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.CTEZ)!}));
         
         //UUSD
         let uusdContract = await Tezos.wallet.at(process.env["REACT_APP_UUSD_CONTRACT"]!,tzip12);
-        let uusdBalance =await dekuClient.getBalance(userL2Address,tokenBytes.get(TOKEN_TYPE.UUSD)!);
+        let uusdBalance = new BigNumber(await dekuClient.getBalance(userL2Address,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.UUSD)!}));
         
         //EURL
         let eurlContract = await Tezos.wallet.at(process.env["REACT_APP_EURL_CONTRACT"]!,tzip12);
-        let eurlBalance =await dekuClient.getBalance(userL2Address,tokenBytes.get(TOKEN_TYPE.EURL)!);
+        let eurlBalance = new BigNumber(await dekuClient.getBalance(userL2Address,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.EURL)!}));
         
         let balance = new Map<TOKEN_TYPE,BigNumber>();
         balance.set(TOKEN_TYPE.XTZ,XTZbalance.dividedBy(Math.pow(10,6))); //convert mutez to tez
@@ -689,7 +698,9 @@ const handleDeposit = async (event : MouseEvent) => {
                         let faContract = await TezosL2.wallet.at( tokenType === TOKEN_TYPE.CTEZ?process.env["REACT_APP_CTEZ_CONTRACT"]! : tokenType === TOKEN_TYPE.KUSD ? process.env["REACT_APP_KUSD_CONTRACT"]! : tokenType === TOKEN_TYPE.UUSD?process.env["REACT_APP_UUSD_CONTRACT"]! : process.env["REACT_APP_EURL_CONTRACT"]! , tzip12  );
                         decimals = Math.pow(10,(await faContract.tzip12().getTokenMetadata(0)).decimals);
                     }
-                    const opHash = await dekuClient.withdraw(userL2Address,quantity.multipliedBy(decimals),tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
+
+                    //FIXME change to BigNumber
+                    const opHash = await dekuClient.withdrawTo(userL2Address,quantity.multipliedBy(decimals).toNumber(),process.env["REACT_APP_CONTRACT"]!,tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
                     enqueueSnackbar("The proof will be available in 10s. Keep this code ( "+opHash+" ) to do a Claim on L1 with user "+userL2Address, {variant: "success", autoHideDuration:10000});
                 } catch (error : any) {
                     console.table(`Error: ${JSON.stringify(error, null, 2)}`);

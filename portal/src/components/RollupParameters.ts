@@ -8,26 +8,23 @@ export abstract class RollupParameters{
 export class RollupParametersDEKU extends RollupParameters {
     
     callback : string; //contract endpoint
-    amount : number; // nat
     data : string ; // bytes
     id : number; //nat
     owner : string ;//address
     ticketer : string; //address
     handles_hash : string ; //bytes proof will be converted to CHAR
-    proofList : Array<[string,string]> ; //bytes array
+    proofList : string[] ; //bytes array
     
     
     constructor(callback : string,
-        amount : number,
         data : string ,
         id : number,
         owner : string ,
         ticketer : string,
         handles_hash : string,
-        proofList : Array<[string,string]>){
+        proofList : string[]){
             super();
             this.callback =callback;
-            this.amount =amount;
             this.data = data ; 
             this.id =id;
             this.owner =owner ;
