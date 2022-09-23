@@ -210,6 +210,7 @@ function App() {
           accounts={accounts}
           hideAfterConnect={false}
           setPageIndex={setPageIndex}
+          setTezos={setTezos}
         />
 
         <Select
@@ -404,6 +405,7 @@ function App() {
                 accounts={accounts}
                 hideAfterConnect={false}
                 setPageIndex={setPageIndex}
+                setTezos={setTezos}
               />
             </MenuItem>
             <label style={{
@@ -554,6 +556,7 @@ function App() {
                         accounts={accounts}
                         hideAfterConnect={true}
                         setPageIndex={setPageIndex}
+                        setTezos={setTezos}
                       />
                     </div>
                   ) : (
@@ -617,6 +620,8 @@ function App() {
               TezosL2={TezosL2}
               rollupType={rollupType}
               userAddress={userAddress}
+              accounts={accounts}
+              setActiveAccount={setActiveAccount}
             />
           </TabPanel>
           <TabPanel
@@ -754,6 +759,7 @@ function App() {
                         accounts={accounts}
                         hideAfterConnect={true}
                         setPageIndex={setPageIndex}
+                        setTezos={setTezos}
                       />
                     </div>
                   ) : (
@@ -790,6 +796,8 @@ function App() {
               TezosL2={TezosL2}
               rollupType={rollupType}
               userAddress={userAddress}
+              accounts={accounts}
+              setActiveAccount={setActiveAccount}
             />
           </TabPanel>
           <TabPanel
