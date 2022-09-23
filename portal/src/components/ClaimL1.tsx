@@ -209,8 +209,8 @@ const ClaimL1 = ({
         spacing={2}
         color="primary.main" 
         width={isDesktop?("700px"):("auto")}
-        sx={{ margin : "5vh 20vw", padding : "2em"}}
-        style={isDesktop?{ margin : "2vh 25vw", padding : "2em" }:{margin : "0", borderRadius:0}}
+        sx={{ margin : "0 auto", padding : "2em"}}
+        style={isDesktop?{ padding : "2em" }:{margin : "0", borderRadius:0}}
         bgcolor="secondary.main">
         
         <Backdrop
