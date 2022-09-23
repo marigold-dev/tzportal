@@ -700,7 +700,7 @@ const handleDeposit = async (event : MouseEvent) => {
                     }
 
                     //FIXME change to BigNumber
-                    const opHash = await dekuClient.withdrawTo(userL2Address,quantity.multipliedBy(decimals).toNumber(),process.env["REACT_APP_CONTRACT"]!,tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
+                    const opHash = await dekuClient.withdrawTo(process.env["REACT_APP_CONTRACT"]!,quantity.multipliedBy(decimals).toNumber(),process.env["REACT_APP_CONTRACT"]!,tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
                     enqueueSnackbar("The proof will be available in 10s. Keep this code ( "+opHash+" ) to do a Claim on L1 with user "+userL2Address, {variant: "success", autoHideDuration:10000});
                 } catch (error : any) {
                     console.table(`Error: ${JSON.stringify(error, null, 2)}`);
