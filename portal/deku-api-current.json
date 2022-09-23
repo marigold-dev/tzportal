@@ -1,0 +1,289 @@
+{
+  "openapi":"3.0.2",
+  "info": {
+    "title":"DEKU API",
+    "version":"1.0"
+  },
+  "servers": [
+    {"url":"https://peer-0.deku.marigold.dev"}
+  ],
+  "paths": {
+    "/block-level": {
+      "post": {
+        "description": "Get the current block level",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain" : {
+              "schema" : {
+                "type": "string",
+                "default" : "null"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties": {
+                    "level" : {
+                      "type" : "number"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/ticket-balance": {
+      "post": {
+        "description": "Get balance for a specific user",
+        "requestBody" : {
+          "required": true,
+          "content": {
+            "text/plain" : {
+              "schema" : {
+                "type": "object",
+                "properties": {
+                  "ticket": {
+                    "type": "string",
+                    "description": "Michelson representation of a ticket",
+                    "example" : "(Pair \"KT1WknoW9XN6ZpvsnMmsuPZ6tvTkF4FqYCQ6\" 0x050505030b)"
+                  },
+                  "address" : {
+                    "type": "string",
+                    "description": "the user address",
+                    "example" : "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb"
+                  } 
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties": {
+                    "amount" : {
+                      "type" : "number"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/withdraw-proof": {
+      "post": {
+        "description": "Get a withdraw proof",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Reference to the operation hash",
+          "content": {
+            "text/plain" : {
+              "schema" : {
+                "type": "object",
+                "properties": {
+                  "operation_hash" : {
+                    "type": "string",
+                    "example" : "df1f432268f09926fceeb4907e7527ac7835387a2c3d8fcfbf9a108a7d0d9bf9"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json" : {
+                "schema" : {
+                  "type": "array",
+                  "description": "A status and a deku proof"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/request-nonce": {
+      "post": {
+        "description": "Get a unique nonce",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Deku node url",
+          "content": {
+            "text/plain" : {
+              "schema" : {
+                "type": "object",
+                "properties": {
+                  "uri" : {
+                    "type": "string",
+                    "example" : "https://peer-0.deku.marigold.dev"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json" : {
+                "schema" : {
+                  "type": "object",
+                  "properties": {
+                    "nonce" : {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user-operation-gossip": {
+      "post": {
+        "description": "Sign and execute any transaction",
+        "parameters": [],
+        "requestBody" : {
+          "required": true,
+          "content": {
+            "text/plain" : {
+              "schema" : {
+                "type": "object",
+                "properties": {
+                  "user_operation" : {
+                    "type": "object",
+                    "properties": {
+                      "hash": {
+                        "type": "string",
+                        "description": "hash of the operation",
+                        "example" : "a105b66ffd01cb133df549f3cc3fb7bfce9a9b6c19a58f7c3af5f7dca727aa89"
+                      },
+                      "key" : {
+                        "example" : "edpkvGfYw3LyB1UcCahKQk4rF2tvbMUk8GFiTuMjL75uGXrpvKXhjn",
+                        "description": "public key of the signer",
+                        "type": "string"
+                      },
+                      "signature" : {
+                        "type": "string",
+                        "description": "Signature of the full payload",
+                        "example" : "edsigtk2JJ7VQjrgq3gHKFZ2TBPmfqXX6zu6wx74iAxfLY852CxfUQ1wLTHmaxmp2LLhrTBvovJinFtCTqnRmWc5qAHreqgGNun"
+                      },
+                      "nonce" : {
+                        "type": "number",
+                        "description": "None used for the operation",
+                        "example" : "99514840"
+                      },
+                      "block_height" : {
+                        "type": "number",
+                        "description": "Current used block height for the operation",
+                        "example" : "163655"
+                      },
+                      "data" : {
+                        "type": "object",
+                        "properties": {
+                          "hash": {
+                            "type" : "string",
+                            "description": "Hash of the user and the initial operation",
+                            "example" : "5199687c36c3dd30509c17b261588c3904a58a7ae32ec79f2a3b3ebfbed5e029"
+                          },    
+                          "source": {
+                            "type" : "string",
+                            "description": "Signer public hash key",
+                            "example" : "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb"
+                          },
+                          "initial_operation" : {
+                            "type": "array",
+                            "items" : {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "Transaction","Contract_invocation","Contract_origination","Tezos_withdraw"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "description": "Operation structure among : Transaction,Contract_invocation,Contract_origination,Tezos_withdraw",
+                                  "oneOf": [
+                                    {
+                                      "description": "Do transfer",
+                                      "properties": {
+                                        "destination" : {
+                                          "type": "string",
+                                          "example" : "tz1aSkwEot3L2kmUvcoxzjMomb9mvBNuzFK6"
+                                        },
+                                        "amount" : {
+                                          "type": "number",
+                                          "example" : 1
+                                        },
+                                        "ticket" :  {
+                                          "type": "string",
+                                          "description": "Michelson representation of a ticket",
+                                          "example" : "(Pair \"KT1WknoW9XN6ZpvsnMmsuPZ6tvTkF4FqYCQ6\" 0x050505030b)"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "description": "Withdraw",
+                                      "properties": {
+                                        "owner" : {
+                                          "type": "string",
+                                          "example" : "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb"
+                                        },
+                                        "amount" : {
+                                          "type": "number",
+                                          "example" : 1
+                                        },
+                                        "ticket" :  {
+                                          "type": "string",
+                                          "description": "Michelson representation of a ticket",
+                                          "example" : "(Pair \"KT1WknoW9XN6ZpvsnMmsuPZ6tvTkF4FqYCQ6\" 0x050505030b)"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      } 
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+          "responses": {
+            "200": {
+              "description": "OK"
+            }
+          }
+      }
+    }
+  }
+}

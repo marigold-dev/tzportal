@@ -7,6 +7,9 @@ on:
 
 jobs:
   docker:
+    strategy:
+      matrix:
+        network: [ghostnet, jakartanet]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,12 +30,12 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: ./
-          file: ./cronjob/Dockerfile
+          file: ./cronjob/Dockerfile.${{ matrix.network }}
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
           # Only push if on main branch
           push: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
           tags: |
-            ghcr.io/marigold-dev/tzportal-treasury-cronjob:latest
-            ghcr.io/marigold-dev/tzportal-treasury-cronjob:${{ github.sha }}
+            ghcr.io/marigold-dev/tzportal-treasury-${{ matrix.network }}-cronjob:latest
+            ghcr.io/marigold-dev/tzportal-treasury-${{ matrix.network }}-cronjob:${{ github.sha }}

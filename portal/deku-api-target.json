@@ -1,0 +1,547 @@
+{
+  "openapi":"3.0.2",
+  "info": {
+    "title":"DEKU API",
+    "version":"2.0"
+  },
+  "servers": [
+    {"url":"https://peer-0.deku.marigold.dev"}
+  ],
+  "paths": {
+    "/block-level": {
+      "get": {
+        "description": "Get the current block level",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json" : {
+                "schema" : {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type" : "object",
+                      "properties": {
+                        "data" : {
+                          "type" : "number",
+                          "example" : 65346
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "500" : {
+            "description": "General error",
+            "content": {
+              "application/json" : {
+                "schema" :{
+                  "$ref":  "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ticket-balance": {
+      "get": {
+        "description": "Get balance for a specific user",
+        "parameters":[
+          {
+            "name": "address",
+            "description": "the user address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type" : "string" ,
+              "example" : "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb"
+            }
+          },
+          {
+            "name": "ticketer",
+            "description": "the ticketer address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref" : "#/components/schemas/ticketer"
+            }
+          },
+          {
+            "name": "ticketData",
+            "description": "the ticket data bytes",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref" : "#/components/schemas/ticketData" 
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json" : {
+                "schema" : {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type" : "object",
+                      "properties": {
+                        "data" : {
+                          "type" : "number",
+                          "example" : 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404" : {
+            "description": "Balance not found",
+            "content": {
+              "application/json" : {
+                "schema" :{
+                  "allOf" :[
+                    {"$ref":  "#/components/schemas/Error"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code" : {
+                          "default" : 404
+                        },
+                        "status" :{
+                          "default" : "error"
+                        },
+                        "message" : {
+                          "example" : "Cannot find balance for user X, ticketer Y and ticket data Z"
+                        },
+                        "data" : {
+                          "example" : {"user":"X","ticketer":"Y","ticketData":"Z"}
+                        }
+                      }
+                    }
+                  ]
+                  
+                }
+              }
+            }
+          },
+          "500" : {
+            "description": "General error",
+            "content": {
+              "application/json" : {
+                "schema" :{
+                  "$ref":  "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/withdraw-proof": {
+      "get": {
+        "description": "Get a withdraw proof",
+        "parameters": [
+          {
+            "name": "operation_hash",
+            "description": "Reference to the operation hash",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type" : "string" ,
+              "example" : "df1f432268f09926fceeb4907e7527ac7835387a2c3d8fcfbf9a108a7d0d9bf9"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json" : {
+                "schema" : {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type" : "object",
+                      "properties": {
+                        "data" : {
+                          "$ref" : "#/components/schemas/dekuProof"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404" : {
+            "description": "Withdraw proof not found",
+            "content": {
+              "application/json" : {
+                "schema" :{
+                  "allOf" :[
+                    {"$ref":  "#/components/schemas/Error"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code" : {
+                          "default" : 404
+                        },
+                        "status" :{
+                          "default" : "error"
+                        },
+                        "message" : {
+                          "example" : "Cannot find a withdraw proof for operation hash X"
+                        },
+                        "data" : {
+                          "example" : {"operation_hash":"X"}
+                        }
+                      }
+                    }
+                  ]
+                  
+                }
+              }
+            }
+          },
+          "500" : {
+            "description": "General error",
+            "content": {
+              "application/json" : {
+                "schema" :{
+                  "$ref":  "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/request-nonce": {
+      "get": {
+        "description": "Get a unique nonce",
+        "parameters": [
+          {
+            "name": "uri",
+            "description": "Deku node url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type" : "string" ,
+              "example" : "https://peer-0.deku.marigold.dev"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json" : {
+                "schema" : {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type" : "object",
+                      "properties": {
+                        "data" : {
+                          "type" : "number",
+                          "example" : 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "500" : {
+            "description": "General error",
+            "content": {
+              "application/json" : {
+                "schema" :{
+                  "$ref":  "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user-operation-gossip": {
+      "post": {
+        "description": "Sign and execute any transaction",
+        "parameters": [],
+        "requestBody" : {
+          "required": true,
+          "content": {
+            "application/json" : {
+              "schema" : {
+                "type": "object",
+                "properties": {
+                  "user_operation" : {
+                    "type": "object",
+                    "properties": {
+                      "hash": {
+                        "type": "string",
+                        "description": "hash of the operation",
+                        "example" : "a105b66ffd01cb133df549f3cc3fb7bfce9a9b6c19a58f7c3af5f7dca727aa89"
+                      },
+                      "key" : {
+                        "example" : "edpkvGfYw3LyB1UcCahKQk4rF2tvbMUk8GFiTuMjL75uGXrpvKXhjn",
+                        "description": "public key of the signer",
+                        "type": "string"
+                      },
+                      "signature" : {
+                        "type": "string",
+                        "description": "Signature of the full payload",
+                        "example" : "edsigtk2JJ7VQjrgq3gHKFZ2TBPmfqXX6zu6wx74iAxfLY852CxfUQ1wLTHmaxmp2LLhrTBvovJinFtCTqnRmWc5qAHreqgGNun"
+                      },
+                      "nonce" : {
+                        "type": "number",
+                        "description": "None used for the operation",
+                        "example" : "99514840"
+                      },
+                      "block_height" : {
+                        "type": "number",
+                        "description": "Current used block height for the operation",
+                        "example" : "163655"
+                      },
+                      "data" : {
+                        "type": "object",
+                        "properties": {
+                          "hash": {
+                            "type" : "string",
+                            "description": "Hash of the user and the initial operation",
+                            "example" : "5199687c36c3dd30509c17b261588c3904a58a7ae32ec79f2a3b3ebfbed5e029"
+                          },    
+                          "source": {
+                            "type" : "string",
+                            "description": "Signer public hash key",
+                            "example" : "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb"
+                          },
+                          "initial_operation" : {
+                            "type": "array",
+                            "items" : {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "Transaction","Contract_invocation","Contract_origination","Tezos_withdraw"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "description": "Operation structure among : Transaction,Contract_invocation,Contract_origination,Tezos_withdraw",
+                                  "oneOf": [
+                                    {
+                                      "description": "Do transfer",
+                                      "properties": {
+                                        "destination" : {
+                                          "type": "string",
+                                          "example" : "tz1aSkwEot3L2kmUvcoxzjMomb9mvBNuzFK6"
+                                        },
+                                        "amount" : {
+                                          "type": "number",
+                                          "example" : 1
+                                        },
+                                        "ticketer" :  {
+                                          "$ref" : "#/components/schemas/ticketer"
+                                        },
+                                        "ticketData" : {
+                                          "$ref" : "#/components/schemas/ticketData"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "description": "Withdraw",
+                                      "properties": {
+                                        "owner" : {
+                                          "type": "string",
+                                          "example" : "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb"
+                                        },
+                                        "amount" : {
+                                          "type": "number",
+                                          "example" : 1
+                                        },
+                                        "ticketer" :  {
+                                          "$ref" : "#/components/schemas/ticketer"
+                                        },
+                                        "ticketData" : {
+                                          "$ref" : "#/components/schemas/ticketData"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      } 
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json" : {
+                "schema" : {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404" : {
+            "description": "Handle not found",
+            "content": {
+              "application/json" : {
+                "schema" :{
+                  "allOf" :[
+                    {"$ref":  "#/components/schemas/Error"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code" : {
+                          "default" : 404
+                        },
+                        "status" :{
+                          "default" : "error"
+                        },
+                        "message" : {
+                          "example" : "Cannot find handle ..."
+                        },
+                        "data" : {
+                          "example" : {"hash":"X"}
+                        }
+                      }
+                    }
+                  ]
+                  
+                }
+              }
+            }
+          },
+          "500" : {
+            "description": "General error",
+            "content": {
+              "application/json" : {
+                "schema" :{
+                  "$ref":  "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error" :{
+        "type": "object",
+        "required": ["status","code","message"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Status of the response",
+            "example" : "error"
+          },
+          "code": {
+            "type": "number",
+            "description": "HTTP code",
+            "example" : 404
+          },
+          "data": {
+            "type": "object",
+            "description": "Optional stack trace or any useful information to debug",
+            "example" : null
+          }, 
+          "message": {
+            "type": "string",
+            "example" : "Invalid handle for withdraw on user X with parameter Y and Z"
+          }
+        }
+      },
+      "Success" :{
+        "type": "object",
+        "required": ["status","data"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Status of the response",
+            "example" : "success"
+          },
+          "data": {
+            "type": "object",
+            "description": "object to return",
+            "example" : {"amount":1}
+          }, 
+          "message": {
+            "type": "string",
+            "example" : "Warning : operation is not yet ready for claim"
+          }
+        }
+      },
+      "ticketer" :{
+        "description": "the ticketer address",
+        "type" : "string" ,
+        "example" : "KT1WknoW9XN6ZpvsnMmsuPZ6tvTkF4FqYCQ6"
+      },
+      "ticketData" : {
+        "description": "the ticket data bytes",
+        "type" : "string" ,
+        "example" : "0x050505030b"
+      },
+      "dekuProof" : {
+        "type": "object",
+        "description": "Generated withdraw proof",
+        "properties": {
+          "withdrawal_handles_hash" : {
+            "type": "string",
+            "description": "Hash of the withdrawal handle",
+            "example" : "azertyuiopqsdfghjklmwxcvbn"
+          },
+          "withdrawal_handle" : {
+            "type": "object",
+            "properties": {
+              "hash" : {"type" : "string", "example":"azertyuiopqsdfghjklmwxcvbn"},
+              "id" : {"type" : "number", "description": "Handle identifier" , "example" : 0},
+              "owner" : {"type" : "string", "description" : "Owner of the ticket to withdraw" ,"example" : "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb"},
+              "amount" : {"type" : "number" , "description" : "Quantity of ticket to withdraw", "example" : 1},
+              "ticket" : {"type" : "number" , "description" : "Ticket identifier" ,"example" : 0}
+            }
+          },
+          "proof" : {
+            "type": "array",
+            "description": "(Optional) Array of pair of proofs",
+            "example" : [["azertyuiopqsdfghjklmwxcvbn","azertyuiopqsdfghjklmwxcvbn"],["azertyuiopqsdfghjklmwxcvbn","azertyuiopqsdfghjklmwxcvbn"]]
+          }
+        }
+      }
+    }
+  }
+}

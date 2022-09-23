@@ -4,7 +4,11 @@
   "scripts": {
     "dev": "ts-node ./index.ts",
     "build": "rm -rf dist/cronjob/* && tsc",
-    "start": "node dist/cronjob/index.js"
+    "build:jakartanet": "env-cmd -f .env.jakartanet rm -rf dist/cronjob/* && tsc",
+    "build:ghostnet": "env-cmd -f .env.ghostnet rm -rf dist/cronjob/* && tsc",
+    "start": "node dist/cronjob/index.js",
+    "start:jakartanet": "env-cmd -f .env.jakartanet node dist/cronjob/index.js",
+    "start:ghostnet": "env-cmd -f .env.ghostnet node dist/cronjob/index.js"
   },
   "authors": [
     "Felipe Cardozo"

@@ -1,16 +1,19 @@
 import { Backdrop, CircularProgress, Grid, InputAdornment, keyframes, OutlinedInput, Skeleton, Stack, TextField, Typography, useMediaQuery } from "@mui/material";
+import { AccountInfo } from "@airgap/beacon-types";
 import Button from "@mui/material/Button";
-import { BigMapAbstraction, compose, Contract, TezosToolkit } from "@taquito/taquito";
+import { BeaconWallet } from "@taquito/beacon-wallet";
+import { BlockResponse } from "@taquito/rpc";
+import { BigMapAbstraction, compose, Contract, TezosToolkit, Wallet, WalletContract } from "@taquito/taquito";
 import { tzip12 } from "@taquito/tzip12";
 import { tzip16 } from "@taquito/tzip16";
 import BigNumber from 'bignumber.js';
 import { useSnackbar } from "notistack";
-import { MouseEvent, useEffect, useRef, useState } from "react";
+import { Dispatch, MouseEvent, SetStateAction, useEffect, useRef, useState } from "react";
 import DEKUClient, { DEKUWithdrawProof } from "./DEKUClient";
 import { FA12Contract } from "./fa12Contract";
 import { FA2Contract } from "./fa2Contract";
 import { RollupParameters, RollupParametersDEKU, RollupParametersTORU } from "./RollupParameters";
-import { getBytes, ROLLUP_TYPE, TOKEN_TYPE } from "./TezosUtils";
+import { getBytes, LAYER2Type, ROLLUP_TYPE, TOKEN_TYPE } from "./TezosUtils";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 
 
@@ -20,13 +23,17 @@ type ClaimL1Props = {
     TezosL2 : TezosToolkit;
     rollupType : ROLLUP_TYPE;
     userAddress : string;
+    accounts : AccountInfo[];
+    setActiveAccount : Dispatch<SetStateAction<AccountInfo|undefined>>;
 };
 
 const ClaimL1 = ({
     Tezos,
     TezosL2,
     rollupType,
-    userAddress
+    userAddress,
+    accounts,
+    setActiveAccount
 }: ClaimL1Props): JSX.Element => {
     
     const [shouldBounce,setShouldBounce] = useState(true);
@@ -58,7 +65,13 @@ const ClaimL1 = ({
         const dekuClient = new DEKUClient(process.env["REACT_APP_DEKU_NODE"]!,process.env["REACT_APP_CONTRACT"]!,TezosL2);
         
         try {
+            
+            //we sign first with active account on L2
             const withdrawProof : DEKUWithdrawProof = await dekuClient.getWithdrawProof(opHash);
+            
+            //we need to switch Beacon to force to sign on L1 now
+            const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU}); 
+            setActiveAccount(l1Account);
             await handleWithdraw(withdrawProof); 
             
             enqueueSnackbar("Your L1 Claim has been accepted", {variant: "success", autoHideDuration:10000});
@@ -82,30 +95,30 @@ const ClaimL1 = ({
         let newCurrentBalance  : BigNumber = new BigNumber(0) ;
         
         //XTZ
-        const XTZbalance = await Tezos.tz.getBalance(userAddress);
+        const XTZbalance = await TezosL2.tz.getBalance(userAddress);
         
         //FA1.2 LOOP
         
         //kUSD
-        let kUSDContract = await Tezos.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!,compose(tzip12, tzip16));
+        let kUSDContract = await Tezos.contract.at(process.env["REACT_APP_KUSD_CONTRACT"]!,compose(tzip12, tzip16));
         const kUSDtokenMap : BigMapAbstraction = (await kUSDContract.storage() as FA12Contract).tokens;
         let kUSDBalance : BigNumber|undefined = await kUSDtokenMap.get<BigNumber>(userAddress);
         
         
         //CTEZ
-        let ctezContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!,compose(tzip12, tzip16));
+        let ctezContract = await Tezos.contract.at(process.env["REACT_APP_CTEZ_CONTRACT"]!,compose(tzip12, tzip16));
         const ctezContractStorage : FA12Contract = (await ctezContract.storage() as FA12Contract)
         const cteztokenMap : BigMapAbstraction = ctezContractStorage.tokens;
         let ctezBalance : BigNumber|undefined = await cteztokenMap.get<BigNumber>(userAddress);
         
         //UUSD
-        let uusdContract = await Tezos.wallet.at(process.env["REACT_APP_UUSD_CONTRACT"]!,tzip12);
+        let uusdContract = await Tezos.contract.at(process.env["REACT_APP_UUSD_CONTRACT"]!,tzip12);
         const uusdContractStorage : FA2Contract = (await uusdContract.storage() as FA2Contract)
         const uusdtokenMap : BigMapAbstraction = uusdContractStorage.ledger;
         let uusdBalance : BigNumber|undefined = await uusdtokenMap.get<BigNumber>([userAddress,0]);
         
         //EURL
-        let eurlContract = await Tezos.wallet.at(process.env["REACT_APP_EURL_CONTRACT"]!,tzip12);
+        let eurlContract = await Tezos.contract.at(process.env["REACT_APP_EURL_CONTRACT"]!,tzip12);
         const eurlContractStorage : FA2Contract = (await eurlContract.storage() as FA2Contract)
         const eurltokenMap : BigMapAbstraction = eurlContractStorage.ledger;
         let eurlBalance : BigNumber|undefined = await eurltokenMap.get<BigNumber>([userAddress,0]);
@@ -149,12 +162,16 @@ const ClaimL1 = ({
         }
     }
     
-    const handleWithdraw = async (withdrawProof : DEKUWithdrawProof) : Promise<number>=> {
+    const handleWithdraw = async (withdrawProof : DEKUWithdrawProof) : Promise<{
+        block: BlockResponse;
+        expectedConfirmation: number;
+        currentConfirmation: number;
+        completed: boolean;
+        isInCurrentBranch: () => Promise<boolean>;
+    }>=> {
         
         console.log("handleWithdraw");
-        let rollupContract : Contract = await Tezos.contract.at(rollupType === ROLLUP_TYPE.DEKU ?process.env["REACT_APP_ROLLUP_CONTRACT_DEKU"]!:process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
-        console.log("rollupContract",rollupContract);
-        
+        let rollupContract : WalletContract = await Tezos.wallet.at(rollupType === ROLLUP_TYPE.DEKU ?process.env["REACT_APP_ROLLUP_CONTRACT_DEKU"]!:process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);       
         
         let param : RollupParameters = 
         rollupType === ROLLUP_TYPE.DEKU ? 
