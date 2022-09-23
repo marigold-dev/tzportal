@@ -9,7 +9,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { PAGES } from "../App";
 import { FA12Contract } from "./fa12Contract";
 import BigNumber from 'bignumber.js';
-import { Avatar, Button, Chip, Icon, Stack } from "@mui/material";
+import { Avatar, Button, Chip, Icon, Stack, useMediaQuery } from "@mui/material";
 import { LogoutOutlined } from "@mui/icons-material";
 import { LAYER2Type } from "./TezosUtils";
 import './../App.css';
@@ -80,10 +80,11 @@ const ConnectButton = ({
         }
     };
     
+    const isDesktop = useMediaQuery('(min-width:600px)');
     return (<Fragment>
         {!userAddress || userAddress === ""?
         <Stack direction="row" alignContent="center" alignItems="center">
-        <img src="XTZ_white.png" height={24} width={24}/>
+        <img  style={isDesktop?{background:"transparent"}:{background:"#22313f", borderRadius: "5px"}} src="XTZ_white.png" height={24} width={24}/>
         <Button variant="contained" onClick={connectWallet}>
         Connect Tezos wallet
         </Button>

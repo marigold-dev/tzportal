@@ -1,5 +1,5 @@
+import { Backdrop, CircularProgress, Grid, InputAdornment, keyframes, OutlinedInput, Skeleton, Stack, TextField, Typography, useMediaQuery } from "@mui/material";
 import { AccountInfo } from "@airgap/beacon-types";
-import { Backdrop, CircularProgress, Grid, InputAdornment, keyframes, OutlinedInput, Stack, TextField } from "@mui/material";
 import Button from "@mui/material/Button";
 import { BeaconWallet } from "@taquito/beacon-wallet";
 import { BlockResponse } from "@taquito/rpc";
@@ -219,12 +219,15 @@ const ClaimL1 = ({
     100% { transform: translate(1px, -2px)  rotate(-1deg);  }
     `;
     
+    const isDesktop = useMediaQuery('(min-width:600px)');
+    
     return (
         <Grid container  borderRadius={5}
         spacing={2}
         color="primary.main" 
-        width="auto"
-        sx={{ margin : "5vh 20vw", padding : "2em"}}
+        width={isDesktop?("700px"):("auto")}
+        sx={{ margin : "0 auto", padding : "2em"}}
+        style={isDesktop?{ marginTop:"2vh", padding : "2em" }:{margin : "0", borderRadius:0}}
         bgcolor="secondary.main">
         
         <Backdrop
@@ -252,9 +255,11 @@ const ClaimL1 = ({
             width:"70%"
         }
     }}
-    endAdornment={<InputAdornment position="end" ><img height="24px" src={tokenType+".png"}/></InputAdornment>}
+    endAdornment={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)==='undefined XTZ')?(<Typography variant="h1">{<Skeleton style={{background:"#d6d6d6", width:"100px", height:"20px"}} />}</Typography>
+    ):(<InputAdornment position="end" ><img height="24px" src={tokenType+".png"}/></InputAdornment>)}
     startAdornment="Available balance"
-    value={userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType} />
+    value={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)==='undefined XTZ')?(""
+    ):(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)} />
     
     
     <TextField value={opHash} placeholder="Enter your operation hash here" onChange={(e)=>setOpHash(e.target.value?e.target.value.trim():"")}/>

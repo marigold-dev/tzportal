@@ -1,4 +1,4 @@
-import { Avatar, Card, CardContent, CardHeader, Chip, Divider, Grid, Input, InputAdornment, keyframes, MenuItem, OutlinedInput, Paper, Select, SelectChangeEvent, Stack, TextField, Typography } from "@mui/material";
+import { Avatar, Card, CardContent, CardHeader, Chip, Divider, Grid, Input, InputAdornment, keyframes, MenuItem, OutlinedInput, Paper, Select, SelectChangeEvent, Skeleton, Stack, TextField, Typography, useMediaQuery } from "@mui/material";
 import { LAYER2Type, TOKEN_TYPE } from "./TezosUtils";
 import BigNumber from 'bignumber.js';
 import { AccountInfo } from "@airgap/beacon-types";
@@ -55,25 +55,24 @@ const UserWallet = ({
     90%  { transform: translate(1px, 2px)   rotate(0deg);   },
     100% { transform: translate(1px, -2px)  rotate(-1deg);  }
     `;
-
+    const isDesktop = useMediaQuery('(min-width:600px)');
     return (
         
         <Grid bgcolor="var(--tertiary-color)" padding="1em" container spacing={1}>
-        
         <Grid xs={12} sm={2} item >   
         <Stack margin={1} spacing={1}>
-        <Typography fontWeight="bolder" color="secondary" variant="h6" sx={{backgroundColor:"primary.main"}} >{isDirectionDeposit?"From":"To"}</Typography>
-        <img src="XTZ_white.png" width={80}/>
+        {isDesktop?( <><Typography fontWeight="bolder" color="secondary" variant="h6" sx={{ backgroundColor: "primary.main" }}>{isDirectionDeposit ? "From" : "To"}</Typography><img src="XTZ_white.png" width={80} /></>):( <div style={{display:"flex", flexDirection:"row"}}><img style={{padding:"10px"}} src="XTZ_white.png" width={22} /><Typography fontWeight="bolder" color="secondary" variant="h6" lineHeight={2.2} sx={{ backgroundColor: "primary.main" , width:"-webkit-fill-available"}}>{isDirectionDeposit ? "From" : "To"}</Typography></div>)}  
+
         </Stack  >
         </Grid>
         
         <Grid xs={12} sm={10} item>
 
 
-        {!isDirectionDeposit ?<div style={{height:"70px"}}></div>:""}
+        {!isDirectionDeposit ?<div style={isDesktop?{height:"70px"}:{height:"0"}}></div>:""}
 
 
-            <Stack direction={"column"} spacing={1} >
+            <Stack  direction={"column"} spacing={1} >
         
         <OutlinedInput 
         fullWidth
@@ -91,9 +90,10 @@ const UserWallet = ({
                 width:"70%"
             }
         }}
-        endAdornment={<InputAdornment position="end" ><img height="24px" src={tokenType+".png"}/></InputAdornment>}
+        endAdornment={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)==='undefined XTZ')?(<Typography variant="h1">{<Skeleton style={{background:"#d6d6d6", width:"100px", height:"20px"}} />}</Typography>
+        ):(<InputAdornment position="end" ><img height="24px" src={tokenType+".png"}/></InputAdornment>)}
         startAdornment="Available balance"
-        value={userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType} />
+        value={(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)==='undefined XTZ'?(""):(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)} />
         
         {isDirectionDeposit?
             <Fragment>

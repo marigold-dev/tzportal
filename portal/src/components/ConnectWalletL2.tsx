@@ -7,7 +7,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 
 import Button from "@mui/material/Button";
 
-import { Avatar, Chip, Stack } from "@mui/material";
+import { Avatar, Chip, Stack, useMediaQuery } from "@mui/material";
 import {  LogoutOutlined } from "@mui/icons-material";
 import { InMemorySigner } from "@taquito/signer";
 import { LAYER2Type } from "./TezosUtils";
@@ -95,13 +95,13 @@ const ConnectButtonL2 = ({
             
         };
     };
-    
+    const isDesktop = useMediaQuery('(min-width:600px)');
     return (
         <Fragment>
         {!userL2Address?
             
             <Stack direction="row" alignContent="center" alignItems="center">
-            <img src="deku_white.png" height={24} width={24}/>
+             <img  style={isDesktop?{background:"transparent"}:{background:"#22313f"}} src="deku_white.png" height={24} width={24}/>
             <Button
             variant="contained"
             component="label" 
