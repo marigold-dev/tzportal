@@ -9,7 +9,9 @@ import { tzip16 } from "@taquito/tzip16";
 import BigNumber from 'bignumber.js';
 import { useSnackbar } from "notistack";
 import { Dispatch, MouseEvent, SetStateAction, useEffect, useRef, useState } from "react";
-import DEKUClient, { DEKUWithdrawProof } from "./DEKUClient";
+import { DekuToolkit} from "../deku_client";
+import { Proof } from "../deku_client/core/proof";
+import {fromMemorySigner} from "../deku_client/utils/signers";
 import { FA12Contract } from "./fa12Contract";
 import { FA2Contract } from "./fa2Contract";
 import { RollupParameters, RollupParametersDEKU, RollupParametersTORU } from "./RollupParameters";
@@ -62,13 +64,22 @@ const ClaimL1 = ({
         
         event.preventDefault();
         setTezosLoading(true);
-        const dekuClient = new DEKUClient(process.env["REACT_APP_DEKU_NODE"]!,process.env["REACT_APP_CONTRACT"]!,TezosL2);
+
+        const dekuClient = new DekuToolkit({ dekuRpc: process.env["REACT_APP_DEKU_NODE"]!, dekuSigner : fromMemorySigner(TezosL2.signer) })
+        .setTezosRpc(process.env["REACT_APP_TEZOS_NODE"]!)
+        .onBlock(block => {
+          console.log("The client received a block");
+          console.log(block);
+        });
         
         try {
             
             //we sign first with active account on L2
-            const withdrawProof : DEKUWithdrawProof = await dekuClient.getWithdrawProof(opHash);
+            const withdrawProof : Proof = await dekuClient.getProof(opHash);
             
+
+            console.log("withdrawProof",withdrawProof)
+
             //we need to switch Beacon to force to sign on L1 now
             const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU}); 
             setActiveAccount(l1Account);
@@ -162,7 +173,7 @@ const ClaimL1 = ({
         }
     }
     
-    const handleWithdraw = async (withdrawProof : DEKUWithdrawProof) : Promise<{
+    const handleWithdraw = async (withdrawProof : Proof) : Promise<{
         block: BlockResponse;
         expectedConfirmation: number;
         currentConfirmation: number;
@@ -172,18 +183,34 @@ const ClaimL1 = ({
         
         console.log("handleWithdraw");
         let rollupContract : WalletContract = await Tezos.wallet.at(rollupType === ROLLUP_TYPE.DEKU ?process.env["REACT_APP_ROLLUP_CONTRACT_DEKU"]!:process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);       
-        
+        let ticketData = tokenType == TOKEN_TYPE.XTZ ? await getBytes(TOKEN_TYPE.XTZ) : await getBytes(TOKEN_TYPE[tokenType.toUpperCase() as keyof typeof TOKEN_TYPE],process.env["REACT_APP_"+tokenType+"_CONTRACT"]!) ;
+        let proofPair : Array<[string,string]> = [];
+        for(var i = 0; i < withdrawProof.proof.length ; i =i +2){
+            proofPair.push([withdrawProof.proof[i].replace("0x",""),withdrawProof.proof[i+1].replace("0x","")]);
+        }
+
         let param : RollupParameters = 
         rollupType === ROLLUP_TYPE.DEKU ? 
+        
         new RollupParametersDEKU(
             process.env["REACT_APP_CONTRACT"]!+"%withdrawDEKU", 
-            withdrawProof.withdrawal_handle.amount,
-            tokenType == TOKEN_TYPE.XTZ ? await getBytes(TOKEN_TYPE.XTZ) : await getBytes(TOKEN_TYPE[tokenType.toUpperCase() as keyof typeof TOKEN_TYPE],process.env["REACT_APP_"+tokenType+"_CONTRACT"]!) ,
-            withdrawProof.withdrawal_handle.id,
+            
+                 parseFloat(withdrawProof.handle.amount),
+                 ticketData,  //FIXME reverse decode
+                 withdrawProof.handle.id,
+                 withdrawProof.handle.owner,
+                withdrawProof.handle.ticket_id.ticketer ,
+            
+            withdrawProof.withdrawal_handles_hash,
+            proofPair)
+            /*
+            1, //withdrawProof.handle.amount,
+            ticketData,
+            withdrawProof.handle.id,
             userAddress,
             process.env["REACT_APP_CONTRACT"]!,
             withdrawProof.withdrawal_handles_hash,
-            withdrawProof.proof) 
+            withdrawProof.proof) */
             : new RollupParametersTORU();
             
             console.log("param",param);

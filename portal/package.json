@@ -19,6 +19,8 @@
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^12.0.0",
     "@testing-library/user-event": "^13.2.1",
+    "blakejs": "^1.2.1",
+    "bs58check": "^2.1.2",
     "notistack": "^2.0.3",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
@@ -31,9 +33,11 @@
     "start": "HTTPS=true react-app-rewired start",
     "start:jakartanet": "HTTPS=true env-cmd -f .env.jakartanet react-app-rewired start",
     "start:ghostnet": "HTTPS=true env-cmd -f .env.ghostnet react-app-rewired start",
+    "start:kathmandunet": "HTTPS=true env-cmd -f .env.kathmandunet react-app-rewired start",
     "build": "react-app-rewired --max_old_space_size=2048 build",
     "build:jakartanet": "env-cmd -f .env.jakartanet react-app-rewired --max_old_space_size=2048 build",
     "build:ghostnet": "env-cmd -f .env.ghostnet react-app-rewired --max_old_space_size=2048 build",
+    "build:kathmandunet": "env-cmd -f .env.kathmandunet react-app-rewired --max_old_space_size=2048 build",
     "test": "react-app-rewired test",
     "eject": "react-app-rewired eject",
     "update-taquito": "ncu -u --target newest --filter '/^@taquito.*$/' && npm i"
@@ -58,6 +62,7 @@
   },
   "devDependencies": {
     "@airgap/beacon-types": "^3.1.3",
+    "@types/bs58check": "^2.1.0",
     "@types/jest": "^27.0.1",
     "@types/node": "^16.7.13",
     "@types/react": "^18.0.0",

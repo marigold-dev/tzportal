@@ -5,7 +5,8 @@ import { tzip16 } from "@taquito/tzip16";
 import BigNumber from 'bignumber.js';
 import { useSnackbar } from "notistack";
 import { MouseEvent, useCallback, useEffect, useRef, useState } from "react";
-import DEKUClient from "./DEKUClient";
+import { DekuToolkit} from "../deku_client";
+import {fromMemorySigner} from "../deku_client/utils/signers";
 import RollupBox, { RollupBoxComponentType } from "./RollupBox";
 import { RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TOKEN_TYPE } from "./TezosUtils";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
@@ -32,9 +33,14 @@ const TransferL2 = ({
     const [userL2DestinationAddress,setUserL2DestinationAddress] = useState<string>(""); // L2 user destination address
     const userL2DestinationAddressRef = useRef(userL2DestinationAddress); //TRICK : to track current value on async timeout functions
     userL2DestinationAddressRef.current = userL2DestinationAddress;
-    
-    const dekuClient = new DEKUClient(process.env["REACT_APP_DEKU_NODE"]!,process.env["REACT_APP_CONTRACT"]!,TezosL2);
-    
+        
+    const dekuClient = new DekuToolkit({ dekuRpc: process.env["REACT_APP_DEKU_NODE"]!, dekuSigner : fromMemorySigner(TezosL2.signer) })
+    .setTezosRpc(process.env["REACT_APP_TEZOS_NODE"]!)
+    .onBlock(block => {
+      console.log("The client received a block");
+      console.log(block);
+    });
+
     const rollupBoxRef = useRef<RollupBoxComponentType>();
     const rollupDestinationBoxRef = useRef<RollupBoxComponentType>();
     
@@ -68,24 +74,28 @@ const TransferL2 = ({
         
         let newCurrentBalance  : BigNumber = new BigNumber(0) ;
         
+
+        //FIXME change to bigdecimal later all below
+
+
         //XTZ
-        const XTZbalance = await dekuClient.getBalance(userL2,tokenBytes.get(TOKEN_TYPE.XTZ)!);
+        const XTZbalance = new BigNumber(await dekuClient.getBalance(userL2,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.XTZ)!}));
         
         //kUSD
         let kUSDContract = await TezosL2.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!,compose(tzip12, tzip16));
-        let kUSDBalance = await dekuClient.getBalance(userL2,tokenBytes.get(TOKEN_TYPE.KUSD)!);
+        let kUSDBalance = new BigNumber(await dekuClient.getBalance(userL2,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.KUSD)!}));
         
         //CTEZ
         let ctezContract = await TezosL2.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!,compose(tzip12, tzip16));
-        let ctezBalance =await dekuClient.getBalance(userL2,tokenBytes.get(TOKEN_TYPE.CTEZ)!);
+        let ctezBalance = new BigNumber(await dekuClient.getBalance(userL2,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.CTEZ)!}));
         
         //UUSD
         let uusdContract = await TezosL2.wallet.at(process.env["REACT_APP_UUSD_CONTRACT"]!,tzip12);
-        let uusdBalance =await dekuClient.getBalance(userL2,tokenBytes.get(TOKEN_TYPE.UUSD)!);
+        let uusdBalance = new BigNumber(await dekuClient.getBalance(userL2,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.UUSD)!}));
         
         //EURL
         let eurlContract = await TezosL2.wallet.at(process.env["REACT_APP_EURL_CONTRACT"]!,tzip12);
-        let eurlBalance =await dekuClient.getBalance(userL2,tokenBytes.get(TOKEN_TYPE.EURL)!);
+        let eurlBalance = new BigNumber(await dekuClient.getBalance(userL2,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.EURL)!}));
         
         let balance = new Map<TOKEN_TYPE,BigNumber>();
         balance.set(TOKEN_TYPE.XTZ,XTZbalance.dividedBy(Math.pow(10,6))); //convert mutez to tez
@@ -192,7 +202,9 @@ const TransferL2 = ({
                 let faContract = await TezosL2.wallet.at( tokenType === TOKEN_TYPE.CTEZ?process.env["REACT_APP_CTEZ_CONTRACT"]! : tokenType === TOKEN_TYPE.KUSD ? process.env["REACT_APP_KUSD_CONTRACT"]! : tokenType === TOKEN_TYPE.UUSD?process.env["REACT_APP_UUSD_CONTRACT"]! : process.env["REACT_APP_EURL_CONTRACT"]! , tzip12  );
                 decimals = Math.pow(10,(await faContract.tzip12().getTokenMetadata(0)).decimals);
             }
-            const opHash = await dekuClient.createTransaction(userL2DestinationAddress,quantity.multipliedBy(decimals),tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
+
+            //FIXME change to bigdecimal later
+            const opHash = await dekuClient.transferTo(userL2DestinationAddress,quantity.multipliedBy(decimals).toNumber(), process.env["REACT_APP_CONTRACT"]!, tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
             enqueueSnackbar("Transaction to "+userL2DestinationAddress+" was successful", {variant: "success", autoHideDuration:10000});
         } catch (error : any) {
             console.table(`Error: ${JSON.stringify(error, null, 2)}`);
