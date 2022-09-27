@@ -77,6 +77,9 @@ const ClaimL1 = ({
             //we sign first with active account on L2
             const withdrawProof : Proof = await dekuClient.getProof(opHash);
             
+
+            console.log("withdrawProof",withdrawProof)
+
             //we need to switch Beacon to force to sign on L1 now
             const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU}); 
             setActiveAccount(l1Account);
@@ -180,17 +183,34 @@ const ClaimL1 = ({
         
         console.log("handleWithdraw");
         let rollupContract : WalletContract = await Tezos.wallet.at(rollupType === ROLLUP_TYPE.DEKU ?process.env["REACT_APP_ROLLUP_CONTRACT_DEKU"]!:process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);       
-        
+        let ticketData = tokenType == TOKEN_TYPE.XTZ ? await getBytes(TOKEN_TYPE.XTZ) : await getBytes(TOKEN_TYPE[tokenType.toUpperCase() as keyof typeof TOKEN_TYPE],process.env["REACT_APP_"+tokenType+"_CONTRACT"]!) ;
+        let proofPair : Array<[string,string]> = [];
+        for(var i = 0; i < withdrawProof.proof.length ; i =i +2){
+            proofPair.push([withdrawProof.proof[i].replace("0x",""),withdrawProof.proof[i+1].replace("0x","")]);
+        }
+
         let param : RollupParameters = 
         rollupType === ROLLUP_TYPE.DEKU ? 
+        
         new RollupParametersDEKU(
             process.env["REACT_APP_CONTRACT"]!+"%withdrawDEKU", 
-            tokenType == TOKEN_TYPE.XTZ ? await getBytes(TOKEN_TYPE.XTZ) : await getBytes(TOKEN_TYPE[tokenType.toUpperCase() as keyof typeof TOKEN_TYPE],process.env["REACT_APP_"+tokenType+"_CONTRACT"]!) ,
+            
+                 parseFloat(withdrawProof.handle.amount),
+                 ticketData,  //FIXME reverse decode
+                 withdrawProof.handle.id,
+                 withdrawProof.handle.owner,
+                withdrawProof.handle.ticket_id.ticketer ,
+            
+            withdrawProof.withdrawal_handles_hash,
+            proofPair)
+            /*
+            1, //withdrawProof.handle.amount,
+            ticketData,
             withdrawProof.handle.id,
             userAddress,
             process.env["REACT_APP_CONTRACT"]!,
             withdrawProof.withdrawal_handles_hash,
-            withdrawProof.proof) 
+            withdrawProof.proof) */
             : new RollupParametersTORU();
             
             console.log("param",param);

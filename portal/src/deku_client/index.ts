@@ -39,6 +39,7 @@ export class DekuToolkit {
     private _consensus: Consensus | undefined;
     private _discovery: Discovery | undefined;
 
+
     // private websocket: WebSocket
     private onBlockCallback: (block: BlockType) => void;
 
@@ -66,8 +67,8 @@ export class DekuToolkit {
         this.endpoints = makeEndpoints(setting.dekuRpc)
         this._dekuSigner = setting.dekuSigner;
         this.onBlockCallback = () => { return; }; // The callback is not provided by the user in the constructor
-        /*this.initializeStream(setting.dekuRpc)
-            .catch(err => console.error(`error: ${err}`));*/
+        this.initializeStream(setting.dekuRpc)
+            .catch(err => console.error(`error: ${err}`));
         this.pendingOperations = {};
     }
 
@@ -215,7 +216,9 @@ export class DekuToolkit {
     }
 
     async getBalance(address: string, ticket_id: TicketID): Promise<number> {
-        const balance = await get(this.endpoints["GET_BALANCE"](address, ticket_id));
+        //ex : 050505030b to 0x050505030b 
+        let ticketData = ticket_id.data.startsWith("0x")?ticket_id.data:"0x"+ticket_id.data;         
+        const balance = await get(this.endpoints["GET_BALANCE"](address, { ticketer : ticket_id.ticketer, data : ticketData}));
         return balance
     }
 
