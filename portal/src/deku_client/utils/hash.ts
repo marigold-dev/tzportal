@@ -24,9 +24,9 @@ const toB58Hash = (prefix: Uint8Array) => (payload: JSONValue) => {
     return b58;
 }
 
-export const fromB58Hash = (x: string) => {
+export const fromB58Hash = (x: string): string => {
     const y = bs58check.decode(x);
-    const tmp = new Uint8Array(y.buffer);
+    const tmp = new Uint8Array(y.buffer).slice(0, 32 + 2);
     return "0x" + Buffer.from(tmp.slice(2)).toString("hex");
 }
 
