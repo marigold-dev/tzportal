@@ -42,8 +42,8 @@ export type SignedOperation = {
 }
 
 const createTransaction = (level: LevelType, nonce: NonceType, source: KeyHashType, receiver: KeyHashType, amount: AmountType, ticketer: string, data: string): Transaction => {
-  const hexData = Buffer.from(data, "hex").toString();  // FIXME: make this type safe
-  const a : Transaction = {
+    const hexData = Buffer.from(data, "hex").toString();  // FIXME: make this type safe
+    const a: Transaction = {
         level,
         nonce,
         source,
@@ -51,14 +51,14 @@ const createTransaction = (level: LevelType, nonce: NonceType, source: KeyHashTy
         content: {
             receiver,
             ticket_id: ["Ticket_id", {
-              ticketer: ticketer,
-              data: hexData
+                ticketer: ticketer,
+                data: hexData
             }],
             amount
         }
     }
-  console.log(a);
-  return a;
+    console.log(a);
+    return a;
 }
 
 const createVmOperation = (level: LevelType, nonce: NonceType, source: KeyHashType, payload: string): Operation => {
@@ -74,8 +74,8 @@ const createVmOperation = (level: LevelType, nonce: NonceType, source: KeyHashTy
 }
 
 const createWithdraw = (level: LevelType, nonce: NonceType, source: KeyHashType, owner: KeyHashType, amount: AmountType, ticketer: string, data: string): Withdraw => {
-  const hexData = Buffer.from(data, "hex").toString(); // FIXME: make this type safe
-  const a : Withdraw = {
+    const hexData = Buffer.from(data, "hex").toString(); // FIXME: make this type safe
+    const a: Withdraw = {
         level,
         nonce,
         source,
@@ -83,18 +83,18 @@ const createWithdraw = (level: LevelType, nonce: NonceType, source: KeyHashType,
         content: {
             owner,
             ticket_id: ["Ticket_id", {
-              ticketer: ticketer,
-              data: hexData
+                ticketer: ticketer,
+                data: hexData
             }],
             amount
         }
     }
-  console.log(a);
-  return a;
+    console.log(a);
+    return a;
 }
 
 const toDTO = (operation: Operation): JSONValue => {
-    const { level, nonce, source, type, content} = operation;
+    const { level, nonce, source, type, content } = operation;
     switch (type) {
         case "Transaction": {
             const { receiver, amount, ticket_id } = content;
@@ -112,17 +112,17 @@ const toDTO = (operation: Operation): JSONValue => {
                 level: Level.toDTO(level),
                 nonce: Nonce.toDTO(nonce),
                 source: source,
-                content: ["Tezos_withdraw", { owner: ["Originated", {"contract": owner, "entrypoint": null}], ticket_id, amount: Amount.toDTO(amount) }]
+                content: ["Tezos_withdraw", { owner: ["Implicit", owner], ticket_id, amount: Amount.toDTO(amount) }]
             }
             return JSONValue.of(dto);
         }
         case "Vm": {
-            const {payload} = content;
+            const { payload } = content;
             const dto = {
                 level: Level.toDTO(level),
                 nonce: Nonce.toDTO(nonce),
                 source: source,
-                content: ["Vm_transaction", {operation:payload, tickets:[]}]
+                content: ["Vm_transaction", { operation: payload, tickets: [] }]
             }
             return JSONValue.of(dto);
         }
@@ -153,10 +153,10 @@ const ofDTO = (json: JSONValue): Operation | null => {
     if (type === null) return null;
 
     const level = Level.ofDTO(level_json);
-    if(level === null) return null;
+    if (level === null) return null;
 
     const nonce = Nonce.ofDTO(nonce_json);
-    if(nonce === null) return null;
+    if (nonce === null) return null;
 
     switch (type) {
         case "Transaction": {
@@ -169,7 +169,7 @@ const ofDTO = (json: JSONValue): Operation | null => {
         }
         case "Vm_transaction": {
             const operation = payload.at("operation").as_string();
-            if(operation === null) return null;
+            if (operation === null) return null;
             return createVmOperation(level, nonce, source, operation);
         }
         default:
