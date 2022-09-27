@@ -700,7 +700,8 @@ const handleDeposit = async (event : MouseEvent) => {
                     }
 
                     //FIXME change to BigNumber
-                    const opHash = await dekuClient.withdrawTo(process.env["REACT_APP_CONTRACT"]!,
+                    const opHash = await dekuClient.withdrawTo(
+                    userAddress,
                     quantity.multipliedBy(decimals).toNumber(),
                     process.env["REACT_APP_CONTRACT"]!,
                     tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);

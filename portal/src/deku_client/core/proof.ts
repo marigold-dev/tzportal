@@ -67,7 +67,7 @@ const ofDTO = (json: JSONValue): Proof | null => {
   if (amount === null) return null;
   console.log("h");
 
-  const address = owner[1].at("contract").as_string();
+  const address = owner[1].as_string();
   if (address === null) return null;
   console.log("i");
 
