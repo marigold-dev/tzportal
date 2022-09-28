@@ -3,7 +3,6 @@ import {  TezosToolkit } from "@taquito/taquito";
 import './../App.css';
 
 import { AccountInfo, NetworkType, Origin} from "@airgap/beacon-types";
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 
 import Button from "@mui/material/Button";
 
@@ -11,8 +10,7 @@ import { Avatar, Chip, Stack, useMediaQuery } from "@mui/material";
 import {  LogoutOutlined } from "@mui/icons-material";
 import { InMemorySigner } from "@taquito/signer";
 import { LAYER2Type } from "./TezosUtils";
-import { DekuToolkit} from "../deku_client";
-import {fromMemorySigner} from "../deku_client/utils/signers";
+
 import { PAGES } from "../App";
 
 

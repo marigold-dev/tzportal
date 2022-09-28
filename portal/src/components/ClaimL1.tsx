@@ -1,7 +1,6 @@
 import { Backdrop, CircularProgress, Grid, InputAdornment, keyframes, OutlinedInput, Skeleton, Stack, TextField, Typography, useMediaQuery } from "@mui/material";
 import { AccountInfo } from "@airgap/beacon-types";
 import Button from "@mui/material/Button";
-import { BeaconWallet } from "@taquito/beacon-wallet";
 import { BlockResponse } from "@taquito/rpc";
 import { BigMapAbstraction, compose, Contract, TezosToolkit, Wallet, WalletContract } from "@taquito/taquito";
 import { tzip12 } from "@taquito/tzip12";
@@ -9,14 +8,13 @@ import { tzip16 } from "@taquito/tzip16";
 import BigNumber from 'bignumber.js';
 import { useSnackbar } from "notistack";
 import { Dispatch, MouseEvent, SetStateAction, useEffect, useRef, useState } from "react";
-import { DekuToolkit} from "../deku_client";
-import { Proof } from "../deku_client/core/proof";
-import {fromMemorySigner} from "../deku_client/utils/signers";
 import { FA12Contract } from "./fa12Contract";
 import { FA2Contract } from "./fa2Contract";
 import { RollupParameters, RollupParametersDEKU, RollupParametersTORU } from "./RollupParameters";
 import { getBytes, LAYER2Type, ROLLUP_TYPE, TOKEN_TYPE } from "./TezosUtils";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
+import { DekuToolkit, fromMemorySigner } from "../deku_client_old";
+import { Proof } from "../deku_client_old/core/proof";
 
 
 

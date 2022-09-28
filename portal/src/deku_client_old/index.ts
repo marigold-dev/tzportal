@@ -67,8 +67,8 @@ export class DekuToolkit {
         this.endpoints = makeEndpoints(setting.dekuRpc)
         this._dekuSigner = setting.dekuSigner;
         this.onBlockCallback = () => { return; }; // The callback is not provided by the user in the constructor
-        this.initializeStream(setting.dekuRpc)
-            .catch(err => console.error(`error: ${err}`));
+        /*this.initializeStream(setting.dekuRpc)
+            .catch(err => console.error(`error: ${err}`));*/
         this.pendingOperations = {};
     }
 

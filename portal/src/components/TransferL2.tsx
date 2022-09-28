@@ -5,8 +5,7 @@ import { tzip16 } from "@taquito/tzip16";
 import BigNumber from 'bignumber.js';
 import { useSnackbar } from "notistack";
 import { MouseEvent, useCallback, useEffect, useRef, useState } from "react";
-import { DekuToolkit} from "../deku_client";
-import {fromMemorySigner} from "../deku_client/utils/signers";
+import { DekuToolkit, fromMemorySigner } from "../deku_client_old";
 import RollupBox, { RollupBoxComponentType } from "./RollupBox";
 import { RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TOKEN_TYPE } from "./TezosUtils";
 import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
@@ -83,19 +82,19 @@ const TransferL2 = ({
         
         //kUSD
         let kUSDContract = await TezosL2.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!,compose(tzip12, tzip16));
-        let kUSDBalance = new BigNumber(await dekuClient.getBalance(userL2,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.KUSD)!}));
+        let kUSDBalance = new BigNumber(await dekuClient.getBalance(userL2,{ticketer: process.env["REACT_APP_CONTRACT"]!,data: tokenBytes.get(TOKEN_TYPE.KUSD)!}));
         
         //CTEZ
         let ctezContract = await TezosL2.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!,compose(tzip12, tzip16));
-        let ctezBalance = new BigNumber(await dekuClient.getBalance(userL2,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.CTEZ)!}));
+        let ctezBalance = new BigNumber(await dekuClient.getBalance(userL2, {ticketer:process.env["REACT_APP_CONTRACT"]!,data: tokenBytes.get(TOKEN_TYPE.CTEZ)!}));
         
         //UUSD
         let uusdContract = await TezosL2.wallet.at(process.env["REACT_APP_UUSD_CONTRACT"]!,tzip12);
-        let uusdBalance = new BigNumber(await dekuClient.getBalance(userL2,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.UUSD)!}));
+        let uusdBalance = new BigNumber(await dekuClient.getBalance(userL2, {ticketer:process.env["REACT_APP_CONTRACT"]!,data: tokenBytes.get(TOKEN_TYPE.UUSD)!}));
         
         //EURL
         let eurlContract = await TezosL2.wallet.at(process.env["REACT_APP_EURL_CONTRACT"]!,tzip12);
-        let eurlBalance = new BigNumber(await dekuClient.getBalance(userL2,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.EURL)!}));
+        let eurlBalance = new BigNumber(await dekuClient.getBalance(userL2, {ticketer:process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.EURL)!}));
         
         let balance = new Map<TOKEN_TYPE,BigNumber>();
         balance.set(TOKEN_TYPE.XTZ,XTZbalance.dividedBy(Math.pow(10,6))); //convert mutez to tez

@@ -2,11 +2,11 @@ import { AddShoppingCartOutlined, UnfoldMoreOutlined } from "@mui/icons-material
 import { Accordion, AccordionDetails, AccordionSummary, Avatar, backdropClasses, Badge, Box, Button, Chip, FormControl, Grid, Input, InputAdornment, InputLabel, keyframes, MenuItem, OutlinedInput, Paper, Select, SelectChangeEvent, Skeleton, Stack, styled, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import { TezosToolkit } from "@taquito/taquito";
 import BigNumber from 'bignumber.js';
-import React, { Dispatch, forwardRef, Fragment, SetStateAction, useEffect, useImperativeHandle, useState } from "react";
-import { DekuToolkit} from "../deku_client";
-import {fromMemorySigner} from "../deku_client/utils/signers";
-import { RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
-import { ContractFAStorage, ContractStorage } from "./TicketerContractUtils";
+import React, { Dispatch, forwardRef, Fragment, SetStateAction, useImperativeHandle, useState } from "react";
+import { DekuToolkit } from "../deku_client_old";
+
+import { RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TOKEN_TYPE } from "./TezosUtils";
+import { ContractFAStorage } from "./TicketerContractUtils";
 
 BigNumber.config({ EXPONENTIAL_AT : 19});
 

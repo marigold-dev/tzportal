@@ -1,4 +1,3 @@
-import { Proof } from "../deku_client/core/proof";
 
 //order of fields is very important
 export abstract class RollupParameters{
