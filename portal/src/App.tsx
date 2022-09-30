@@ -43,47 +43,47 @@ export enum PAGES {
 };
 
 function App() {
-  
-  
+
+
   const [pageIndex, setPageIndex] = useState<string>(""+PAGES.WELCOME);
-  
+
   const setPageIndexWrapper = (newValue:string)=>{
     if(newValue === ""+PAGES.WITHDRAW || newValue === ""+PAGES.L2TRANSFER){
-      const l2Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU}); 
+      const l2Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU});
       setActiveAccount(l2Account);
     }
     if(newValue === ""+PAGES.DEPOSIT){
-      const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU}); 
+      const l1Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU});
       setActiveAccount(l1Account);
     }
     if(newValue === ""+PAGES.L1CLAIM){ //we will need both wallet for signature on both networks. we start with L2, then L1
-      const l2Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU}); 
+      const l2Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU});
       setActiveAccount(l2Account);
     }
     setPageIndex(newValue)}
-    
+
     const [Tezos, setTezos] = useState<TezosToolkit>(new TezosToolkit(process.env["REACT_APP_TEZOS_NODE"]!));
     const [TezosL2, setTezosL2] = useState<TezosToolkit>(new TezosToolkit(process.env["REACT_APP_TEZOS_NODE"]!));
-    
+
     Tezos.setPackerProvider(new MichelCodecPacker());
     Tezos.addExtension(new Tzip12Module());
-    
+
     const [wallet, setWallet] = useState<BeaconWallet|undefined>();
-    
+
     const [activeAccount, setActiveAccount] = useState<AccountInfo>(); //used to display selected wallet
     const [accounts, setAccounts] = useState<AccountInfo[]>([]); //used to track both wallets
-    
-    
-    
+
+
+
     const [userAddress, setUserAddress] = useState<string>("");
     const [userL2Address, setUserL2Address] = useState<string>("");//
-    
+
     const [tokenBytes,setTokenBytes] = useState<Map<TOKEN_TYPE,string>>(new Map<TOKEN_TYPE,string>());
-    
-    
+
+
     let network = process.env["REACT_APP_NETWORK"]? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType] : NetworkType.JAKARTANET;
-    
-    
+
+
     const createWallet = async () => {
       let wallet = new BeaconWallet({
         name: "TzPortal",
@@ -91,41 +91,41 @@ function App() {
       });
       Tezos.setWalletProvider(wallet);
       setTezos(Tezos);
-      setWallet(wallet);  
+      setWallet(wallet);
     }
-    
+
     const disconnectWallet = async (e:any): Promise<void> => {
       setUserAddress("");
-      const newAccounts = accounts.filter(a => a.address===userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU); 
+      const newAccounts = accounts.filter(a => a.address===userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU);
       setAccounts(newAccounts);//keep only L2 if still exists
       if(newAccounts.length==1)setActiveAccount(newAccounts[0])//set a activeAcccount
       await wallet!.disconnect();
       await wallet!.client.destroy();
-      
+
       if(userL2Address=="")setPageIndex(""+PAGES.WELCOME)
       else setPageIndex(""+PAGES.L2TRANSFER) ;
-      
+
       console.log("Wallet L1 disconnected");
       await createWallet();
     };
-    
+
     const disconnectWalletL2 = async (e:any): Promise<void> => {
       setUserL2Address("");
-      const newAccounts = accounts.filter(a => a.address===userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU); 
+      const newAccounts = accounts.filter(a => a.address===userAddress && a.accountIdentifier!==LAYER2Type.L2_DEKU);
       setAccounts(newAccounts);//keep only L1 if still exists
       if(newAccounts.length==1)setActiveAccount(newAccounts[0])//set a activeAcccount
       TezosL2.setSignerProvider(undefined);
-      
+
       if(userAddress=="")setPageIndex(""+PAGES.WELCOME)
       else setPageIndex(""+PAGES.L1CLAIM) ;
-      
+
       console.log("Wallet L2 disconnected");
     };
-    
+
     const [rollupType , setRollupType] = useState<ROLLUP_TYPE>(ROLLUP_TYPE.DEKU);
     const [selectedRollupType , setSelectedRollupType] = useState<string>(ROLLUP_TYPE.DEKU.name);
     const [rollup , setRollup] = useState<RollupTORU | RollupDEKU | RollupCHUSAI>();
-    
+
     async function refreshRollup() {
       switch(rollupType){
         case ROLLUP_TYPE.TORU : setRollup(await TezosUtils.fetchRollupTORU(Tezos.rpc.getRpcUrl(),rollupType.address));break;
@@ -135,33 +135,33 @@ function App() {
         }
       }
     }
-    
+
     React.useEffect(() => { (async () => {
       const tokenBytes = await getTokenBytes();//need to call this first and wait for init
-      setTokenBytes(tokenBytes); 
+      setTokenBytes(tokenBytes);
       await createWallet();
     })();
   }, []);
-  
-  
+
+
   React.useEffect(() => {
     refreshRollup();
   }, [rollupType]);
-  
-  
-  
-  
+
+
+
+
   return (
     <div style={{position:"relative"  ,backgroundImage : "url('/bg.jpg')" , minHeight: "100vh" ,backgroundSize: "cover", paddingBottom:"0px"}} >
-    
-    
-    
+
+
+
     {(network != NetworkType.MAINNET)?<div className="banner" style={{height:"20px"}}>WARNING: (TEST ONLY) You are on {network}</div>:<span />}
-    
+
     <Stack direction="row-reverse" id="header" style={{backgroundColor:"#0E1E2E",height:"80px",padding : "0 50px"}}>
-    
-    
-    <ConnectButtonL2 
+
+
+    <ConnectButtonL2
     userAddress={userAddress}
     userL2Address={userL2Address}
     setUserL2Address={setUserL2Address}
@@ -172,10 +172,10 @@ function App() {
     disconnectWalletL2={disconnectWalletL2}
     hideAfterConnect={false}
     setPageIndex={setPageIndex}
-    
+
     />
-    
-    
+
+
     <ConnectButton
     Tezos={Tezos}
     setTezos={setTezos}
@@ -191,8 +191,8 @@ function App() {
     hideAfterConnect={false}
     setPageIndex={setPageIndex}
     />
-    
-    <Select 
+
+    <Select
     variant="standard"
     id="layer2-select"
     defaultValue={ROLLUP_TYPE.DEKU.name}
@@ -208,7 +208,7 @@ function App() {
     variant="outlined"
     />
     </MenuItem>
-    {/* 
+    {/*
     <MenuItem key={ROLLUP_TYPE.CHUSAI.name} value={ROLLUP_TYPE.CHUSAI.name}>
     <Chip sx={{border: "none",margin: 0}}
     avatar={<Avatar alt="Natacha" src="CHUSAI.png" />}
@@ -216,7 +216,7 @@ function App() {
     variant="outlined"
     />
     </MenuItem>
-    
+
     <MenuItem key={ROLLUP_TYPE.TORU.name} value={ROLLUP_TYPE.TORU.name}>
     <Chip sx={{border: "none",margin: 0}}
     avatar={<Avatar alt="Natacha" src="TORU.png" />}
@@ -225,23 +225,23 @@ function App() {
     />
     </MenuItem>
   */}
-  
-  
-  
+
+
+
   </Select>
-  
+
   <img src="icon.png" height="80px" style={{position: "absolute",left: 0,marginLeft: "50px"}}/>
-  
+
   </Stack>
-  
+
   <TabContext value={pageIndex}>
   <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-  <Tabs 
-  value={pageIndex} 
-  centered 
+  <Tabs
+  value={pageIndex}
+  centered
   onChange={(e,newValue:string)=>{!newValue?setPageIndex(PAGES.WELCOME.toString()):
     setPageIndexWrapper(newValue)}
-  } 
+  }
   >
   <Tab icon={<Home  />} sx={{display:"none"}} label="HOME" disabled={true}  value={""+PAGES.WELCOME}/>
   <Tab icon={<Hail  />} label="L1 Claim" disabled={userL2Address=="" || userAddress==""}  value={""+PAGES.L1CLAIM}/>
@@ -250,16 +250,16 @@ function App() {
   <Tab icon={<Send />} label="L2 Transfer" disabled={userL2Address==""} value={""+PAGES.L2TRANSFER}/>
   </Tabs>
   </Box>
-  
+
   <TabPanel value={""+PAGES.WELCOME}>
-  
+
   <Grid container  borderRadius={5}
   spacing={2}
-  color="primary.main" 
+  color="primary.main"
   width="auto"
   sx={{ margin : "5vh 20vw", padding : "2em"}}
   bgcolor="secondary.main">
-  
+
   <Grid item xs={3}>
   <Stack  direction="row" height="100%" style={{fontFamily:"Chilanka" }}>
 
@@ -283,15 +283,15 @@ function App() {
 
 
   </Stack>
-  
+
   </Grid >
   <Grid item xs={6}>
-  
+
   <Stack spacing={2} >
-  
+
   {userAddress===""?
   <div  style={{padding:"1em", backgroundColor:"var(--tertiary-color)"}} >
-  
+
   <ConnectButton
   Tezos={Tezos}
   setTezos={setTezos}
@@ -307,15 +307,15 @@ function App() {
   hideAfterConnect={true}
   setPageIndex={setPageIndex}
   />
-  
+
   </div>
   :<div  style={{height:"100px"}}>&nbsp;</div>}
-  
+
   <div style={{padding:"1em", backgroundColor:"var(--tertiary-color)"}} >
-  
-  
-  
-  <ConnectButtonL2 
+
+
+
+  <ConnectButtonL2
   userAddress={userAddress}
   userL2Address={userL2Address}
   setUserL2Address={setUserL2Address}
@@ -327,36 +327,36 @@ function App() {
   hideAfterConnect={true}
   setPageIndex={setPageIndex}
   />
-  
+
   </div>
-  
+
   </Stack>
-  
+
   </Grid>
   <Grid item xs={3}>
-  <Stack 
-  height="100%"   
+  <Stack
+  height="100%"
   alignContent="space-between" alignItems="center" spacing={1}
-  > 
-  
-  
+  >
+
+
 
 
   <span style={{fontFamily:"Chilanka", height:"50%", paddingTop:"25%" }}>  </span>
   <span style={{fontFamily:"Chilanka", height:"50%", paddingTop:"25%" }}> &larr; Do L2 Transfer </span>
 
 
-  
+
   </Stack>
-  
-  
-  
+
+
+
   </Grid>
-  
+
   </Grid>
   </TabPanel>
   <TabPanel value={""+PAGES.L1CLAIM}>
-  <ClaimL1 
+  <ClaimL1
   Tezos={Tezos}
   TezosL2={TezosL2}
   rollupType={rollupType}
@@ -366,7 +366,7 @@ function App() {
   />
   </TabPanel>
   <TabPanel style={{ paddingLeft: "calc(50% - 350px)"}} value={""+PAGES.DEPOSIT} >
-  <DepositWithdrawV2 
+  <DepositWithdrawV2
   Tezos={Tezos}
   wallet={wallet!}
   TezosL2={TezosL2}
@@ -384,7 +384,7 @@ function App() {
   />
   </TabPanel>
   <TabPanel style={{ paddingLeft: "calc(50% - 350px)"}} value={""+PAGES.WITHDRAW} >
-  <DepositWithdrawV2 
+  <DepositWithdrawV2
   Tezos={Tezos}
   wallet={wallet!}
   TezosL2={TezosL2}
@@ -402,7 +402,7 @@ function App() {
   />
   </TabPanel>
   <TabPanel style={{ paddingLeft: "calc(50% - 350px)"}} value={""+PAGES.L2TRANSFER} >
-  <TransferL2 
+  <TransferL2
   TezosL2 = {TezosL2}
   userL2Address = {userL2Address}
   tokenBytes = {tokenBytes}
@@ -411,35 +411,35 @@ function App() {
   />
   </TabPanel>
   </TabContext>
-  
-  
-  
+
+
+
   <Grid   container
   direction="row"
   justifyContent="space-between"
   alignItems="center" id="footer" style={{backgroundColor:"#0E1E2E", position:"absolute",
   left:0,bottom:0,right:0, height:"80px" , paddingLeft:"50px" , paddingRight:"50px"}}>
-  
+
   <a href="https://www.marigold.dev/project/deku-sidechain" target="_blank"><img src="deku_logo_white.png" height={60}/></a>
   <a href="https://tezos.gitlab.io/alpha/transaction_rollups.html" target="_blank"><img src="toru.png" height={60}/></a>
-  
+
   <Divider orientation='vertical'  color='white' sx={{height:"70%"}}/>
   <a href="https://tzstamp.io/" target="_blank"><img src="tzstamp.png" height={60}/></a>
   <a href="https://faucet.marigold.dev/" target="_blank"><img src="faucet.png" height={60}/></a>
   <a href="https://tzvote.marigold.dev/" target="_blank"><img src="tzvote.png" height={60}/></a>
-  
+
   <Divider orientation='vertical'  color='white' sx={{height:"70%"}}/>
-  
-  
-  
+
+
+
   <a href="https://marigold.dev/" target="_blank" ><Typography variant='h5' color="primary" >Powered by Marigold</Typography></a>
-  
+
   </Grid>
-  
+
   </div>
-  
-  
-  
+
+
+
   );
 }
 
