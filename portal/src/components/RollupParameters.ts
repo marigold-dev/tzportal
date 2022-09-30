@@ -7,7 +7,7 @@ export abstract class RollupParameters{
 
 
 export class RollupParametersDEKU extends RollupParameters {
-    
+
     callback : string; //contract endpoint
       amount : number; // nat
       data : string ; // bytes
@@ -16,7 +16,7 @@ export class RollupParametersDEKU extends RollupParameters {
       ticketer : string; //address
     handles_hash : string ; //bytes proof will be converted to CHAR
     proofList : Array<[string,string]> ; //bytes array
-    
+
     constructor(callback : string,
         amount : number,
         data : string ,
@@ -36,7 +36,7 @@ export class RollupParametersDEKU extends RollupParameters {
             this.proofList=proofList;
         }
     }
-    
+
     export class RollupParametersTORU extends RollupParameters {
         //TODO
         constructor(

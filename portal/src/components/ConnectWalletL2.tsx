@@ -43,23 +43,23 @@ const ConnectButtonL2 = ({
     hideAfterConnect,
     setPageIndex
 }: ButtonProps): JSX.Element => {
-    
+
     const setL2AccountAsActive = async() => {
-        const l2Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU}); 
+        const l2Account : AccountInfo | undefined = accounts.find((a)=> {return a.address == userL2Address && a.accountIdentifier===LAYER2Type.L2_DEKU});
         setActiveAccount(l2Account);
 
         if(userAddress=="")setPageIndex(""+PAGES.L2TRANSFER)
         else setPageIndex(""+PAGES.WITHDRAW) ;
 
     }
-    
+
     const connectWallet = (e: ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files) {
             return;
         }
         const file = e.target.files[0];
         const fileReader = new FileReader();
-        
+
         fileReader.readAsText(file);
         fileReader.onload = async(e) => {
             if (!e?.target?.result) {
@@ -67,10 +67,10 @@ const ConnectButtonL2 = ({
             }
             const l2Wallet : {
                 address: string,
-                priv_key: string    
+                priv_key: string
             } = JSON.parse(e.target.result as string);
             setUserL2Address(l2Wallet.address);
-            
+
             const accountInfo : AccountInfo = { address: l2Wallet.address,
                 network: {
                     type: NetworkType[process.env["REACT_APP_NETWORK"]!.toUpperCase() as keyof typeof NetworkType]
@@ -88,25 +88,25 @@ const ConnectButtonL2 = ({
             if(accounts.length == 0)setActiveAccount(accountInfo);
             accounts.push(accountInfo);
             TezosL2.setProvider({ signer: await InMemorySigner.fromSecretKey(l2Wallet.priv_key) });
-            
+
 
             if(userAddress=="")setPageIndex(""+PAGES.L2TRANSFER)
             else setPageIndex(""+PAGES.DEPOSIT) ;
 
             console.log("Connected to Layer 2");
-            
+
         };
     };
-    
+
     return (
         <Fragment>
         {!userL2Address?
-            
+
             <Stack direction="row" alignContent="center" alignItems="center">
             <img src="deku_white.png" height={24} width={24}/>
             <Button
             variant="contained"
-            component="label" 
+            component="label"
             >  &nbsp;
             Upload DEKU wallet file
             <input
@@ -117,13 +117,13 @@ const ConnectButtonL2 = ({
             </Button>
             </Stack>
             :!hideAfterConnect? <Chip
-            style={{ 
-                marginTop: "20px", 
+            style={{
+                marginTop: "20px",
                 opacity: (activeAccount?.address == userL2Address && activeAccount.accountIdentifier===LAYER2Type.L2_DEKU?1:0.38)}}
             color="primary"  onClick={setL2AccountAsActive} avatar={<Avatar src="deku_white.png" />}
              onDelete={disconnectWalletL2}   label={userL2Address} deleteIcon={<LogoutOutlined />
-            
-        }/> 
+
+        }/>
         :""
     }
     </Fragment>
