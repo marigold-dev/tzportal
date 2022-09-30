@@ -1,4 +1,4 @@
-import { Proof } from "../deku_client/core/proof";
+import { Proof } from "@marigold-dev/deku-toolkit/lib/core/proof";
 
 //order of fields is very important
 export abstract class RollupParameters{
