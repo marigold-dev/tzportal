@@ -3,8 +3,8 @@ import { Accordion, AccordionDetails, AccordionSummary, Avatar, Badge, Box, Butt
 import { TezosToolkit } from "@taquito/taquito";
 import BigNumber from 'bignumber.js';
 import React, { Dispatch, forwardRef, Fragment, SetStateAction, useEffect, useImperativeHandle, useState } from "react";
-import { DekuToolkit} from "../deku_client";
-import {fromMemorySigner} from "../deku_client/utils/signers";
+import { DekuToolkit} from "@marigold-dev/deku-toolkit";
+import {fromMemorySigner} from "@marigold-dev/deku-toolkit/lib/utils/signers";
 import { RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from "./TezosUtils";
 import { ContractFAStorage, ContractStorage } from "./TicketerContractUtils";
 

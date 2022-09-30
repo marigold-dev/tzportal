@@ -11,8 +11,8 @@ import { Avatar, Chip, Stack } from "@mui/material";
 import {  LogoutOutlined } from "@mui/icons-material";
 import { InMemorySigner } from "@taquito/signer";
 import { LAYER2Type } from "./TezosUtils";
-import { DekuToolkit} from "../deku_client";
-import {fromMemorySigner} from "../deku_client/utils/signers";
+import { DekuToolkit} from "@marigold-dev/deku-toolkit";
+import {fromMemorySigner} from "@marigold-dev/deku-toolkit/lib/utils/signers";
 import { PAGES } from "../App";
 
 
