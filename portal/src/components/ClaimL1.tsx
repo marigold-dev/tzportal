@@ -195,7 +195,7 @@ const ClaimL1 = ({
                     process.env["REACT_APP_CONTRACT"]! + "%withdrawDEKU",
 
                     parseFloat(withdrawProof.handle.amount),
-                    ticketData,  //FIXME reverse decode
+                    withdrawProof.handle.ticket_id.data,
                     withdrawProof.handle.id,
                     withdrawProof.handle.owner,
                     withdrawProof.handle.ticket_id.ticketer,
