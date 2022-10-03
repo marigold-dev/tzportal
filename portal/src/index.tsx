@@ -38,9 +38,9 @@ const themeLight = createTheme({
           textTransform: "none",
           fontWeight : "bolder",
         },
-        containedWarning : {
-          color : "#ffffff"
-        },
+        //containedWarning : {
+        //  color : "#ffffff"
+        //},
         containedSizeMedium : {
         },
         sizeMedium : {
@@ -57,7 +57,7 @@ const themeLight = createTheme({
         avatarColorPrimary : {
           backgroundColor : "black"
         },
-        
+
       }
     },
     MuiInputBase : {
@@ -89,7 +89,7 @@ const themeLight = createTheme({
           transform: "translate(1em, 1em) scale(1)",
         },
         shrink : true,
-        
+
       }
     },
     MuiOutlinedInput : {
@@ -113,12 +113,12 @@ const themeLight = createTheme({
         standard : {
           borderRadius: "4px",
         },
-        
+
       },
       defaultProps : {
         disableUnderline : true
       }
-     
+
     },
     MuiInput : {
       styleOverrides : {
@@ -172,9 +172,9 @@ root.render(
   </SnackbarProvider>
   </React.StrictMode>
   );
-  
+
   // If you want to start measuring performance in your app, pass a function
   // to log results (for example: reportWebVitals(console.log))
   // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
   reportWebVitals();
-  
+
