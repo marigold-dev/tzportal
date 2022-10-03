@@ -193,23 +193,23 @@ const DepositWithdrawV2 = ({
 
 
         //XTZ
-        const XTZbalance = new BigNumber(await dekuClient.getBalance(userL2Address, process.env["REACT_APP_CONTRACT"]!, tokenBytes.get(TOKEN_TYPE.XTZ)!));
+        const XTZbalance = new BigNumber(await dekuClient.getBalance(userL2Address,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.XTZ)!}));
 
         //kUSD
         let kUSDContract = await Tezos.wallet.at(process.env["REACT_APP_KUSD_CONTRACT"]!, compose(tzip12, tzip16));
-        let kUSDBalance = new BigNumber(await dekuClient.getBalance(userL2Address, process.env["REACT_APP_CONTRACT"]!, tokenBytes.get(TOKEN_TYPE.KUSD)!));
+        let kUSDBalance = new BigNumber(await dekuClient.getBalance(userL2Address,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.KUSD)!}));
 
         //CTEZ
         let ctezContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!, compose(tzip12, tzip16));
-        let ctezBalance = new BigNumber(await dekuClient.getBalance(userL2Address, process.env["REACT_APP_CONTRACT"]!, tokenBytes.get(TOKEN_TYPE.CTEZ)!));
+        let ctezBalance = new BigNumber(await dekuClient.getBalance(userL2Address,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.CTEZ)!}));
 
         //UUSD
         let uusdContract = await Tezos.wallet.at(process.env["REACT_APP_UUSD_CONTRACT"]!, tzip12);
-        let uusdBalance = new BigNumber(await dekuClient.getBalance(userL2Address, process.env["REACT_APP_CONTRACT"]!, tokenBytes.get(TOKEN_TYPE.UUSD)!));
+        let uusdBalance = new BigNumber(await dekuClient.getBalance(userL2Address,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.UUSD)!}));
 
         //EURL
         let eurlContract = await Tezos.wallet.at(process.env["REACT_APP_EURL_CONTRACT"]!, tzip12);
-        let eurlBalance = new BigNumber(await dekuClient.getBalance(userL2Address, process.env["REACT_APP_CONTRACT"]!, tokenBytes.get(TOKEN_TYPE.EURL)!));
+        let eurlBalance = new BigNumber(await dekuClient.getBalance(userL2Address,{ticketer: process.env["REACT_APP_CONTRACT"]!, data:tokenBytes.get(TOKEN_TYPE.EURL)!}));
 
         let balance = new Map<TOKEN_TYPE, BigNumber>();
         balance.set(TOKEN_TYPE.XTZ, XTZbalance.dividedBy(Math.pow(10, 6))); //convert mutez to tez
