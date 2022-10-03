@@ -1,5 +1,5 @@
-import { Dispatch, SetStateAction } from "react";
 import { BeaconWallet } from "@taquito/beacon-wallet";
+import { Dispatch, SetStateAction } from "react";
 import { PAGES } from "../App";
 
 interface ButtonProps {
