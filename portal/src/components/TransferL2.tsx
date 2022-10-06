@@ -1,4 +1,4 @@
-import { DekuToolkit, fromMemorySigner } from "@marigold-dev/deku-toolkit";
+import { DekuToolkit } from "@marigold-dev/deku-toolkit";
 import { Backdrop, Box, Button, CircularProgress, keyframes, Stack, useMediaQuery } from "@mui/material";
 import { compose, TezosToolkit } from "@taquito/taquito";
 import { tzip12 } from "@taquito/tzip12";
@@ -14,32 +14,28 @@ import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 
 type TransferL2Props = {
     TezosL2: TezosToolkit;
+    dekuClient: DekuToolkit;
     userL2Address: string;
     tokenBytes: Map<TOKEN_TYPE, string>;
-    rollupType: ROLLUP_TYPE;
     rollup: RollupTORU | RollupDEKU | RollupCHUSAI | undefined;
+    rollupmap: Map<ROLLUP_TYPE, string>;
+    rollupType: ROLLUP_TYPE;
 };
 
 const TransferL2 = ({
     TezosL2,
+    dekuClient,
     userL2Address,
     tokenBytes,
-    rollupType,
     rollup,
+    rollupmap,
+    rollupType
 }: TransferL2Props): JSX.Element => {
 
     const [quantity, setQuantity] = useState<BigNumber>(new BigNumber(0));
     const [userL2DestinationAddress, setUserL2DestinationAddress] = useState<string>(""); // L2 user destination address
     const userL2DestinationAddressRef = useRef(userL2DestinationAddress); //TRICK : to track current value on async timeout functions
     userL2DestinationAddressRef.current = userL2DestinationAddress;
-
-    // FIXME: This seems to be created several times?
-    const dekuClient = new DekuToolkit({ dekuRpc: process.env["REACT_APP_DEKU_NODE"]!, dekuSigner: fromMemorySigner(TezosL2.signer) })
-        .setTezosRpc(process.env["REACT_APP_TEZOS_NODE"]!)
-        .onBlock(block => {
-            console.log("The client received a block");
-            console.log(block);
-        });
 
     const rollupBoxRef = useRef<RollupBoxComponentType>();
     const rollupDestinationBoxRef = useRef<RollupBoxComponentType>();
@@ -253,6 +249,7 @@ const TransferL2 = ({
             <Stack sx={isDesktop ? { width: "inherit" } : { padding: "30px" }} direction="column" spacing={2}>
 
                 <RollupBox
+                    rollupmap={rollupmap}
                     isDirectionDeposit={false}
                     ref={rollupBoxRef}
                     Tezos={TezosL2}
@@ -277,6 +274,7 @@ const TransferL2 = ({
                 </div>
 
                 <RollupBox
+                    rollupmap={rollupmap}
                     isDirectionDeposit={true}
                     ref={rollupDestinationBoxRef}
                     Tezos={TezosL2}

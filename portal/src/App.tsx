@@ -4,6 +4,7 @@ import './App.css';
 import ConnectButton from './components/ConnectWallet';
 
 import { AccountInfo, NetworkType } from "@airgap/beacon-types";
+import { DekuToolkit, fromMemorySigner } from '@marigold-dev/deku-toolkit';
 import { Archive, Hail, Home, Send, Unarchive } from '@mui/icons-material';
 import AppsIcon from '@mui/icons-material/Apps';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -86,9 +87,17 @@ function App() {
   const [userL2Address, setUserL2Address] = useState<string>("");//
 
   const [tokenBytes, setTokenBytes] = useState<Map<TOKEN_TYPE, string>>(new Map<TOKEN_TYPE, string>());
-
+  const [rollupMap, setRollupMap] = useState<Map<ROLLUP_TYPE, string>>(new Map());
 
   let network = process.env["REACT_APP_NETWORK"] ? NetworkType[process.env["REACT_APP_NETWORK"].toUpperCase() as keyof typeof NetworkType] : NetworkType.JAKARTANET;
+
+  const dekuClient = new DekuToolkit({ dekuRpc: process.env["REACT_APP_DEKU_NODE"]!, dekuSigner: fromMemorySigner(TezosL2.signer) })
+    .setTezosRpc(process.env["REACT_APP_TEZOS_NODE"]!)
+    .onBlock(block => {
+      console.log("The client received a block");
+      console.log(block);
+    });
+
 
 
   const createWallet = async () => {
@@ -130,15 +139,15 @@ function App() {
   };
 
   const [rollupType, setRollupType] = useState<ROLLUP_TYPE>(ROLLUP_TYPE.DEKU);
-  const [selectedRollupType, setSelectedRollupType] = useState<string>(ROLLUP_TYPE.DEKU.name);
+  const [selectedRollupType, setSelectedRollupType] = useState<string>(ROLLUP_TYPE.DEKU);
   const [rollup, setRollup] = useState<RollupTORU | RollupDEKU | RollupCHUSAI>();
 
   async function refreshRollup() {
     switch (rollupType) {
-      case ROLLUP_TYPE.TORU: setRollup(await TezosUtils.fetchRollupTORU(Tezos.rpc.getRpcUrl(), rollupType.address)); break;
-      case ROLLUP_TYPE.DEKU: setRollup(await TezosUtils.fetchRollupDEKU(Tezos, rollupType.address)); break;
+      case ROLLUP_TYPE.TORU: setRollup(await TezosUtils.fetchRollupTORU(Tezos.rpc.getRpcUrl(), rollupMap.get(rollupType)!)); break;
+      case ROLLUP_TYPE.DEKU: setRollup(await TezosUtils.fetchRollupDEKU(Tezos, rollupMap.get(rollupType)!)); break;
       case ROLLUP_TYPE.CHUSAI: {
-        setRollup(await TezosUtils.fetchRollupCHUSAI(Tezos, rollupType.address)); break;
+        setRollup(await TezosUtils.fetchRollupCHUSAI(Tezos, rollupMap.get(rollupType)!)); break;
       }
     }
   }
@@ -147,7 +156,16 @@ function App() {
       const tokenBytes = await getTokenBytes();//need to call this first and wait for init
       setTokenBytes(tokenBytes);
       await createWallet();
+
+      rollupMap.set(ROLLUP_TYPE.TORU, process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
+      const dekuConsensusContractAddress: string = (await dekuClient.consensus?.address())!
+      rollupMap.set(ROLLUP_TYPE.DEKU, dekuConsensusContractAddress);
+      rollupMap.set(ROLLUP_TYPE.CHUSAI, process.env["REACT_APP_ROLLUP_CONTRACT_CHUSAI"]!);
+      setRollupMap(rollupMap);
+      console.log("rollupMap", rollupMap);
     })();
+
+
   }, []);
 
 
@@ -211,7 +229,7 @@ function App() {
         <Select
           variant="standard"
           id="layer2-select"
-          defaultValue={ROLLUP_TYPE.DEKU.name}
+          defaultValue={ROLLUP_TYPE.DEKU}
           value={selectedRollupType}
           label="Rollup type"
           sx={{
@@ -227,7 +245,7 @@ function App() {
             );
           }}
         >
-          <MenuItem key={ROLLUP_TYPE.DEKU.name} value={ROLLUP_TYPE.DEKU.name}>
+          <MenuItem key={ROLLUP_TYPE.DEKU} value={ROLLUP_TYPE.DEKU}>
             <Chip
               sx={{ border: "none", margin: 0 }}
               avatar={
@@ -236,7 +254,7 @@ function App() {
                   src="deku_white.png"
                 />
               }
-              label={ROLLUP_TYPE.DEKU.name}
+              label={ROLLUP_TYPE.DEKU}
               variant="outlined"
             />
           </MenuItem>
@@ -346,7 +364,7 @@ function App() {
               <Select
                 variant="standard"
                 id="layer2-select"
-                defaultValue={ROLLUP_TYPE.DEKU.name}
+                defaultValue={ROLLUP_TYPE.DEKU}
                 value={selectedRollupType}
                 label="Rollup type"
                 sx={{
@@ -363,8 +381,8 @@ function App() {
                 }}
               >
                 <MenuItem
-                  key={ROLLUP_TYPE.DEKU.name}
-                  value={ROLLUP_TYPE.DEKU.name}
+                  key={ROLLUP_TYPE.DEKU}
+                  value={ROLLUP_TYPE.DEKU}
                 >
                   <Chip
                     sx={{ border: "none", margin: 0 }}
@@ -374,7 +392,7 @@ function App() {
                         src="deku_white.png"
                       />
                     }
-                    label={ROLLUP_TYPE.DEKU.name}
+                    label={ROLLUP_TYPE.DEKU}
                     variant="outlined"
                   />
                 </MenuItem>
@@ -613,6 +631,7 @@ function App() {
             <ClaimL1
               Tezos={Tezos}
               TezosL2={TezosL2}
+              dekuClient={dekuClient}
               rollupType={rollupType}
               userAddress={userAddress}
               accounts={accounts}
@@ -624,7 +643,9 @@ function App() {
             value={"" + PAGES.DEPOSIT}
           >
             <DepositWithdrawV2
+              rollupMap={rollupMap}
               Tezos={Tezos}
+              dekuClient={dekuClient}
               wallet={wallet!}
               TezosL2={TezosL2}
               userAddress={userAddress}
@@ -645,7 +666,9 @@ function App() {
             value={"" + PAGES.WITHDRAW}
           >
             <DepositWithdrawV2
+              rollupMap={rollupMap}
               Tezos={Tezos}
+              dekuClient={dekuClient}
               wallet={wallet!}
               TezosL2={TezosL2}
               userAddress={userAddress}
@@ -667,10 +690,13 @@ function App() {
           >
             <TransferL2
               TezosL2={TezosL2}
+              dekuClient={dekuClient}
               userL2Address={userL2Address}
               tokenBytes={tokenBytes}
               rollupType={rollupType}
               rollup={rollup}
+              rollupmap={rollupMap}
+
             />
           </TabPanel>
         </Box>
@@ -789,6 +815,7 @@ function App() {
             <ClaimL1
               Tezos={Tezos}
               TezosL2={TezosL2}
+              dekuClient={dekuClient}
               rollupType={rollupType}
               userAddress={userAddress}
               accounts={accounts}
@@ -800,7 +827,9 @@ function App() {
             value={"" + PAGES.DEPOSIT}
           >
             <DepositWithdrawV2
+              rollupMap={rollupMap}
               Tezos={Tezos}
+              dekuClient={dekuClient}
               wallet={wallet!}
               TezosL2={TezosL2}
               userAddress={userAddress}
@@ -821,7 +850,9 @@ function App() {
             value={"" + PAGES.WITHDRAW}
           >
             <DepositWithdrawV2
+              rollupMap={rollupMap}
               Tezos={Tezos}
+              dekuClient={dekuClient}
               wallet={wallet!}
               TezosL2={TezosL2}
               userAddress={userAddress}
@@ -843,10 +874,12 @@ function App() {
           >
             <TransferL2
               TezosL2={TezosL2}
+              dekuClient={dekuClient}
               userL2Address={userL2Address}
               tokenBytes={tokenBytes}
               rollupType={rollupType}
               rollup={rollup}
+              rollupmap={rollupMap}
             />
           </TabPanel>
         </Box>

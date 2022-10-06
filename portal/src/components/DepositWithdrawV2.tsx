@@ -1,6 +1,5 @@
 import { AccountInfo } from "@airgap/beacon-types";
 import { DekuToolkit } from "@marigold-dev/deku-toolkit";
-import { fromMemorySigner } from "@marigold-dev/deku-toolkit/lib/utils/signers";
 import { AddShoppingCartOutlined, SwapVert, UnfoldMoreOutlined } from "@mui/icons-material";
 import { Accordion, AccordionDetails, AccordionSummary, Avatar, Backdrop, Badge, Box, CircularProgress, Divider, Grid, Stack, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import Button from "@mui/material/Button";
@@ -25,6 +24,7 @@ import UserWallet, { UserWalletComponentType } from "./UserWallet";
 
 type DepositWithdrawV2Props = {
     Tezos: TezosToolkit;
+    dekuClient: DekuToolkit;
     wallet: BeaconWallet;
     TezosL2: TezosToolkit;
     userAddress: string;
@@ -38,10 +38,12 @@ type DepositWithdrawV2Props = {
     accounts: AccountInfo[];
     tokenBytes: Map<TOKEN_TYPE, string>;
     setPageIndex: Dispatch<SetStateAction<string>>;
+    rollupMap: Map<ROLLUP_TYPE, string>;
 };
 
 const DepositWithdrawV2 = ({
     Tezos,
+    dekuClient,
     wallet,
     TezosL2,
     userAddress,
@@ -54,15 +56,9 @@ const DepositWithdrawV2 = ({
     setActiveAccount,
     accounts,
     tokenBytes,
-    setPageIndex
+    setPageIndex,
+    rollupMap
 }: DepositWithdrawV2Props): JSX.Element => {
-
-    const dekuClient = new DekuToolkit({ dekuRpc: process.env["REACT_APP_DEKU_NODE"]!, dekuSigner: fromMemorySigner(TezosL2.signer) })
-        .setTezosRpc(process.env["REACT_APP_TEZOS_NODE"]!)
-        .onBlock(block => {
-            console.log("The client received a block");
-            console.log(block);
-        });
 
     const [userBalance, setUserBalance] = useState<Map<TOKEN_TYPE, BigNumber>>(new Map());
     const [userTicketBalance, setUserTicketBalance] = useState<Map<TOKEN_TYPE, BigNumber>>(new Map());
@@ -604,13 +600,13 @@ const DepositWithdrawV2 = ({
             }
 
             let param: ContractParameters =
-                tokenType === TOKEN_TYPE.XTZ ? new ContractXTZParameters(quantity.multipliedBy(decimals), rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI, userL2Address, rollupType.address)
+                tokenType === TOKEN_TYPE.XTZ ? new ContractXTZParameters(quantity.multipliedBy(decimals), rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI, userL2Address, rollupMap.get(rollupType)!)
                     : new ContractFAParameters(
                         quantity.multipliedBy(decimals),
                         process.env["REACT_APP_" + tokenType + "_CONTRACT"]!,
                         rollupType === ROLLUP_TYPE.DEKU ? LAYER2Type.L2_DEKU : rollupType === ROLLUP_TYPE.TORU ? LAYER2Type.L2_TORU : LAYER2Type.L2_CHUSAI,
                         userL2Address,
-                        rollupType.address);
+                        rollupMap.get(rollupType)!);
 
             /* console.log("param",param);
             let inspect = c.methods.deposit(...Object.values(param)).toTransferParams();
@@ -767,6 +763,7 @@ const DepositWithdrawV2 = ({
                     />
                     :
                     <RollupBox
+                        rollupmap={rollupMap}
                         isDirectionDeposit={isDirectionDeposit()!}
                         ref={rollupBoxRef}
                         Tezos={Tezos}
@@ -891,6 +888,7 @@ const DepositWithdrawV2 = ({
 
                 {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier !== LAYER2Type.L2_DEKU ?
                     <RollupBox
+                        rollupmap={rollupMap}
                         ref={rollupBoxRef}
                         Tezos={Tezos}
                         userAddress={userL2Address}
