@@ -1719,10 +1719,10 @@
   resolved "https://registry.yarnpkg.com/@leichtgewicht/ip-codec/-/ip-codec-2.0.4.tgz#b2ac626d6cb9c8718ab459166d4bb405b8ffa78b"
   integrity sha512-Hcv+nVC0kZnQ3tD9GVu5xSMR4VVYOteQIr/hwFPVEvPdlXqgGEuRjiheChHgdM+JyqdgNcmzZOX/tnl0JOiI7A==
 
-"@marigold-dev/deku-toolkit@^0.1.6":
-  version "0.1.6"
-  resolved "https://registry.yarnpkg.com/@marigold-dev/deku-toolkit/-/deku-toolkit-0.1.6.tgz#4099587176a63208ac3631b47c4bc5c13e592775"
-  integrity sha512-WlKyO+uc3IjM0t+T/wVsZ9ttITT4domyVqRTFG8h9e3G7wjOZAAoCeu6dwOy0TZu3e4kWCxxQeCDDZdO/O2BqA==
+"@marigold-dev/deku-toolkit@^0.1.7":
+  version "0.1.7"
+  resolved "https://registry.yarnpkg.com/@marigold-dev/deku-toolkit/-/deku-toolkit-0.1.7.tgz#195448ab1325ed15ad281886b951738d8d73b453"
+  integrity sha512-eGj4br4keISluEEhuIv8fmPwhzpJQfVQyjl4kKFJdo9mfaq+BV9ypq+QUb/bXmuYuU06/lwxXfkF6zaCrEkw2g==
   dependencies:
     "@taquito/taquito" "^13.0.1"
     blakejs "^1.2.1"
