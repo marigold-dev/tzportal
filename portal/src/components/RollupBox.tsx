@@ -32,7 +32,7 @@ type RollupProps = {
     quantity: BigNumber;
     setQuantity: Dispatch<SetStateAction<BigNumber>>;
     setTokenType: Dispatch<SetStateAction<string>>;
-
+    rollupmap: Map<ROLLUP_TYPE, string>;
 };
 
 const RollupBox = ({
@@ -51,7 +51,8 @@ const RollupBox = ({
     tokenType,
     quantity,
     setQuantity,
-    setTokenType
+    setTokenType,
+    rollupmap
 }: RollupProps, ref: any): JSX.Element => {
 
     const layer2Tickets = React.createRef<any>();
@@ -103,9 +104,9 @@ const RollupBox = ({
 
             <Grid xs={12} sm={2} item >
                 <Stack margin={1} spacing={1}>
-                    {isDesktop ? (<><Typography fontWeight="bolder" color="secondary" variant="h6" sx={{ backgroundColor: "primary.main" }}>{isDirectionDeposit ? "To" : "From"}</Typography><Tooltip title={rollupType.address}>
+                    {isDesktop ? (<><Typography fontWeight="bolder" color="secondary" variant="h6" sx={{ backgroundColor: "primary.main" }}>{isDirectionDeposit ? "To" : "From"}</Typography><Tooltip title={rollupmap.get(rollupType)}>
                         <img src="deku_white.png" width={80} />
-                    </Tooltip></>) : (<div style={{ display: "flex", flexDirection: "row" }}><Tooltip title={rollupType.address}>
+                    </Tooltip></>) : (<div style={{ display: "flex", flexDirection: "row" }}><Tooltip title={rollupmap.get(rollupType)}>
                         <img src="deku_white.png" width={30} style={{ padding: "10px" }} />
                     </Tooltip><Typography lineHeight={2} fontWeight="bolder" color="secondary" variant="h6" sx={{ backgroundColor: "primary.main", width: "-webkit-fill-available" }}>{isDirectionDeposit ? "To" : "From"}</Typography></div>)}
 

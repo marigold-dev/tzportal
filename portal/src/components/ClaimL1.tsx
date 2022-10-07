@@ -1,7 +1,6 @@
 import { AccountInfo } from "@airgap/beacon-types";
 import { DekuToolkit } from "@marigold-dev/deku-toolkit";
 import { Proof } from "@marigold-dev/deku-toolkit/lib/core/proof";
-import { fromMemorySigner } from "@marigold-dev/deku-toolkit/lib/utils/signers";
 import { Backdrop, CircularProgress, Grid, InputAdornment, keyframes, OutlinedInput, Skeleton, Stack, TextField, Typography, useMediaQuery } from "@mui/material";
 import Button from "@mui/material/Button";
 import { BlockResponse } from "@taquito/rpc";
@@ -23,6 +22,7 @@ import { TransactionInvalidBeaconError } from "./TransactionInvalidBeaconError";
 type ClaimL1Props = {
     Tezos: TezosToolkit;
     TezosL2: TezosToolkit;
+    dekuClient: DekuToolkit;
     rollupType: ROLLUP_TYPE;
     userAddress: string;
     accounts: AccountInfo[];
@@ -32,6 +32,7 @@ type ClaimL1Props = {
 const ClaimL1 = ({
     Tezos,
     TezosL2,
+    dekuClient,
     rollupType,
     userAddress,
     accounts,
@@ -47,6 +48,7 @@ const ClaimL1 = ({
     const [tokenType, setTokenType] = useState<string>(TOKEN_TYPE.XTZ);
     const tokenTypeRef = useRef(tokenType); //TRICK : to track current value on async timeout functions
     tokenTypeRef.current = tokenType;
+
     useEffect(() => {
         if (oldBalance) oldBalance!.current = userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!;
     }, [tokenType]); //required to refresh to current when changing token type
@@ -64,13 +66,6 @@ const ClaimL1 = ({
 
         event.preventDefault();
         setTezosLoading(true);
-
-        const dekuClient = new DekuToolkit({ dekuRpc: process.env["REACT_APP_DEKU_NODE"]!, dekuSigner: fromMemorySigner(TezosL2.signer) })
-            .setTezosRpc(process.env["REACT_APP_TEZOS_NODE"]!)
-            .onBlock(block => {
-                console.log("The client received a block");
-                console.log(block);
-            });
 
         try {
 
@@ -182,7 +177,7 @@ const ClaimL1 = ({
     }> => {
 
         console.log("handleWithdraw");
-        let rollupContract: WalletContract = await Tezos.wallet.at(rollupType === ROLLUP_TYPE.DEKU ? process.env["REACT_APP_ROLLUP_CONTRACT_DEKU"]! : process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
+        let rollupContract: WalletContract = await Tezos.wallet.at(rollupType === ROLLUP_TYPE.DEKU ? (await dekuClient.consensus?.address())! : process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
         let ticketData = tokenType == TOKEN_TYPE.XTZ ? await getBytes(TOKEN_TYPE.XTZ) : await getBytes(TOKEN_TYPE[tokenType.toUpperCase() as keyof typeof TOKEN_TYPE], process.env["REACT_APP_" + tokenType + "_CONTRACT"]!);
         let proofPair: Array<[string, string]> = [];
         for (var i = 0; i < withdrawProof.proof.length; i = i + 2) {
