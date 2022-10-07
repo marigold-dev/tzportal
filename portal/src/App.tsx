@@ -143,6 +143,12 @@ function App() {
   const [rollup, setRollup] = useState<RollupTORU | RollupDEKU | RollupCHUSAI>();
 
   async function refreshRollup() {
+    //requires this to be set first
+    if (rollupMap.size != 3) {
+      const rollupMap = await refreshRollupMap(); //wait
+      setRollupMap(rollupMap);
+    }
+
     switch (rollupType) {
       case ROLLUP_TYPE.TORU: setRollup(await TezosUtils.fetchRollupTORU(Tezos.rpc.getRpcUrl(), rollupMap.get(rollupType)!)); break;
       case ROLLUP_TYPE.DEKU: setRollup(await TezosUtils.fetchRollupDEKU(Tezos, rollupMap.get(rollupType)!)); break;
@@ -151,18 +157,25 @@ function App() {
       }
     }
   }
+
+  async function refreshRollupMap(): Promise<Map<ROLLUP_TYPE, string>> {
+    return new Promise(async (resolve, reject) => {
+      rollupMap.set(ROLLUP_TYPE.TORU, process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
+      const dekuConsensusContractAddress: string = (await dekuClient.consensus?.address())!;
+      rollupMap.set(ROLLUP_TYPE.DEKU, dekuConsensusContractAddress);
+      rollupMap.set(ROLLUP_TYPE.CHUSAI, process.env["REACT_APP_ROLLUP_CONTRACT_CHUSAI"]!);
+      return resolve(rollupMap);
+    });
+
+  }
+
+
   React.useEffect(() => {
     (async () => {
       const tokenBytes = await getTokenBytes();//need to call this first and wait for init
       setTokenBytes(tokenBytes);
       await createWallet();
-
-      rollupMap.set(ROLLUP_TYPE.TORU, process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
-      const dekuConsensusContractAddress: string = (await dekuClient.consensus?.address())!;
-      rollupMap.set(ROLLUP_TYPE.DEKU, dekuConsensusContractAddress);
-      rollupMap.set(ROLLUP_TYPE.CHUSAI, process.env["REACT_APP_ROLLUP_CONTRACT_CHUSAI"]!);
-      setRollupMap(rollupMap);
-      console.log("rollupMap", rollupMap);
+      setRollupMap(await refreshRollupMap());
     })();
 
 
@@ -170,7 +183,9 @@ function App() {
 
 
   React.useEffect(() => {
-    refreshRollup();
+    (async () => {
+      await refreshRollup();
+    })();
   }, [rollupType]);
 
 
