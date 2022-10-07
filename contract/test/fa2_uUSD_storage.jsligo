@@ -2,7 +2,7 @@
   token_ids : list([0 as nat]) as list<nat>,
   operators :  Big_map.empty  as big_map<[address, address], set<nat>> ,
   ledger : ( Big_map.literal( list([
-    [ ["tz1VApBuWHuaTfDHtKzU3NBtWFYsxJvvWhYk" as address, 0 as nat] , (1000000000000000000 as nat)]])
+    [ ["tz1KkeNrP9YeL4NzU9ha5yuvxv8NYpWNd2LY" as address, 0 as nat] , (1000000000000000000000000 as nat)]])
    ) as big_map<[address,nat],nat> ),
   token_metadata : ( Big_map.literal ( list([
     [ (0 as nat) , 

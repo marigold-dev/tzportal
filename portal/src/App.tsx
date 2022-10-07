@@ -158,7 +158,7 @@ function App() {
       await createWallet();
 
       rollupMap.set(ROLLUP_TYPE.TORU, process.env["REACT_APP_ROLLUP_CONTRACT_TORU"]!);
-      const dekuConsensusContractAddress: string = (await dekuClient.consensus?.address())!
+      const dekuConsensusContractAddress: string = (await dekuClient.consensus?.address())!;
       rollupMap.set(ROLLUP_TYPE.DEKU, dekuConsensusContractAddress);
       rollupMap.set(ROLLUP_TYPE.CHUSAI, process.env["REACT_APP_ROLLUP_CONTRACT_CHUSAI"]!);
       setRollupMap(rollupMap);
