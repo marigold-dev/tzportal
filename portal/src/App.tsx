@@ -169,7 +169,6 @@ function App() {
 
   }
 
-
   React.useEffect(() => {
     (async () => {
       const tokenBytes = await getTokenBytes();//need to call this first and wait for init
