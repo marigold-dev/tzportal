@@ -189,7 +189,6 @@ function App() {
   }, [rollupType]);
 
 
-
   const isDesktop = useMediaQuery('(min-width:600px)');
 
   return (
