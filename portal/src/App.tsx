@@ -177,7 +177,6 @@ function App() {
       setRollupMap(await refreshRollupMap());
     })();
 
-
   }, []);
 
 
