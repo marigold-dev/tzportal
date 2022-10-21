@@ -2,9 +2,12 @@ name: Create Docker Image for Testnets
 
 on:
   push:
+    paths-ignore:
+      - "cronjob/**"
     branches:
       - "main"
       - "ghost"
+
 jobs:
   docker:
     strategy:
@@ -56,8 +59,8 @@ jobs:
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # Only push if on main branch
           push: true
+          push: ${{ github.ref == 'refs/heads/ghost' && github.event_name == 'push' }}
           tags: |
             ghcr.io/marigold-dev/tzportal:stable-${{ matrix.network }}
             ghcr.io/marigold-dev/tzportal:${{ steps.vars.outputs.date }}-${{ github.sha }}-${{ matrix.network }}
