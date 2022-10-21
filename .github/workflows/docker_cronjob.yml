@@ -9,7 +9,7 @@ jobs:
   docker:
     strategy:
       matrix:
-        network: [ghostnet, jakartanet, kathmandunet]
+        network: [ghostnet, jakartanet]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
