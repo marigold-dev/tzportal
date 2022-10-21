@@ -2,14 +2,19 @@ name: Create Cronjob Docker Image
 
 on:
   push:
+    paths:
+      - "cronjob/**"
     branches:
       - "main"
+      - "ghost"
+      - "jarkarta"
+      - "jakartanet"
 
 jobs:
   docker:
     strategy:
       matrix:
-        network: [ghostnet, jakartanet, kathmandunet]
+        network: [ghostnet, jakartanet]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
