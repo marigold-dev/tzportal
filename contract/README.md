@@ -135,6 +135,6 @@ ligo compile contract ./test/cfmm_tez_ctez.mligo --output-file ./test/cfmm.tz
 sed s/FA12_CTEZ/${FA12_CTEZ_ADDRESS}/ < ./test/cfmm_initial_storage.mligo | sed s/CTEZ_ADDRESS/${FA12_CTEZ_ADDRESS}/ > ./test/cfmm_storage.mligo
 
 ligo compile storage ./test/cfmm_tez_ctez.mligo "$(<./test/cfmm_storage.mligo)" --output-file ./test/cfmm_storage.tz
-tezos-client originate contract cfmm transferring 0.000001 from myFirstKey running 'file:./test/cfmm.tz' --init "$(<./test/cfmm_storage.tz)" --burn-cap 10
+tezos-client originate contract cfmm transferring 0.000001 from myFirstKey running 'file:./test/cfmm.tz' --init "$(<./test/cfmm_storage.tz)" --burn-cap 10 --force
 CFMM_ADDRESS=`tezos-client show known contract cfmm`
 ```
