@@ -41,6 +41,7 @@ jobs:
           cache-to: type=gha,mode=max
           # Only push if on main branch
           #push: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+          push: true
           tags: |
             ghcr.io/marigold-dev/tzportal-treasury-${{ matrix.network }}-cronjob:latest
             ghcr.io/marigold-dev/tzportal-treasury-${{ matrix.network }}-cronjob:${{ github.sha }}
