@@ -145,78 +145,84 @@ const RollupBox = ({
                                 <Fragment>
 
 
-                                    <OutlinedInput
-                                        ref={layer2Tickets}
-                                        sx={
-                                            shouldBounce ? {
-                                                animation: `${myKeyframe} 1s ease`,
-                                                backgroundColor: changeTicketColor
-                                            } : {
-                                                animation: "",
-                                                backgroundColor: "#55606A"
-                                            }
-                                        }
-                                        fullWidth
-                                        inputProps={{
-                                            style: {
-                                                textAlign: "right",
-                                                display: 'inline',
-                                                width: "70%",
-                                            }
-                                        }}
-                                        endAdornment={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType) === 'undefined XTZ') ? (<Typography variant="h1">{<Skeleton style={{ background: "#d6d6d6", width: "100px", height: "20px" }} />}</Typography>
-                                        ) : (<InputAdornment position="end" >
-                                            <img height="24px" src={tokenType + ".png"} />
-                                            <img height="24px" src={"ticket.png"} />
-                                        </InputAdornment>)}
-                                        startAdornment="Available balance"
-                                        value=
-                                        {(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString()
-                                            + " " + tokenType + "-ticket") === 'undefined XTZ-ticket' ? ("") : ((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString()
-                                                + " " + tokenType + "-ticket"))
-                                        } />
+                                    {tokenType === TOKEN_TYPE.XTZ && isDirectionDeposit ? " ( For XTZ, your deposit will first be converted to a swap to CTEZ, then you will have to deposit CTEZ ) " :
 
-                                    {!isDirectionDeposit ?
                                         <Fragment>
-
-                                            <Input
-
+                                            <OutlinedInput
+                                                ref={layer2Tickets}
+                                                sx={
+                                                    shouldBounce ? {
+                                                        animation: `${myKeyframe} 1s ease`,
+                                                        backgroundColor: changeTicketColor
+                                                    } : {
+                                                        animation: "",
+                                                        backgroundColor: "#55606A"
+                                                    }
+                                                }
                                                 fullWidth
-                                                required
-                                                type="number"
-                                                onChange={(e) => setQuantity(e.target.value ? new BigNumber(e.target.value) : new BigNumber(0))}
-                                                value={quantity}
-                                                title="Enter amount"
-                                                endAdornment={
-                                                    <Fragment>
+                                                inputProps={{
+                                                    style: {
+                                                        textAlign: "right",
+                                                        display: 'inline',
+                                                        width: "70%",
+                                                    }
+                                                }}
+                                                endAdornment={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType) === 'undefined XTZ') ? (<Typography variant="h1">{<Skeleton style={{ background: "#d6d6d6", width: "100px", height: "20px" }} />}</Typography>
+                                                ) : (<InputAdornment position="end" >
+                                                    <img height="24px" src={tokenType + ".png"} />
+                                                    <img height="24px" src={"ticket.png"} />
+                                                </InputAdornment>)}
+                                                startAdornment="Available balance"
+                                                value=
+                                                {(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString()
+                                                    + " " + tokenType + "-ticket") === 'undefined XTZ-ticket' ? ("") : ((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString()
+                                                        + " " + tokenType + "-ticket"))
+                                                } />
 
-                                                        <span style={{ color: "var(--tertiary-color)" }} onClick={() => setQuantity(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!)}>MAX</span>
 
-                                                        <Select
-                                                            variant="standard"
-                                                            defaultValue={TOKEN_TYPE.XTZ}
-                                                            value={tokenType}
-                                                            label="ticket-token type"
-                                                            sx={{ paddingRight: 0 }}
-                                                            onChange={(e: SelectChangeEvent) => { setTokenType(e.target.value) }}
-                                                        >
-                                                            {Object.keys(TOKEN_TYPE).map((key) =>
-                                                                <MenuItem key={key} value={key}>
-                                                                    <Chip sx={{ border: "none" }} variant="outlined"
-                                                                        avatar={<Fragment><img height="24px" src={key + ".png"} />
-                                                                            <img height="24px" src={"ticket.png"} /> </Fragment>}
-                                                                        label={key}
-                                                                    />
-                                                                </MenuItem>
-                                                            )}</Select>
+                                            {!isDirectionDeposit ?
+                                                <Fragment>
 
-                                                    </Fragment>}
-                                            />
+                                                    <Input
+
+                                                        fullWidth
+                                                        required
+                                                        type="number"
+                                                        onChange={(e) => setQuantity(e.target.value ? new BigNumber(e.target.value) : new BigNumber(0))}
+                                                        value={quantity}
+                                                        title="Enter amount"
+                                                        endAdornment={
+                                                            <Fragment>
+
+                                                                <span style={{ color: "var(--tertiary-color)" }} onClick={() => setQuantity(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!)}>MAX</span>
+
+                                                                <Select
+                                                                    variant="standard"
+                                                                    defaultValue={TOKEN_TYPE.CTEZ}
+                                                                    value={tokenType}
+                                                                    label="ticket-token type"
+                                                                    sx={{ paddingRight: 0 }}
+                                                                    onChange={(e: SelectChangeEvent) => { setTokenType(e.target.value) }}
+                                                                >
+                                                                    {Object.keys(TOKEN_TYPE).filter((key) => { return key !== TOKEN_TYPE.XTZ }).map((key) =>
+                                                                        <MenuItem key={key} value={key}>
+                                                                            <Chip sx={{ border: "none" }} variant="outlined"
+                                                                                avatar={<Fragment><img height="24px" src={key + ".png"} />
+                                                                                    <img height="24px" src={"ticket.png"} /> </Fragment>}
+                                                                                label={key}
+                                                                            />
+                                                                        </MenuItem>
+
+                                                                    )}</Select>
+
+                                                            </Fragment>}
+                                                    />
+                                                </Fragment>
+                                                : ""
+                                            }
                                         </Fragment>
-                                        : ""
+
                                     }
-
-
 
 
 

@@ -68,7 +68,7 @@ const DepositWithdrawV2 = ({
 
     let oldTicketBalance = useRef<BigNumber>();
     let oldBalance = useRef<BigNumber>();
-    const [tokenType, setTokenType] = useState<string>(TOKEN_TYPE.XTZ);
+    const [tokenType, setTokenType] = useState<string>(TOKEN_TYPE.CTEZ);
     const tokenTypeRef = useRef(tokenType); //TRICK : to track current value on async timeout functions
     tokenTypeRef.current = tokenType;
     useEffect(() => {
@@ -514,6 +514,32 @@ const DepositWithdrawV2 = ({
         setTezosLoading(false);
     }
 
+
+    interface CfmmStorage {
+        tokenPool: BigNumber;
+        cashPool: BigNumber;
+        pendingPoolUpdates: BigNumber;
+        tokenAddress: string;
+        lqtAddress: string;
+        lastOracleUpdate: Date;
+        consumerEntrypoint: string;
+        lqtTotal: BigNumber;
+    }
+
+    const calcMinBuyValue = (amount: number, cfmmStorage: CfmmStorage): number => {
+        if (cfmmStorage) {
+            const { tokenPool, cashPool } = cfmmStorage;
+            const cashSold = amount * 1e6;
+            const [aPool, bPool] = [tokenPool, cashPool];
+            const tokWithoutSlippage =
+                (cashSold * 997 * aPool.toNumber()) / (bPool.toNumber() * 1000 + cashSold * 997) / 1e6;
+            const tok = tokWithoutSlippage * (1 - 0.2 * 0.01);
+            return (Number(tok.toFixed(6)));
+        } else {
+            return -1;
+        }
+    };
+
     const handleDeposit = async (event: MouseEvent) => {
 
         event.preventDefault();
@@ -524,6 +550,29 @@ const DepositWithdrawV2 = ({
         const operations: WalletParamsWithKind[] = [];
 
         try {
+
+            if ((tokenType === TOKEN_TYPE.XTZ) && (rollupType === ROLLUP_TYPE.DEKU)) {
+
+                enqueueSnackbar("We need to swap XTZ against CTEZ first, then deposit your CTEZ", { variant: "warning", autoHideDuration: 5000 });
+
+                let faContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_CONTRACT"]!, compose(tzip12, tzip16));
+                let faSwapContract = await Tezos.wallet.at(process.env["REACT_APP_CTEZ_SWAP_CONTRACT"]!);
+                const storage = await faSwapContract.storage<CfmmStorage>();
+
+                const decimals = Math.pow(10, (await faContract.tzip12().getTokenMetadata(0)).decimals);
+                const now = new Date();
+
+                //FIXME , we need the current XTZ/CTEZ price to reserve enough XTZ to pay
+                const op =
+                    await faSwapContract.methods.cashToToken(userAddress, calcMinBuyValue(quantity.toNumber(), storage) * decimals, new Date(now.setMinutes(now.getMinutes() + 1)).toISOString()).send({ amount: quantity.toNumber() });
+
+                await op.confirmation(1);
+
+                enqueueSnackbar("You can use your new CTEZ to do your deposit now", { variant: "success", autoHideDuration: 10000 });
+
+                setTokenType(TOKEN_TYPE.CTEZ);
+                return;
+            }
 
             if ((tokenType !== TOKEN_TYPE.XTZ) && (rollupType === ROLLUP_TYPE.CHUSAI)) {
                 alert("CHUSAI is not yet ready for other token than native XTZ");

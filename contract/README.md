@@ -122,3 +122,19 @@ Watch the inbox
 tezos-client rpc get /chains/main/blocks/head/context/tx_rollup/txr1Q4iYZti8wfKXJi9CyagSnAHCogzX877kD/inbox/0
 ```
 
+# CFMM
+
+We deploy a modified version of the ctez CFMM that swap 1 XTZ against 1 CTEZ with a 1:1 peg.
+Goal is to avoid to deploy the full Ctez ecosystem and/or depends on ctez team deployments on testnets. It means no ovens or liquidity pools.
+
+## Build and deploy cfmm
+
+```bash
+FA12_CTEZ_ADDRESS=`tezos-client show known contract fa12CTEZGhostnet`
+ligo compile contract ./test/cfmm_tez_ctez.mligo --output-file ./test/cfmm.tz
+sed s/FA12_CTEZ/${FA12_CTEZ_ADDRESS}/ < ./test/cfmm_initial_storage.mligo | sed s/CTEZ_ADDRESS/${FA12_CTEZ_ADDRESS}/ > ./test/cfmm_storage.mligo
+
+ligo compile storage ./test/cfmm_tez_ctez.mligo "$(<./test/cfmm_storage.mligo)" --output-file ./test/cfmm_storage.tz
+tezos-client originate contract cfmm transferring 0.000001 from myFirstKey running 'file:./test/cfmm.tz' --init "$(<./test/cfmm_storage.tz)" --burn-cap 10
+CFMM_ADDRESS=`tezos-client show known contract cfmm`
+```

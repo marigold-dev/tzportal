@@ -53,7 +53,7 @@ const TransferL2 = ({
     let oldTicketBalance = useRef<BigNumber>();
     let oldTicketDestinationBalance = useRef<BigNumber>();
 
-    const [tokenType, setTokenType] = useState<string>(TOKEN_TYPE.XTZ);
+    const [tokenType, setTokenType] = useState<string>(TOKEN_TYPE.CTEZ);
     const tokenTypeRef = useRef(tokenType); //TRICK : to track current value on async timeout functions
     tokenTypeRef.current = tokenType;
     useEffect(() => {
@@ -198,8 +198,6 @@ const TransferL2 = ({
         event.preventDefault();
         setTezosLoading(true);
 
-        console.error("!!!");
-        console.error(tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]));
         try {
             let decimals = Math.pow(10, 6);
             if (tokenType !== TOKEN_TYPE.XTZ) {
@@ -209,10 +207,8 @@ const TransferL2 = ({
 
             //FIXME change to bigdecimal later
             const opHash = await dekuClient.transferTo(userL2DestinationAddress, quantity.multipliedBy(decimals).toNumber(), process.env["REACT_APP_CONTRACT"]!, tokenBytes.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!);
-            console.error("Ce message auissi a ete affiche");
             enqueueSnackbar("Transaction to " + userL2DestinationAddress + " was successful", { variant: "success", autoHideDuration: 10000 });
         } catch (error: any) {
-            console.error("ah ben Jules avait raison");
             console.table(`Error: ${JSON.stringify(error, null, 2)}`);
             let tibe: TransactionInvalidBeaconError = new TransactionInvalidBeaconError(error);
             enqueueSnackbar(tibe.data_message, { variant: "error", autoHideDuration: 10000 });
