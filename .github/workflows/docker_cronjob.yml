@@ -5,7 +5,6 @@ on:
     paths:
       - "cronjob/**"
     branches:
-      - "main"
       - "ghost"
 
 jobs:
@@ -26,7 +25,7 @@ jobs:
         run: |
           echo "::set-output name=date::$(date +%Y-%m-%dT%H-%M-%S)"
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-          
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
         with:
@@ -35,28 +34,12 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        id: docker_build_tzportal-treasury-cronjob
+        if: ${{ github.ref == 'refs/heads/ghost' }}
+        id: docker_build_tzportal_treasury_cronjob_ghostnet
         uses: docker/build-push-action@v2
         with:
           context: ./
           file: ./cronjob/Dockerfile.${{ matrix.network }}
-          platforms: linux/amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          # Only push if on main branch
-          #push: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
-          push: true
-          tags: |
-            ghcr.io/marigold-dev/tzportal-treasury-${{ matrix.network }}-cronjob:latest
-            ghcr.io/marigold-dev/tzportal-treasury-${{ matrix.network }}-cronjob:${{ github.sha }}
-
-      - name: Build and push
-        if: ${{ github.ref == 'refs/heads/ghost' }}
-        id: docker_build_tzportal_treasury_ghostnet
-        uses: docker/build-push-action@v2
-        with:
-          file: ./portal/Dockerfile.${{ matrix.network }}
-          context: ./portal/
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
