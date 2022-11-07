@@ -245,7 +245,7 @@ const ClaimL1 = ({
     const isDesktop = useMediaQuery('(min-width:600px)');
 
     return (
-        <Grid container borderRadius={5}
+        <Grid container 
             spacing={2}
             color="primary.main"
             width={isDesktop ? ("700px") : ("auto")}

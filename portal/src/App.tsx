@@ -24,6 +24,7 @@ import ConnectButtonL2 from './components/ConnectWalletL2';
 import DepositWithdrawV2 from './components/DepositWithdrawV2';
 import { getTokenBytes, LAYER2Type, RollupCHUSAI, RollupDEKU, RollupTORU, ROLLUP_TYPE, TezosUtils, TOKEN_TYPE } from './components/TezosUtils';
 import TransferL2 from './components/TransferL2';
+import { yellow } from '@mui/material/colors';
 
 export enum PAGES {
   "WELCOME",
@@ -196,9 +197,8 @@ function App() {
     <div
       style={{
         position: "relative",
-        backgroundImage: "url('/bg.jpg')",
+        background:"var(--tertiary-color)",
         minHeight: "100vh",
-        backgroundSize: "cover",
         paddingBottom: "0px",
       }}
     >
@@ -207,9 +207,10 @@ function App() {
         direction="row-reverse"
         id="header"
         style={{
-          backgroundColor: "#0E1E2E",
+          background:"var(--tertiary-color)",
           height: "80px",
           padding: "0 50px",
+          borderBottom: "3px solid #7B7B7E"
         }}
       >
         <ConnectButtonL2
@@ -287,9 +288,10 @@ function App() {
         direction="row-reverse"
         id="header"
         style={{
-          backgroundColor: "#0E1E2E",
           height: "80px",
           padding: "0 50px",
+          background:"var(--tertiary-color)",
+          borderBottom: "3px solid #7B7B7E"
         }}
       >
         <img
@@ -304,6 +306,7 @@ function App() {
         />
         <div style={{ left: 0, marginLeft: "40vW", position: "absolute" }}>
           <Button
+            style={{background:"transparent"}}
             id="basic-button"
             aria-controls={open ? "basic-menu" : undefined}
             aria-haspopup="true"
@@ -352,6 +355,7 @@ function App() {
         </div>
         <div style={{ left: 0, marginLeft: "60vW", position: "absolute" }}>
           <Button
+            style={{background:"transparent"}}
             id="basic-button"
             aria-controls={open ? "basic-menu" : undefined}
             aria-haspopup="true"
@@ -400,7 +404,7 @@ function App() {
                   value={ROLLUP_TYPE.DEKU}
                 >
                   <Chip
-                    sx={{ border: "none", margin: 0 }}
+                    sx={{ border: "none", margin: 0}}
                     avatar={
                       <Avatar
                         sx={{ backgroundColor: "secondary.main" }}
@@ -517,12 +521,12 @@ function App() {
           <TabPanel value={"" + PAGES.WELCOME}>
             <Grid
               container
-              borderRadius={5}
+              border={"3px solid #7B7B7E"}
               spacing={2}
               color="primary.main"
               width="auto"
               sx={{ margin: "5vh 20vw", padding: "2em" }}
-              bgcolor="secondary.main"
+              bgcolor="var(--tertiary-color)"
             >
               <Grid item xs={3}>
                 <Stack
@@ -569,6 +573,7 @@ function App() {
                       style={{
                         padding: "1em",
                         backgroundColor: "var(--tertiary-color)",
+                        border:"3px solid #7B7B7E",
                       }}
                     >
                       <ConnectButton
@@ -595,6 +600,7 @@ function App() {
                     style={{
                       padding: "1em",
                       backgroundColor: "var(--tertiary-color)",
+                      border:"3px solid #7B7B7E",
                     }}
                   >
                     <ConnectButtonL2
@@ -769,8 +775,8 @@ function App() {
               color="primary.main"
               width="auto"
               sx={{ padding: "2em" }}
-              bgcolor="secondary.main"
-              style={{ justifyContent: "center", paddingLeft: "20px" }}
+              style={{ justifyContent: "center", paddingLeft: "20px",  backgroundColor: "var(--tertiary-color)",
+              borderTop:"3px solid #7B7B7E", borderBottom:"3px solid #7B7B7E" }}
             >
               <Grid item xs={6} style={{ maxWidth: "100%" }}>
                 <Stack spacing={2}>
@@ -779,7 +785,8 @@ function App() {
                       style={{
                         padding: "1em",
                         backgroundColor: "var(--tertiary-color)",
-                        width: "250px"
+                        width: "250px",
+                        border:"3px solid #7B7B7E"
                       }}
                     >
                       <ConnectButton
@@ -807,6 +814,7 @@ function App() {
                       padding: "1em",
                       backgroundColor: "var(--tertiary-color)",
                       width: "max-content",
+                      border:"3px solid #7B7B7E"
                     }}
                   >
                     <ConnectButtonL2
@@ -908,7 +916,8 @@ function App() {
         alignItems="center"
         id="footer"
         style={{
-          backgroundColor: "#0E1E2E",
+          borderTop:"3px solid #7B7B7E",
+          backgroundColor: "var(--tertiary-color)",
           position: "absolute",
           left: 0,
           bottom: 0,
@@ -945,7 +954,7 @@ function App() {
         <Divider orientation="vertical" color="white" sx={{ height: "70%" }} />
 
         <a href="https://marigold.dev/" target="_blank">
-          <Typography variant="h4" color="primary">
+          <Typography variant="h6" color="primary">
             Powered by Marigold
           </Typography>
         </a>
@@ -958,7 +967,8 @@ function App() {
         alignItems="center"
         id="footer"
         style={{
-          backgroundColor: "#0E1E2E",
+          backgroundColor: "var(--tertiary-color)",
+          borderTop:"3px solid #7B7B7E",
           position: "absolute",
           left: 0,
           bottom: 0,

@@ -730,7 +730,6 @@ const DepositWithdrawV2 = ({
             color="primary.main"
             alignContent={"space-between"}
             textAlign={"center"}
-            borderRadius={5}
             bgcolor="secondary.main"
             width={!isDesktop ? "100%" : "700px"}
             sx={{ marginTop: "2vh" }}

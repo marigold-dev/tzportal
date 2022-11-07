@@ -232,7 +232,6 @@ const TransferL2 = ({
             color="primary.main"
             alignContent={"space-between"}
             textAlign={"center"}
-            borderRadius={5}
             bgcolor="secondary.main"
             width={!isDesktop ? "100%" : "700px"}
             sx={isDesktop ? { marginTop: "2vh", padding: "2em" } : { marginTop: 0, padding: 0, borderRadius: "0" }}

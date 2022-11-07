@@ -33,10 +33,13 @@ const themeLight = createTheme({
     MuiButton : {
       styleOverrides : {
         root : {
+          background:"#D8464E",
           height : "fit-content",
           margin: "20px",
           textTransform: "none",
           fontWeight : "bolder",
+          borderRadius:"0px",
+          color : "#ffffff",
         },
         //containedWarning : {
         //  color : "#ffffff"
@@ -52,7 +55,9 @@ const themeLight = createTheme({
         root : {
           fontWeight: "bolder",
           border: "1px solid white" ,
-          height: "3em"
+          height: "3em",
+          color:"white",
+          background:"#D8464E",
         },
         avatarColorPrimary : {
           backgroundColor : "black"
@@ -69,7 +74,6 @@ const themeLight = createTheme({
           fontWeight : "bolder",
           padding: "1em",
           height: "4em",
-          borderRadius : "0.4em"
         }
       }
     },
@@ -107,11 +111,11 @@ const themeLight = createTheme({
     MuiSelect : {
       styleOverrides : {
         select : {
-          backgroundColor:"#ffffff",
+          background:"#D8464E",
+          color:"ffffff",
           padding : 0,
         },
         standard : {
-          borderRadius: "4px",
         },
 
       },
