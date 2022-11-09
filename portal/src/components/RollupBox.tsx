@@ -98,7 +98,7 @@ const RollupBox = ({
 
     return (
 
-        <Grid bgcolor="var(--tertiary-color)" padding="1em" container spacing={1}>
+        <Grid bgcolor="var(--tertiary-color)" style={{ border: "3px solid #7B7B7E"}} padding="1em" container spacing={1}>
 
 
 
@@ -127,7 +127,7 @@ const RollupBox = ({
                         : ""}
 
 
-                <Stack direction={"column"} spacing={1} style={isDesktop ? { textAlign: "initial" } : { textAlign: "center" }} >
+                <Stack direction={"column"} spacing={1} style={isDesktop ? { textAlign: "initial", border: "3px solid #7B7B7E", background:"var(--tertiary-color)" } : { textAlign: "center" }} >
                     {
                         rollup instanceof RollupTORU ?
                             <TableContainer component={Paper}><Table><TableBody>

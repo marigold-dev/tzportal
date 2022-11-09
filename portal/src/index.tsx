@@ -69,7 +69,6 @@ const themeLight = createTheme({
       styleOverrides : {
         root : {
           color : "#ffffff",
-          backgroundColor : "#55606A",
           border : 0,
           fontWeight : "bolder",
           padding: "1em",
@@ -80,7 +79,6 @@ const themeLight = createTheme({
     MuiInputAdornment : {
       styleOverrides : {
         root : {
-          backgroundColor : "#55606A",
         }
       }
     },
@@ -102,9 +100,6 @@ const themeLight = createTheme({
       },
       styleOverrides : {
         root : {
-        },
-        input : {
-          backgroundColor : "#55606A",
         }
       }
     },

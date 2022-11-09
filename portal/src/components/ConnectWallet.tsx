@@ -81,6 +81,7 @@ const ConnectButton = ({
     return (<Fragment>
         {!userAddress || userAddress === "" ?
             <Stack direction="row" alignContent="center" alignItems="center">
+                 <img style={isDesktop ? { background: "transparent" } : { borderRadius: "5px" }} src="XTZ_white.png" height={24} width={24} />
                 <Button variant="contained"  onClick={connectWallet}>
                     Connect Tezos wallet
                 </Button>

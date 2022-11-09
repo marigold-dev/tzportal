@@ -249,7 +249,7 @@ const ClaimL1 = ({
             spacing={2}
             color="primary.main"
             width={isDesktop ? ("700px") : ("auto")}
-            sx={{ margin: "0 auto", padding: "2em" }}
+            sx={{ margin: "0 auto", padding: "2em", background:"var(--tertiary-color)", border: "3px solid #7B7B7E"}}
             style={isDesktop ? { marginTop: "2vh", padding: "2em" } : { margin: "0", borderRadius: 0 }}
             bgcolor="secondary.main">
 
@@ -264,6 +264,7 @@ const ClaimL1 = ({
             <Stack sx={{ width: "100%" }} direction="column" spacing={2}>
 
                 <OutlinedInput
+                    style={{ background:"var(--tertiary-color)", border: "3px solid #7B7B7E"}}
                     fullWidth
                     sx={
                         shouldBounce ? {
@@ -282,13 +283,13 @@ const ClaimL1 = ({
                         }
                     }}
                     endAdornment={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType) === 'undefined XTZ') ? (<Typography variant="h1">{<Skeleton style={{ background: "#d6d6d6", width: "100px", height: "20px" }} />}</Typography>
-                    ) : (<InputAdornment position="end" ><img height="24px" src={tokenType + ".png"} /></InputAdornment>)}
+                    ) : (<InputAdornment  position="end" ><img height="24px" src={tokenType + ".png"} /></InputAdornment>)}
                     startAdornment="Available balance"
                     value={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType) === 'undefined XTZ') ? (""
                     ) : (userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)} />
 
-                <TextField value={opHash} placeholder="Enter your operation hash here" onChange={(e) => setOpHash(e.target.value ? e.target.value.trim() : "")} />
-                <Button color="warning" variant="contained" onClick={(e) => handleL1Withdraw(e)}>L1 Claim</Button>
+                <TextField  style={{ background:"var(--tertiary-color)", border: "3px solid #7B7B7E"}} value={opHash} placeholder="Enter your operation hash here" onChange={(e) => setOpHash(e.target.value ? e.target.value.trim() : "")} />
+                <Button  color="warning" variant="contained" onClick={(e) => handleL1Withdraw(e)}>L1 Claim</Button>
 
             </Stack>
 

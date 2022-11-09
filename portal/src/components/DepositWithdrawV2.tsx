@@ -733,7 +733,7 @@ const DepositWithdrawV2 = ({
             bgcolor="secondary.main"
             width={!isDesktop ? "100%" : "700px"}
             sx={{ marginTop: "2vh" }}
-            style={isDesktop ? { padding: "2em" } : { padding: 0 }}
+            style={isDesktop ? { padding: "2em",  background:"var(--tertiary-color)", border: "3px solid #7B7B7E" } : { padding: 0 }}
         >
 
 
@@ -745,7 +745,7 @@ const DepositWithdrawV2 = ({
                 <CircularProgress color="inherit" />
             </Backdrop>
 
-            <Stack width="inherit"  >
+            <Stack width="inherit" >
 
 
                 {activeAccount && activeAccount?.address === userAddress && activeAccount.accountIdentifier !== LAYER2Type.L2_DEKU ?
