@@ -57,7 +57,7 @@ const RollupBox = ({
 
     const layer2Tickets = React.createRef<any>();
     const [shouldBounce, setShouldBounce] = useState(true);
-    const [changeTicketColor, setChangeTicketColor] = useState("#55606A");
+    const [changeTicketColor, setChangeTicketColor] = useState("#2a2a2e");
 
     //POPUP
     const [selectRollupPopupAnchorEl, setSelectRollupPopupAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -119,7 +119,7 @@ const RollupBox = ({
                 {isDirectionDeposit && !handleL2Transfer ? <div style={isDesktop ? { height: "70px" } : { height: "0" }}></div>
                     : isDirectionDeposit && handleL2Transfer ?
                         <TextField
-                            sx={{ paddingBottom: "1em" }}
+                            sx={{ paddingBottom: "1em", }}
                             fullWidth
                             value={userAddress}
                             placeholder="Enter your L2 destination address here"
@@ -127,7 +127,7 @@ const RollupBox = ({
                         : ""}
 
 
-                <Stack direction={"column"} spacing={1} style={isDesktop ? { textAlign: "initial", border: "3px solid #7B7B7E", background:"var(--tertiary-color)" } : { textAlign: "center" }} >
+                <Stack direction={"column"} spacing={1} style={isDesktop ? { textAlign: "initial" } : { textAlign: "center" }} >
                     {
                         rollup instanceof RollupTORU ?
                             <TableContainer component={Paper}><Table><TableBody>
@@ -146,6 +146,7 @@ const RollupBox = ({
 
 
                                     <OutlinedInput
+                                        style={{ border: "3px solid #2a2a2e"}}
                                         ref={layer2Tickets}
                                         sx={
                                             shouldBounce ? {
@@ -153,7 +154,7 @@ const RollupBox = ({
                                                 backgroundColor: changeTicketColor
                                             } : {
                                                 animation: "",
-                                                backgroundColor: "#55606A"
+                                                backgroundColor: "#2a2a2e"
                                             }
                                         }
                                         fullWidth
@@ -180,7 +181,7 @@ const RollupBox = ({
                                         <Fragment>
 
                                             <Input
-
+                                                style={{background:"#2a2a2e"}}
                                                 fullWidth
                                                 required
                                                 type="number"
@@ -190,7 +191,7 @@ const RollupBox = ({
                                                 endAdornment={
                                                     <Fragment>
 
-                                                        <span style={{ color: "var(--tertiary-color)" }} onClick={() => setQuantity(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!)}>MAX</span>
+                                                        <span style={{ color: "white" }} onClick={() => setQuantity(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!)}>MAX</span>
 
                                                         <Select
                                                             variant="standard"

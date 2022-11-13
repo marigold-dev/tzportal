@@ -266,7 +266,6 @@ function App() {
               sx={{ border: "none", margin: 0 }}
               avatar={
                 <Avatar
-                  sx={{ backgroundColor: "secondary.main" }}
                   src="deku_white.png"
                 />
               }
@@ -407,7 +406,6 @@ function App() {
                     sx={{ border: "none", margin: 0}}
                     avatar={
                       <Avatar
-                        sx={{ backgroundColor: "secondary.main" }}
                         src="deku_white.png"
                       />
                     }
@@ -846,7 +844,7 @@ function App() {
             />
           </TabPanel>
           <TabPanel
-            style={isDesktop ? { paddingLeft: "calc(50% - 350px)" } : { padding: "30px", background: "#0e1e2e" }}
+            style={isDesktop ? { paddingLeft: "calc(50% - 350px)" } : { padding: "30px" }}
             value={"" + PAGES.DEPOSIT}
           >
             <DepositWithdrawV2
@@ -869,7 +867,7 @@ function App() {
             />
           </TabPanel>
           <TabPanel
-            style={isDesktop ? { paddingLeft: "calc(50% - 350px)" } : { padding: "30px", background: "#0e1e2e" }}
+            style={isDesktop ? { paddingLeft: "calc(50% - 350px)" } : { padding: "30px" }}
             value={"" + PAGES.WITHDRAW}
           >
             <DepositWithdrawV2

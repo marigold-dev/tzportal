@@ -40,7 +40,7 @@ const ClaimL1 = ({
 }: ClaimL1Props): JSX.Element => {
 
     const [shouldBounce, setShouldBounce] = useState(true);
-    const [changeTicketColor, setChangeTicketColor] = useState("#55606A");
+    const [changeTicketColor, setChangeTicketColor] = useState("#2a2a2e");
 
     const [userBalance, setUserBalance] = useState<Map<TOKEN_TYPE, BigNumber>>(new Map());
 
@@ -264,15 +264,15 @@ const ClaimL1 = ({
             <Stack sx={{ width: "100%" }} direction="column" spacing={2}>
 
                 <OutlinedInput
-                    style={{ background:"var(--tertiary-color)", border: "3px solid #7B7B7E"}}
+                    style={{ background: "#2a2a2e", borderRadius:"0", border: "3px solid #2a2a2e"}}
                     fullWidth
                     sx={
                         shouldBounce ? {
                             animation: `${myKeyframe} 1s ease`,
-                            backgroundColor: changeTicketColor
+                            backgroundColor: "#2a2a2e"
                         } : {
                             animation: "",
-                            backgroundColor: "#55606A"
+                            backgroundColor: "#2a2a2e"
                         }
                     }
                     inputProps={{
@@ -288,7 +288,7 @@ const ClaimL1 = ({
                     value={((userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType) === 'undefined XTZ') ? (""
                     ) : (userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)} />
 
-                <TextField  style={{ background:"var(--tertiary-color)", border: "3px solid #7B7B7E"}} value={opHash} placeholder="Enter your operation hash here" onChange={(e) => setOpHash(e.target.value ? e.target.value.trim() : "")} />
+                <TextField  style={{ background:"var(--tertiary-color)"}} value={opHash} placeholder="Enter your operation hash here" onChange={(e) => setOpHash(e.target.value ? e.target.value.trim() : "")} />
                 <Button  color="warning" variant="contained" onClick={(e) => handleL1Withdraw(e)}>L1 Claim</Button>
 
             </Stack>

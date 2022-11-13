@@ -12,7 +12,10 @@
   --quaternary-color: #D38700;
 }
 
-a:link { text-decoration: none; }
+a:link {
+  text-decoration: none;
+  color: #fff;
+ }
 
 
 body {

@@ -81,14 +81,14 @@ const ConnectButton = ({
     return (<Fragment>
         {!userAddress || userAddress === "" ?
             <Stack direction="row" alignContent="center" alignItems="center">
-                 <img style={isDesktop ? { background: "transparent" } : { borderRadius: "5px" }} src="XTZ_white.png" height={24} width={24} />
+                 <img style={{ background: "var(--tertiary-color)" }} src="XTZ_white.png" height={24} width={24} />
                 <Button variant="contained"  onClick={connectWallet}>
                     Connect Tezos wallet
                 </Button>
             </Stack>
             : !hideAfterConnect ? <Chip
                 style={{
-                    marginTop: "20px", marginRight: "20px", background:"green",
+                    marginTop: "20px", marginRight: "20px",
                     opacity: (activeAccount?.address == userAddress && activeAccount.accountIdentifier !== LAYER2Type.L2_DEKU ? 1 : 0.38)
                 }}
                 onClick={() => setL1AccountAsActive()} avatar={<Avatar src="XTZ_white.png" />}

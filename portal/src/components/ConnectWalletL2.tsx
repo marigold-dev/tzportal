@@ -102,7 +102,7 @@ const ConnectButtonL2 = ({
             {!userL2Address ?
 
                 <Stack direction="row" alignContent="center" alignItems="center">
-                    <img style={isDesktop ? { background: "transparent" } : { background: "#22313f" }} src="deku_white.png" height={24} width={24} />
+                    <img style={{ background: "transparent"}} src="deku_white.png" height={24} width={24} />
                     <Button
                         variant="contained"
                         component="label"

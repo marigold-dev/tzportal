@@ -38,7 +38,7 @@ const UserWallet = ({
     
     const layer1 = React.createRef<any>();
     const [shouldBounce,setShouldBounce] = useState(true);
-    const [changeTicketColor,setChangeTicketColor] = useState("#55606A");
+    const [changeTicketColor,setChangeTicketColor] = useState("#2a2a2e");
 
     useImperativeHandle(ref, () =>  ({setShouldBounce, setChangeTicketColor }));
 
@@ -72,16 +72,17 @@ const UserWallet = ({
         {!isDirectionDeposit ?<div style={isDesktop?{height:"70px"}:{height:"0"}}></div>:""}
 
 
-            <Stack  direction={"column"} spacing={1} >
+            <Stack direction={"column"} spacing={1} >
         
         <OutlinedInput 
+        style={{background: "#2a2a2e", borderRadius:"0", border: "3px solid #2a2a2e"}}
         fullWidth
         ref={layer1}
             sx={
                 shouldBounce ? {animation : `${myKeyframe} 1s ease`,
-                backgroundColor : changeTicketColor
+                backgroundColor : "#2a2a2e"
             } : {animation : "" ,
-        backgroundColor : "#55606A"}
+            backgroundColor : "#2a2a2e"}
                }
         inputProps={{
             style : {
@@ -96,10 +97,10 @@ const UserWallet = ({
         value={(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)==='undefined XTZ'?(""):(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])?.toString() + " " + tokenType)} />
         
         {isDirectionDeposit?
-            <Fragment>
+            <Fragment >
 
             <Input
-            
+            style={{background:"#2a2a2e"}}
             fullWidth 
             required 
             type="number"
@@ -109,7 +110,7 @@ const UserWallet = ({
             endAdornment={
                 <Fragment>
 
-                <span style={{color:"var(--tertiary-color)"}} onClick={()=>setQuantity(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!)}>MAX</span>
+                <span style={{color:"white"}} onClick={()=>setQuantity(userBalance.get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])!)}>MAX</span>
 
                 <Select 
                 variant="standard"

@@ -50,6 +50,28 @@ const themeLight = createTheme({
         }
       }
     },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          background:"transparent",
+        }
+      }
+    },
+    MuiList: {
+      styleOverrides: {
+        root: {
+          background:"var(--tertiary-color)",
+          border: "1px solid rgb(123, 123, 126)",
+        }
+      }
+    },
+    MuiAvatar: {
+      styleOverrides: {
+        img: {
+          objectFit:"fill",
+        }
+      }
+    },
     MuiChip : {
       styleOverrides : {
         root : {
@@ -58,6 +80,7 @@ const themeLight = createTheme({
           height: "3em",
           color:"white",
           background:"#D8464E",
+          borderRadius:"0",
         },
         avatarColorPrimary : {
           backgroundColor : "black"
@@ -72,7 +95,7 @@ const themeLight = createTheme({
           border : 0,
           fontWeight : "bolder",
           padding: "1em",
-          height: "4em",
+          height: "4em"
         }
       }
     },
@@ -100,6 +123,7 @@ const themeLight = createTheme({
       },
       styleOverrides : {
         root : {
+          border: "3px solid rgb(123, 123, 126)"
         }
       }
     },
@@ -140,7 +164,7 @@ palette: {
     main : "#ffffff"
   },
   secondary: {
-    main : "#0E1E2E"
+    main : "#1c1d22"
   },
   warning : {
     main : "#D38700"
