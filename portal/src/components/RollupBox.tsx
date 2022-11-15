@@ -118,7 +118,7 @@ const RollupBox = (
 ): JSX.Element => {
   const layer2Tickets = React.createRef<any>();
   const [shouldBounce, setShouldBounce] = useState(true);
-  const [changeTicketColor, setChangeTicketColor] = useState("#55606A");
+  const [changeTicketColor, setChangeTicketColor] = useState("#2a2a2e");
 
   //POPUP
   const [selectRollupPopupAnchorEl, setSelectRollupPopupAnchorEl] =
@@ -165,7 +165,13 @@ const RollupBox = (
   const isDesktop = useMediaQuery("(min-width:600px)");
 
   return (
-    <Grid bgcolor="var(--tertiary-color)" padding="1em" container spacing={1}>
+    <Grid
+      bgcolor="var(--tertiary-color)"
+      style={{ border: "3px solid #7B7B7E" }}
+      padding="1em"
+      container
+      spacing={1}
+    >
       <Grid xs={12} sm={2} item>
         <Stack margin={1} spacing={1}>
           {isDesktop ? (
@@ -273,153 +279,138 @@ const RollupBox = (
             </TableContainer>
           ) : rollup instanceof RollupDEKU ? (
             <Fragment>
-              {tokenType === TOKEN_TYPE.XTZ && isDirectionDeposit ? (
-                " ( For XTZ, your deposit will first be converted to a swap to CTEZ, then you will have to deposit CTEZ ) "
-              ) : (
-                <Fragment>
-                  <OutlinedInput
-                    ref={layer2Tickets}
-                    sx={
-                      shouldBounce
-                        ? {
-                            animation: `${myKeyframe} 1s ease`,
-                            backgroundColor: changeTicketColor,
-                          }
-                        : {
-                            animation: "",
-                            backgroundColor: "#55606A",
-                          }
-                    }
-                    fullWidth
-                    inputProps={{
-                      style: {
-                        textAlign: "right",
-                        display: "inline",
-                        width: "70%",
-                      },
-                    }}
-                    endAdornment={
-                      userBalance
+              <OutlinedInput
+                style={{ border: "3px solid #2a2a2e" }}
+                ref={layer2Tickets}
+                sx={
+                  shouldBounce
+                    ? {
+                        animation: `${myKeyframe} 1s ease`,
+                        backgroundColor: changeTicketColor,
+                      }
+                    : {
+                        animation: "",
+                        backgroundColor: "#2a2a2e",
+                      }
+                }
+                fullWidth
+                inputProps={{
+                  style: {
+                    textAlign: "right",
+                    display: "inline",
+                    width: "70%",
+                  },
+                }}
+                endAdornment={
+                  userBalance
+                    .get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])
+                    ?.toString() +
+                    " " +
+                    tokenType ===
+                  "undefined XTZ" ? (
+                    <Typography variant="h1">
+                      {
+                        <Skeleton
+                          style={{
+                            background: "#d6d6d6",
+                            width: "100px",
+                            height: "20px",
+                          }}
+                        />
+                      }
+                    </Typography>
+                  ) : (
+                    <InputAdornment position="end">
+                      <img height="24px" src={tokenType + ".png"} />
+                      <img height="24px" src={"ticket.png"} />
+                    </InputAdornment>
+                  )
+                }
+                startAdornment="Available balance"
+                value={
+                  userBalance
+                    .get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])
+                    ?.toString() +
+                    " " +
+                    tokenType +
+                    "-ticket" ===
+                  "undefined XTZ-ticket"
+                    ? ""
+                    : userBalance
                         .get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])
                         ?.toString() +
-                        " " +
-                        tokenType ===
-                      "undefined XTZ" ? (
-                        <Typography variant="h1">
-                          {
-                            <Skeleton
-                              style={{
-                                background: "#d6d6d6",
-                                width: "100px",
-                                height: "20px",
-                              }}
-                            />
-                          }
-                        </Typography>
-                      ) : (
-                        <InputAdornment position="end">
-                          <img height="24px" src={tokenType + ".png"} />
-                          <img height="24px" src={"ticket.png"} />
-                        </InputAdornment>
+                      " " +
+                      tokenType +
+                      "-ticket"
+                }
+              />
+
+              {!isDirectionDeposit ? (
+                <Fragment>
+                  <Input
+                    style={{ background: "#2a2a2e" }}
+                    fullWidth
+                    required
+                    type="number"
+                    onChange={(e) =>
+                      setQuantity(
+                        e.target.value
+                          ? new BigNumber(e.target.value)
+                          : new BigNumber(0)
                       )
                     }
-                    startAdornment="Available balance"
-                    value={
-                      userBalance
-                        .get(TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE])
-                        ?.toString() +
-                        " " +
-                        tokenType +
-                        "-ticket" ===
-                      "undefined XTZ-ticket"
-                        ? ""
-                        : userBalance
-                            .get(
-                              TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]
+                    value={quantity}
+                    title="Enter amount"
+                    endAdornment={
+                      <Fragment>
+                        <span
+                          style={{ color: "white" }}
+                          onClick={() =>
+                            setQuantity(
+                              userBalance.get(
+                                TOKEN_TYPE[tokenType as keyof typeof TOKEN_TYPE]
+                              )!
                             )
-                            ?.toString() +
-                          " " +
-                          tokenType +
-                          "-ticket"
+                          }
+                        >
+                          MAX
+                        </span>
+
+                        <Select
+                          variant="standard"
+                          defaultValue={TOKEN_TYPE.XTZ}
+                          value={tokenType}
+                          label="ticket-token type"
+                          sx={{ paddingRight: 0 }}
+                          onChange={(e: SelectChangeEvent) => {
+                            setTokenType(e.target.value);
+                          }}
+                        >
+                          {Object.keys(TOKEN_TYPE).map((key) => (
+                            <MenuItem key={key} value={key}>
+                              <Chip
+                                sx={{ border: "none" }}
+                                variant="outlined"
+                                avatar={
+                                  <Fragment>
+                                    <img height="24px" src={key + ".png"} />
+                                    <img
+                                      height="24px"
+                                      src={"ticket.png"}
+                                    />{" "}
+                                  </Fragment>
+                                }
+                                label={key}
+                              />
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </Fragment>
                     }
                   />
-
-                  {!isDirectionDeposit ? (
-                    <Fragment>
-                      <Input
-                        fullWidth
-                        required
-                        type="number"
-                        onChange={(e) =>
-                          setQuantity(
-                            e.target.value
-                              ? new BigNumber(e.target.value)
-                              : new BigNumber(0)
-                          )
-                        }
-                        value={quantity}
-                        title="Enter amount"
-                        endAdornment={
-                          <Fragment>
-                            <span
-                              style={{ color: "var(--tertiary-color)" }}
-                              onClick={() =>
-                                setQuantity(
-                                  userBalance.get(
-                                    TOKEN_TYPE[
-                                      tokenType as keyof typeof TOKEN_TYPE
-                                    ]
-                                  )!
-                                )
-                              }
-                            >
-                              MAX
-                            </span>
-
-                            <Select
-                              variant="standard"
-                              defaultValue={TOKEN_TYPE.CTEZ}
-                              value={tokenType}
-                              label="ticket-token type"
-                              sx={{ paddingRight: 0 }}
-                              onChange={(e: SelectChangeEvent) => {
-                                setTokenType(e.target.value);
-                              }}
-                            >
-                              {Object.keys(TOKEN_TYPE)
-                                .filter((key) => {
-                                  return key !== TOKEN_TYPE.XTZ;
-                                })
-                                .map((key) => (
-                                  <MenuItem key={key} value={key}>
-                                    <Chip
-                                      sx={{ border: "none" }}
-                                      variant="outlined"
-                                      avatar={
-                                        <Fragment>
-                                          <img
-                                            height="24px"
-                                            src={key + ".png"}
-                                          />
-                                          <img
-                                            height="24px"
-                                            src={"ticket.png"}
-                                          />{" "}
-                                        </Fragment>
-                                      }
-                                      label={key}
-                                    />
-                                  </MenuItem>
-                                ))}
-                            </Select>
-                          </Fragment>
-                        }
-                      />
-                    </Fragment>
-                  ) : (
-                    ""
-                  )}
                 </Fragment>
+              ) : (
+                ""
               )}
             </Fragment>
           ) : rollup instanceof RollupCHUSAI ? (
@@ -503,7 +494,7 @@ const RollupBox = (
               </Accordion>
             </Fragment>
           ) : (
-            "No rollup info ..."
+            "No layer2 info ..."
           )}
         </Stack>
 

@@ -22,21 +22,25 @@ const themeLight = createTheme({
   },
   typography: {
     fontFamily: [
-      'Chilanka',
+      'Roboto Mono',
+      'monospace',
       'Helvetica Neue',
       'Arial',
       'sans-serif',
-      'Chilanka'
     ].join(','),
   },
   components :{
     MuiButton : {
       styleOverrides : {
         root : {
+          background:"#D8464E",
           height : "fit-content",
           margin: "20px",
           textTransform: "none",
           fontWeight : "bolder",
+          borderRadius:"0px",
+          color : "#ffffff",
+          fontSize: "0.65rem"
         },
         //containedWarning : {
         //  color : "#ffffff"
@@ -47,12 +51,36 @@ const themeLight = createTheme({
         }
       }
     },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          background:"transparent",
+        }
+      }
+    },
+    MuiList: {
+      styleOverrides: {
+        root: {
+          background:"var(--tertiary-color)",
+          border: "1px solid rgb(123, 123, 126)",
+        }
+      }
+    },
+    MuiAvatar: {
+      styleOverrides: {
+        img: {
+          objectFit:"fill",
+        }
+      }
+    },
     MuiChip : {
       styleOverrides : {
         root : {
           fontWeight: "bolder",
-          border: "1px solid white" ,
-          height: "3em"
+          height: "3em",
+          color:"white",
+          background:"#D8464E",
+          borderRadius:"0",
         },
         avatarColorPrimary : {
           backgroundColor : "black"
@@ -64,19 +92,16 @@ const themeLight = createTheme({
       styleOverrides : {
         root : {
           color : "#ffffff",
-          backgroundColor : "#55606A",
           border : 0,
           fontWeight : "bolder",
           padding: "1em",
-          height: "4em",
-          borderRadius : "0.4em"
+          height: "4em"
         }
       }
     },
     MuiInputAdornment : {
       styleOverrides : {
         root : {
-          backgroundColor : "#55606A",
         }
       }
     },
@@ -98,20 +123,18 @@ const themeLight = createTheme({
       },
       styleOverrides : {
         root : {
-        },
-        input : {
-          backgroundColor : "#55606A",
+          border: "3px solid rgb(123, 123, 126)"
         }
       }
     },
     MuiSelect : {
       styleOverrides : {
         select : {
-          backgroundColor:"#ffffff",
+          background:"#D8464E",
+          color:"ffffff",
           padding : 0,
         },
         standard : {
-          borderRadius: "4px",
         },
 
       },
@@ -127,10 +150,14 @@ const themeLight = createTheme({
         }
       }
     },
+   
     MuiTab : {
       styleOverrides : {
         fullWidth : true,
         labelIcon : {
+          ":disabled":{
+            color:"var(--tertiary-color)",
+          },
           color : "#ffffff"
         }
       }
@@ -141,7 +168,7 @@ palette: {
     main : "#ffffff"
   },
   secondary: {
-    main : "#0E1E2E"
+    main : "#1c1d22"
   },
   warning : {
     main : "#D38700"

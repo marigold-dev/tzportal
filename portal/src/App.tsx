@@ -142,12 +142,7 @@ function App() {
   const dekuClient = new DekuToolkit({
     dekuRpc: process.env["REACT_APP_DEKU_NODE"]!,
     dekuSigner: fromMemorySigner(TezosL2.signer),
-  })
-    .setTezosRpc(process.env["REACT_APP_TEZOS_NODE"]!)
-    .onBlock((block) => {
-      console.log("The client received a block");
-      console.log(block);
-    });
+  }).setTezosRpc(process.env["REACT_APP_TEZOS_NODE"]!);
 
   const createWallet = async () => {
     let wallet = new BeaconWallet({
@@ -276,9 +271,8 @@ function App() {
     <div
       style={{
         position: "relative",
-        backgroundImage: "url('/bg.jpg')",
+        background: "var(--tertiary-color)",
         minHeight: "100vh",
-        backgroundSize: "cover",
         paddingBottom: "0px",
       }}
     >
@@ -287,9 +281,10 @@ function App() {
         direction="row-reverse"
         id="header"
         style={{
-          backgroundColor: "#0E1E2E",
+          background: "var(--tertiary-color)",
           height: "80px",
           padding: "0 50px",
+          borderBottom: "3px solid #7B7B7E",
         }}
       >
         <ConnectButtonL2
@@ -343,12 +338,7 @@ function App() {
           <MenuItem key={ROLLUP_TYPE.DEKU} value={ROLLUP_TYPE.DEKU}>
             <Chip
               sx={{ border: "none", margin: 0 }}
-              avatar={
-                <Avatar
-                  sx={{ backgroundColor: "secondary.main" }}
-                  src="deku_white.png"
-                />
-              }
+              avatar={<Avatar src="deku_white.png" />}
               label={ROLLUP_TYPE.DEKU}
               variant="outlined"
             />
@@ -367,9 +357,10 @@ function App() {
         direction="row-reverse"
         id="header"
         style={{
-          backgroundColor: "#0E1E2E",
           height: "80px",
           padding: "0 50px",
+          background: "var(--tertiary-color)",
+          borderBottom: "3px solid #7B7B7E",
         }}
       >
         <img
@@ -384,6 +375,7 @@ function App() {
         />
         <div style={{ left: 0, marginLeft: "40vW", position: "absolute" }}>
           <Button
+            style={{ background: "transparent" }}
             id="basic-button"
             aria-controls={open ? "basic-menu" : undefined}
             aria-haspopup="true"
@@ -452,6 +444,7 @@ function App() {
         </div>
         <div style={{ left: 0, marginLeft: "60vW", position: "absolute" }}>
           <Button
+            style={{ background: "transparent" }}
             id="basic-button"
             aria-controls={open ? "basic-menu" : undefined}
             aria-haspopup="true"
@@ -500,12 +493,7 @@ function App() {
                 <MenuItem key={ROLLUP_TYPE.DEKU} value={ROLLUP_TYPE.DEKU}>
                   <Chip
                     sx={{ border: "none", margin: 0 }}
-                    avatar={
-                      <Avatar
-                        sx={{ backgroundColor: "secondary.main" }}
-                        src="deku_white.png"
-                      />
-                    }
+                    avatar={<Avatar src="deku_white.png" />}
                     label={ROLLUP_TYPE.DEKU}
                     variant="outlined"
                   />
@@ -620,18 +608,18 @@ function App() {
           <TabPanel value={"" + PAGES.WELCOME}>
             <Grid
               container
-              borderRadius={5}
+              border={"3px solid #7B7B7E"}
               spacing={2}
               color="primary.main"
               width="auto"
               sx={{ margin: "5vh 20vw", padding: "2em" }}
-              bgcolor="secondary.main"
+              bgcolor="var(--tertiary-color)"
             >
               <Grid item xs={3}>
                 <Stack
                   direction="row"
                   height="100%"
-                  style={{ fontFamily: "Chilanka" }}
+                  style={{ fontFamily: "Roboto Mono" }}
                 >
                   <span style={{ paddingTop: "25%", paddingRight: "1em" }}>
                     Do Deposit / Withdraw
@@ -672,6 +660,7 @@ function App() {
                       style={{
                         padding: "1em",
                         backgroundColor: "var(--tertiary-color)",
+                        border: "3px solid #7B7B7E",
                       }}
                     >
                       <ConnectButton
@@ -698,6 +687,7 @@ function App() {
                     style={{
                       padding: "1em",
                       backgroundColor: "var(--tertiary-color)",
+                      border: "3px solid #7B7B7E",
                     }}
                   >
                     <ConnectButtonL2
@@ -724,7 +714,7 @@ function App() {
                 >
                   <span
                     style={{
-                      fontFamily: "Chilanka",
+                      fontFamily: "Roboto Mono",
                       height: "50%",
                       paddingTop: "25%",
                     }}
@@ -733,7 +723,7 @@ function App() {
                   </span>
                   <span
                     style={{
-                      fontFamily: "Chilanka",
+                      fontFamily: "Roboto Mono",
                       height: "50%",
                       paddingTop: "25%",
                     }}
@@ -876,8 +866,13 @@ function App() {
               color="primary.main"
               width="auto"
               sx={{ padding: "2em" }}
-              bgcolor="secondary.main"
-              style={{ justifyContent: "center", paddingLeft: "20px" }}
+              style={{
+                justifyContent: "center",
+                paddingLeft: "20px",
+                backgroundColor: "var(--tertiary-color)",
+                borderTop: "3px solid #7B7B7E",
+                borderBottom: "3px solid #7B7B7E",
+              }}
             >
               <Grid item xs={6} style={{ maxWidth: "100%" }}>
                 <Stack spacing={2}>
@@ -914,6 +909,7 @@ function App() {
                       padding: "1em",
                       backgroundColor: "var(--tertiary-color)",
                       width: "max-content",
+                      border: "3px solid #7B7B7E",
                     }}
                   >
                     <ConnectButtonL2
@@ -1028,7 +1024,8 @@ function App() {
         alignItems="center"
         id="footer"
         style={{
-          backgroundColor: "#0E1E2E",
+          borderTop: "3px solid #7B7B7E",
+          backgroundColor: "var(--tertiary-color)",
           position: "absolute",
           left: 0,
           bottom: 0,
@@ -1065,7 +1062,7 @@ function App() {
         <Divider orientation="vertical" color="white" sx={{ height: "70%" }} />
 
         <a href="https://marigold.dev/" target="_blank">
-          <Typography variant="h4" color="primary">
+          <Typography variant="h6" color="primary">
             Powered by Marigold
           </Typography>
         </a>
@@ -1078,7 +1075,8 @@ function App() {
         alignItems="center"
         id="footer"
         style={{
-          backgroundColor: "#0E1E2E",
+          backgroundColor: "var(--tertiary-color)",
+          borderTop: "3px solid #7B7B7E",
           position: "absolute",
           left: 0,
           bottom: 0,
