@@ -530,7 +530,7 @@ function App() {
                 <Stack
                   direction="row"
                   height="100%"
-                  style={{ fontFamily: "Chilanka" }}
+                  style={{ fontFamily:  "Roboto Mono" }}
                 >
                   <span style={{ paddingTop: "25%", paddingRight: "1em" }}>
                     Do Deposit / Withdraw
@@ -625,7 +625,7 @@ function App() {
                 >
                   <span
                     style={{
-                      fontFamily: "Chilanka",
+                      fontFamily: "Roboto Mono",
                       height: "50%",
                       paddingTop: "25%",
                     }}
@@ -634,7 +634,7 @@ function App() {
                   </span>
                   <span
                     style={{
-                      fontFamily: "Chilanka",
+                      fontFamily:  "Roboto Mono",
                       height: "50%",
                       paddingTop: "25%",
                     }}

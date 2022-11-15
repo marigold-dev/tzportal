@@ -22,11 +22,11 @@ const themeLight = createTheme({
   },
   typography: {
     fontFamily: [
-      'Chilanka',
+      'Roboto Mono',
+      'monospace',
       'Helvetica Neue',
       'Arial',
       'sans-serif',
-      'Chilanka'
     ].join(','),
   },
   components :{
@@ -40,6 +40,7 @@ const themeLight = createTheme({
           fontWeight : "bolder",
           borderRadius:"0px",
           color : "#ffffff",
+          fontSize: "0.65rem"
         },
         //containedWarning : {
         //  color : "#ffffff"
@@ -76,7 +77,6 @@ const themeLight = createTheme({
       styleOverrides : {
         root : {
           fontWeight: "bolder",
-          border: "1px solid white" ,
           height: "3em",
           color:"white",
           background:"#D8464E",
@@ -150,6 +150,7 @@ const themeLight = createTheme({
         }
       }
     },
+   
     MuiTab : {
       styleOverrides : {
         fullWidth : true,
@@ -170,7 +171,7 @@ palette: {
     main : "#D38700"
   },
   action : {
-    disabled : "rgba(255, 255, 255, 0.26)",
+    disabled : "red",
     disabledBackground : "rgba(255, 255, 255, 0.1)"
   }
 }

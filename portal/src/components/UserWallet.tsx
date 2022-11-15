@@ -75,12 +75,12 @@ const UserWallet = ({
             <Stack direction={"column"} spacing={1} >
         
         <OutlinedInput 
-        style={{background: "#2a2a2e", borderRadius:"0", border: "3px solid #2a2a2e"}}
+        style={{background: "#2a2a2e", borderRadius:"0", border: "3px solid #2a2a2e", textAlign:"initial"}}
         fullWidth
         ref={layer1}
             sx={
                 shouldBounce ? {animation : `${myKeyframe} 1s ease`,
-                backgroundColor : "#2a2a2e"
+                backgroundColor: changeTicketColor
             } : {animation : "" ,
             backgroundColor : "#2a2a2e"}
                }

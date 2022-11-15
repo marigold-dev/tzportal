@@ -269,7 +269,7 @@ const ClaimL1 = ({
                     sx={
                         shouldBounce ? {
                             animation: `${myKeyframe} 1s ease`,
-                            backgroundColor: "#2a2a2e"
+                            backgroundColor: changeTicketColor
                         } : {
                             animation: "",
                             backgroundColor: "#2a2a2e"
