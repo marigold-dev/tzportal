@@ -1719,12 +1719,13 @@
   resolved "https://registry.yarnpkg.com/@leichtgewicht/ip-codec/-/ip-codec-2.0.4.tgz#b2ac626d6cb9c8718ab459166d4bb405b8ffa78b"
   integrity sha512-Hcv+nVC0kZnQ3tD9GVu5xSMR4VVYOteQIr/hwFPVEvPdlXqgGEuRjiheChHgdM+JyqdgNcmzZOX/tnl0JOiI7A==
 
-"@marigold-dev/deku-toolkit@^0.1.7":
-  version "0.1.7"
-  resolved "https://registry.yarnpkg.com/@marigold-dev/deku-toolkit/-/deku-toolkit-0.1.7.tgz#195448ab1325ed15ad281886b951738d8d73b453"
-  integrity sha512-eGj4br4keISluEEhuIv8fmPwhzpJQfVQyjl4kKFJdo9mfaq+BV9ypq+QUb/bXmuYuU06/lwxXfkF6zaCrEkw2g==
+"@marigold-dev/deku-toolkit@^0.1.12":
+  version "0.1.12"
+  resolved "https://registry.yarnpkg.com/@marigold-dev/deku-toolkit/-/deku-toolkit-0.1.12.tgz#81dbf66aadb25f2345f32655382adac1b51379d3"
+  integrity sha512-VEZtV1x7gv1kXOwcDLAcGWSflBzvaNb09RyPPbv4O0gml4KeJS3QMJftHU3Er59SBDkTFaN6wz7xMtdQpg//Iw==
   dependencies:
     "@taquito/taquito" "^13.0.1"
+    "@tzstamp/helpers" "^0.3.4"
     blakejs "^1.2.1"
     bs58check "^2.1.2"
 
@@ -2856,6 +2857,11 @@
   dependencies:
     "@typescript-eslint/types" "5.38.1"
     eslint-visitor-keys "^3.3.0"
+
+"@tzstamp/helpers@^0.3.4":
+  version "0.3.4"
+  resolved "https://registry.yarnpkg.com/@tzstamp/helpers/-/helpers-0.3.4.tgz#9b88f18d0e04b311562ee38be6d19be8dab4cee3"
+  integrity sha512-UM/Sd15xy5EBKJx5UZL/D2H1YETJxyTnbnmEO9zXiTTQ6DAlBuKdsihhspHqymySEznCRO9b6dHkaPkQsqM6Vg==
 
 "@webassemblyjs/ast@1.11.1":
   version "1.11.1"
