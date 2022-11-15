@@ -155,6 +155,9 @@ const themeLight = createTheme({
       styleOverrides : {
         fullWidth : true,
         labelIcon : {
+          ":disabled":{
+            color:"var(--tertiary-color)",
+          },
           color : "#ffffff"
         }
       }
@@ -171,7 +174,7 @@ palette: {
     main : "#D38700"
   },
   action : {
-    disabled : "red",
+    disabled : "rgba(255, 255, 255, 0.26)",
     disabledBackground : "rgba(255, 255, 255, 0.1)"
   }
 }
