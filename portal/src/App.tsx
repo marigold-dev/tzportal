@@ -4,7 +4,7 @@ import "./App.css";
 import ConnectButton from "./components/ConnectWallet";
 
 import { AccountInfo, NetworkType } from "@airgap/beacon-types";
-import { DekuToolkit, fromMemorySigner } from "@marigold-dev/deku-toolkit";
+import { DekuPClient, fromMemorySigner } from "@marigold-dev/deku";
 import { Archive, Hail, Home, Send, Unarchive } from "@mui/icons-material";
 import AppsIcon from "@mui/icons-material/Apps";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -139,7 +139,7 @@ function App() {
       ]
     : NetworkType.JAKARTANET;
 
-  const dekuClient = new DekuToolkit({
+  const dekuClient = new DekuPClient({
     dekuRpc: process.env["REACT_APP_DEKU_NODE"]!,
     dekuSigner: fromMemorySigner(TezosL2.signer),
   }).setTezosRpc(process.env["REACT_APP_TEZOS_NODE"]!);

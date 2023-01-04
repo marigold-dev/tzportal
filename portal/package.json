@@ -6,7 +6,7 @@
     "@dipdup/tzkt-api": "^0.0.1",
     "@emotion/react": "^11.8.2",
     "@emotion/styled": "^11.8.1",
-    "@marigold-dev/deku-toolkit": "^0.1.12",
+    "@marigold-dev/deku": "^0.1.6",
     "@mui/icons-material": "^5.5.1",
     "@mui/lab": "^5.0.0-alpha.94",
     "@mui/material": "^5.5.1",

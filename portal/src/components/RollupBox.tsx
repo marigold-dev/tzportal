@@ -1,4 +1,4 @@
-import { DekuToolkit } from "@marigold-dev/deku-toolkit";
+import { DekuPClient } from "@marigold-dev/deku";
 import { UnfoldMoreOutlined } from "@mui/icons-material";
 import {
   Accordion,
@@ -86,7 +86,7 @@ type RollupProps = {
   rollupType: ROLLUP_TYPE;
   rollup: RollupTORU | RollupDEKU | RollupCHUSAI | undefined;
   isDirectionDeposit: boolean;
-  dekuClient: DekuToolkit;
+  dekuClient: DekuPClient;
   tokenType: TOKEN_TYPE;
   quantity: BigNumber;
   setQuantity: Dispatch<SetStateAction<BigNumber>>;
