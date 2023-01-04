@@ -882,6 +882,7 @@ function App() {
                         padding: "1em",
                         backgroundColor: "var(--tertiary-color)",
                         width: "250px",
+                        border: "3px solid rgb(123, 123, 126)",
                       }}
                     >
                       <ConnectButton
@@ -947,7 +948,7 @@ function App() {
             style={
               isDesktop
                 ? { paddingLeft: "calc(50% - 350px)" }
-                : { padding: "30px", background: "#0e1e2e" }
+                : { padding: "30px" }
             }
             value={"" + PAGES.DEPOSIT}
           >
@@ -974,7 +975,7 @@ function App() {
             style={
               isDesktop
                 ? { paddingLeft: "calc(50% - 350px)" }
-                : { padding: "30px", background: "#0e1e2e" }
+                : { padding: "30px" }
             }
             value={"" + PAGES.WITHDRAW}
           >
