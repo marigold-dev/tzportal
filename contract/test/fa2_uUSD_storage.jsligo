@@ -1,5 +1,4 @@
 {
-  token_ids : list([0 as nat]) as list<nat>,
   operators :  Big_map.empty  as big_map<[address, address], set<nat>> ,
   ledger : ( Big_map.literal( list([
     [ ["tz1KkeNrP9YeL4NzU9ha5yuvxv8NYpWNd2LY" as address, 0 as nat] , (1000000000000000000000000 as nat)]])
@@ -8,10 +7,30 @@
     [ (0 as nat) , 
       {token_id : (0 as nat),
        token_info : Map.literal ( list([
-       ["decimals", (0x3132 as bytes)] , 
-       ["name", (0x796f757665732075555344 as bytes) ],
-       ["symbol", (0x75555344 as bytes) ],
-       ["thumbnailUri", (0x697066733a2f2f516d627668616e4e437879645a45624775315264716b47334c63704e4776375859734348677a5742586e6d785264 as bytes)] 
+       ["decimals", (bytes `12`)] , 
+       ["name", (bytes `youves uUSD`) ],
+       ["interfaces", (bytes `["TZIP-12"]`)],
+       ["description", (bytes `lorem ipsum`)],
+       ["symbol", (bytes `uUSD`) ],
+       ["thumbnailUri", (bytes `ipfs://QmbvhanNCxydZEbGu1RdqkG3LcpNGv7XYsCHgzWBXnmxRd`)] 
       ]))  
-      }] ]) ) as big_map<nat, {token_id:nat,token_info:map<string,bytes>}>)
+      }] ]) ) as big_map<nat, {token_id:nat,token_info:map<string,bytes>}>),
+  owner_token_ids: Set.empty as set<[address, nat]>,
+  token_ids: Set.empty as set<nat>,
+  metadata : Big_map.literal(
+      list([["", bytes `tezos-storage:data`], ["data", bytes `{
+      "name":"FA2 TOKEN uUSD",
+      "description":"Example of FA2 implementation",
+      "version":"0.0.1",
+      "license":{"name":"MIT"},
+      "authors":["Marigold<contact@marigold.dev>"],
+      "homepage":"https://marigold.dev",
+      "source":{
+        "tools":["Ligo"],
+        "location":"https://github.com/ligolang/contract-catalogue/tree/main/lib/fa2"},
+      "interfaces":["TZIP-012"],
+      "errors": [],
+      "views": []
+      }`]])
+   )
 }

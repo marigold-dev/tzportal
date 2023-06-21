@@ -1,25 +1,25 @@
 {
   operators :  Big_map.empty  as big_map<[address, address], set<nat>> ,
   ledger : ( Big_map.literal( list([
-    [ ["tz1KkeNrP9YeL4NzU9ha5yuvxv8NYpWNd2LY" as address, 0 as nat] , (1000000000000000000 as nat)]])
+    [ ["tz1KkeNrP9YeL4NzU9ha5yuvxv8NYpWNd2LY" as address, 0 as nat] , (1000000000000000000000000 as nat)]])
    ) as big_map<[address,nat],nat> ),
   token_metadata : ( Big_map.literal ( list([
     [ (0 as nat) , 
       {token_id : (0 as nat),
        token_info : Map.literal ( list([
        ["decimals", (bytes `6`)] , 
-       ["name", (bytes `Lugh Euro pegged stablecoin`) ],
+       ["name", (bytes `Tether USD`) ],
        ["interfaces", (bytes `["TZIP-12"]`)],
        ["description", (bytes `lorem ipsum`)],
-       ["symbol", (bytes `EURL`) ],
-       ["thumbnailUri", (bytes `ipfs://QmcqsYQn8pTxQr3P1dYpgYxQa6GQPmoBTSWQ8bpuFEuaqe`)] 
+       ["symbol", (bytes `USDt`) ],
+       ["thumbnailUri", (bytes `ipfs://QmRymVGWEudMfLrbjaEiXxngCRTDgWCsscjQMwizy4ZJjX`)] 
       ]))  
       }] ]) ) as big_map<nat, {token_id:nat,token_info:map<string,bytes>}>),
   owner_token_ids: Set.empty as set<[address, nat]>,
   token_ids: Set.empty as set<nat>,
   metadata : Big_map.literal(
       list([["", bytes `tezos-storage:data`], ["data", bytes `{
-      "name":"FA2 TOKEN EURL",
+      "name":"FA2 TOKEN USDt",
       "description":"Example of FA2 implementation",
       "version":"0.0.1",
       "license":{"name":"MIT"},
